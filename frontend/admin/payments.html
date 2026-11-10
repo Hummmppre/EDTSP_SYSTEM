@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Management | EDTSP</title>
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>EDTSP</h2>
+            <p>Administrator Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="trainees.html">Trainees</a>
+            <a href="assessments.html">Assessments</a>
+            <a href="payments.html" class="active">Payments</a>
+            <a href="cow-maintenance.html">Cow Maintenance</a>
+        </nav>
+
+        <button id="logoutBtn" type="button">Logout</button>
+    </aside>
+
+    <main class="main-content">
+
+        <header class="dashboard-header">
+            <button id="sidebarToggle" type="button">☰</button>
+            <div>
+                <h1>Payment Management</h1>
+                <p>Manage training fees, payment records, and trainee balances.</p>
+            </div>
+        </header>
+
+        <!-- Payment Summary -->
+        <section class="dashboard-overview">
+            <h2>Payment Overview</h2>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total Training Fees</h3>
+                    <p id="totalFees">₱432,000</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Total Collected</h3>
+                    <p id="totalCollected">₱318,000</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Outstanding Balance</h3>
+                    <p id="outstandingBalance">₱114,000</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Fully Paid Trainees</h3>
+                    <p id="fullyPaidCount">12</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Payment Records -->
+        <section class="dashboard-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Payment Records</h2>
+                    <p>Monitor individual trainee accounts and payment status.</p>
+                </div>
+
+                <button class="primary-btn" id="recordPaymentBtn">
+                    + Record Payment
+                </button>
+            </div>
+
+            <div class="table-controls">
+                <input
+                    type="search"
+                    id="paymentSearch"
+                    placeholder="Search trainee name or ID..."
+                >
+
+                <select id="paymentStatusFilter">
+                    <option value="all">All Payment Status</option>
+                    <option value="Fully Paid">Fully Paid</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Unpaid">Unpaid</option>
+                </select>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="trainee-table">
+                    <thead>
+                        <tr>
+                            <th>Trainee ID</th>
+                            <th>Trainee Name</th>
+                            <th>Total Fee</th>
+                            <th>Amount Paid</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="paymentTableBody">
+                        <tr data-status="Fully Paid">
+                            <td>EDT-2026-001</td>
+                            <td>Juan Dela Cruz</td>
+                            <td>₱18,000</td>
+                            <td>₱18,000</td>
+                            <td>₱0</td>
+                            <td><span class="status-badge completed">Fully Paid</span></td>
+                            <td><button class="view-btn" data-trainee="EDT-2026-001">View</button></td>
+                        </tr>
+
+                        <tr data-status="Partial">
+                            <td>EDT-2026-002</td>
+                            <td>Maria Santos</td>
+                            <td>₱18,000</td>
+                            <td>₱10,000</td>
+                            <td>₱8,000</td>
+                            <td><span class="status-badge pending">Partial</span></td>
+                            <td><button class="view-btn" data-trainee="EDT-2026-002">View</button></td>
+                        </tr>
+
+                        <tr data-status="Unpaid">
+                            <td>EDT-2026-003</td>
+                            <td>Pedro Reyes</td>
+                            <td>₱18,000</td>
+                            <td>₱0</td>
+                            <td>₱18,000</td>
+                            <td><span class="status-badge inactive">Unpaid</span></td>
+                            <td><button class="view-btn" data-trainee="EDT-2026-003">View</button></td>
+                        </tr>
+
+                        <tr data-status="Partial">
+                            <td>EDT-2026-004</td>
+                            <td>Ana Garcia</td>
+                            <td>₱18,000</td>
+                            <td>₱5,000</td>
+                            <td>₱13,000</td>
+                            <td><span class="status-badge pending">Partial</span></td>
+                            <td><button class="view-btn" data-trainee="EDT-2026-004">View</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <!-- Payment History -->
+        <section class="dashboard-section">
+            <h2>Recent Payment Transactions</h2>
+            <p class="section-description">A record of recently received payments.</p>
+
+            <div class="table-wrapper">
+                <table class="trainee-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Trainee</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Payment Date</th>
+                            <th>Reference Number</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="transactionTableBody">
+                        <tr>
+                            <td>PAY-001</td>
+                            <td>Juan Dela Cruz</td>
+                            <td>₱18,000</td>
+                            <td>Cash</td>
+                            <td>Nov 05, 2026</td>
+                            <td>—</td>
+                        </tr>
+
+                        <tr>
+                            <td>PAY-002</td>
+                            <td>Maria Santos</td>
+                            <td>₱10,000</td>
+                            <td>GCash</td>
+                            <td>Nov 06, 2026</td>
+                            <td>GC-2026-002</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="admin-modal" id="paymentModal">
+    <div class="admin-modal-content">
+
+        <div class="modal-heading">
+            <div>
+                <h2>Record Payment</h2>
+                <p>Enter the details of a trainee's payment.</p>
+            </div>
+
+            <button type="button" class="modal-close" id="closePaymentModal">&times;</button>
+        </div>
+
+        <form id="paymentForm">
+
+            <div class="form-group">
+                <label for="paymentTrainee">Trainee</label>
+                <select id="paymentTrainee" required>
+                    <option value="">Select a trainee</option>
+                    <option value="EDT-2026-001">Juan Dela Cruz</option>
+                    <option value="EDT-2026-002">Maria Santos</option>
+                    <option value="EDT-2026-003">Pedro Reyes</option>
+                    <option value="EDT-2026-004">Ana Garcia</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="paymentAmount">Payment Amount (₱)</label>
+                <input type="number" id="paymentAmount" min="0.01" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="paymentDate">Payment Date</label>
+                <input type="date" id="paymentDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="paymentMethod">Payment Method</label>
+                <select id="paymentMethod" required>
+                    <option value="">Select payment method</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="GCash">GCash</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="referenceNumber">Reference Number</label>
+                <input type="text" id="referenceNumber" placeholder="Optional reference number">
+            </div>
+
+            <div class="form-group">
+                <label for="paymentRemarks">Remarks</label>
+                <textarea id="paymentRemarks" rows="3" placeholder="Additional information"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" id="cancelPayment">Cancel</button>
+                <button type="submit" class="primary-btn">Save Payment</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script src="../js/admin.js" defer></script>
+<script src="../js/admin-payments.js" defer></script>
+
+</body>
+</html>

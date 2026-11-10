@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Cow Maintenance | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/dashboard.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Student portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar" id="userInitials">T</span>
+            <span class="who__text">
+                <strong id="sidebarName">Trainee</strong>
+                <small>Trainee account</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Main">
+            <p class="nav__label">Training</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payment balance</span>
+            </a>
+
+            <a class="nav__link is-active" href="cow-maintenance.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Account</p>
+
+            <a class="nav__link" href="profile.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.2"/>
+                    <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3"/>
+                </svg>
+                <span>My profile</span>
+            </a>
+
+            <a class="nav__link nav__link--quiet" href="#" id="logoutButton">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </a>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Student portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="menuToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Student portal</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Cow maintenance</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span id="topbarName">Trainee</span>
+                <span class="avatar avatar--sm" id="topbarInitials">T</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>Cow maintenance</h1>
+                    <p class="page__deck">
+                        The animal assigned to you, and today's feeding, water,
+                        medication, and general care record.
+                    </p>
+                </div>
+                <span class="demo-tag">Demo records</span>
+            </header>
+
+            <section class="ledger" aria-label="Animal care summary">
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Assigned cows</span>
+                    <strong class="ledger__value">01</strong>
+                    <span class="ledger__note">Animals assigned to you</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Completed tasks</span>
+                    <strong class="ledger__value">02/04</strong>
+                    <span class="ledger__note">Daily care activities</span>
+                </div>
+
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Pending tasks</span>
+                    <strong class="ledger__value">02</strong>
+                    <span class="ledger__note">Still to complete today</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Animal status</span>
+                    <strong class="ledger__value">Healthy</strong>
+                    <span class="ledger__note">Recorded condition</span>
+                </div>
+
+            </section>
+
+            <div class="grid grid--split">
+
+                <section class="panel" aria-labelledby="animal-title">
+                    <header class="panel__head">
+                        <h2 id="animal-title">Assigned animal</h2>
+                        <span class="panel__meta">Active</span>
+                    </header>
+
+                    <div class="plate">
+                        <span class="plate__id">COW-001</span>
+                        <h2>Sample Cow</h2>
+                    </div>
+
+                    <dl class="facts">
+                        <div>
+                            <dt>Animal ID</dt>
+                            <dd>COW-001</dd>
+                        </div>
+                        <div>
+                            <dt>Animal type</dt>
+                            <dd>Dairy cattle</dd>
+                        </div>
+                        <div>
+                            <dt>Care status</dt>
+                            <dd><span class="status-badge completed">Active</span></dd>
+                        </div>
+                        <div>
+                            <dt>Assigned to</dt>
+                            <dd id="profileName">Trainee name</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section class="panel" aria-labelledby="today-title">
+                    <header class="panel__head">
+                        <h2 id="today-title">Today's care</h2>
+                        <span class="panel__meta">2 of 4 done</span>
+                    </header>
+
+                    <div class="care-list">
+
+                        <div class="care">
+                            <span class="care__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 20V10"/>
+                                    <path d="M12 12c0-3.3 2.4-5.5 5.5-5.5 0 3.3-2.4 5.5-5.5 5.5Z"/>
+                                    <path d="M12 15c0-2.6-2-4.5-4.5-4.5 0 2.6 2 4.5 4.5 4.5Z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Feeding</strong>
+                                <p>Morning and afternoon feeding.</p>
+                            </div>
+                            <span class="status-badge pending">Pending</span>
+                        </div>
+
+                        <div class="care">
+                            <span class="care__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 3.5s6 6.2 6 10.5a6 6 0 0 1-12 0c0-4.3 6-10.5 6-10.5Z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Drinking water</strong>
+                                <p>Water availability and intake.</p>
+                            </div>
+                            <span class="status-badge completed">Completed</span>
+                        </div>
+
+                        <div class="care">
+                            <span class="care__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M9.5 4.5 19.5 14.5a3.5 3.5 0 0 1-5 5L4.5 9.5a3.5 3.5 0 0 1 5-5Z"/>
+                                    <path d="m7 7 10 10"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>Medication</strong>
+                                <p>Prescribed medication and health care.</p>
+                            </div>
+                            <span class="status-badge pending">Pending</span>
+                        </div>
+
+                        <div class="care">
+                            <span class="care__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                                    <path d="m8 12.5 2.5 2.5L16 9"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <strong>General care</strong>
+                                <p>Cleanliness and animal condition.</p>
+                            </div>
+                            <span class="status-badge completed">Completed</span>
+                        </div>
+
+                    </div>
+
+                    <div class="meter__track" style="margin-top:20px">
+                        <span class="meter__fill" style="width:50%"></span>
+                    </div>
+                    <p class="meter__note">2 out of 4 daily activities completed.</p>
+                </section>
+
+            </div>
+
+            <section class="panel" aria-labelledby="care-process-title">
+                <header class="panel__head">
+                    <h2 id="care-process-title">How a care activity is recorded</h2>
+                    <span class="panel__meta">Four steps</span>
+                </header>
+
+                <ol class="process">
+                    <li>
+                        <span class="process__num">01</span>
+                        <strong>Check the schedule</strong>
+                        <p>Review the activities assigned for the day.</p>
+                    </li>
+                    <li>
+                        <span class="process__num">02</span>
+                        <strong>Perform the care</strong>
+                        <p>Complete the task for the assigned animal.</p>
+                    </li>
+                    <li>
+                        <span class="process__num">03</span>
+                        <strong>Record the activity</strong>
+                        <p>Enter details and the completion time.</p>
+                    </li>
+                    <li>
+                        <span class="process__num">04</span>
+                        <strong>Monitor status</strong>
+                        <p>Review completed tasks and animal condition.</p>
+                    </li>
+                </ol>
+            </section>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Student Portal.</span>
+                <span>Animal records shown here are demo data.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Assessments | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/dashboard.js" defer></script>
+    <script src="../js/assessments.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Student portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar" id="userInitials">T</span>
+            <span class="who__text">
+                <strong id="sidebarName">Trainee</strong>
+                <small>Trainee account</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Main">
+            <p class="nav__label">Training</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link is-active" href="assessments.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payment balance</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Account</p>
+
+            <a class="nav__link" href="profile.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.2"/>
+                    <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3"/>
+                </svg>
+                <span>My profile</span>
+            </a>
+
+            <a class="nav__link nav__link--quiet" href="#" id="logoutButton">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </a>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Student portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="menuToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Student portal</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Assessments</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span id="topbarName">Trainee</span>
+                <span class="avatar avatar--sm" id="topbarInitials">T</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>My assessments</h1>
+                    <p class="page__deck">
+                        Assigned tests, assessment dates, and graded results in one record.
+                    </p>
+                </div>
+            </header>
+
+            <section class="ledger" aria-label="Assessment summary">
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Total assessments</span>
+                    <strong class="ledger__value" id="totalAssessments">0</strong>
+                    <span class="ledger__note">Assigned to you</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Completed</span>
+                    <strong class="ledger__value" id="completedAssessments">0</strong>
+                    <span class="ledger__note">Submitted or graded</span>
+                </div>
+
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Pending</span>
+                    <strong class="ledger__value" id="pendingAssessments">0</strong>
+                    <span class="ledger__note">Still to complete</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Average score</span>
+                    <strong class="ledger__value" id="averageScore">0/100</strong>
+                    <span class="ledger__note">Graded assessments only</span>
+                </div>
+
+            </section>
+
+            <section class="panel" aria-labelledby="assessments-title">
+                <header class="panel__head">
+                    <h2 id="assessments-title">Assigned assessments</h2>
+                    <span class="panel__meta">Live records</span>
+                </header>
+
+                <div class="assessment-list" id="assessmentList" aria-live="polite">
+                    <div class="state" role="status">
+                        <strong>Loading assessments</strong>
+                        <p>Fetching the assessments assigned to your trainee account.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="process-title" style="margin-top:20px">
+                <header class="panel__head">
+                    <h2 id="process-title">How an assessment runs</h2>
+                    <span class="panel__meta">Four steps</span>
+                </header>
+
+                <ol class="process">
+                    <li>
+                        <span class="process__num">01</span>
+                        <strong>View assessment</strong>
+                        <p>Check the tests assigned to you and their dates.</p>
+                    </li>
+                    <li>
+                        <span class="process__num">02</span>
+                        <strong>Answer questions</strong>
+                        <p>Complete every required question before submitting.</p>
+                    </li>
+                    <li>
+                        <span class="process__num">03</span>
+                        <strong>Submit answers</strong>
+                        <p>Review your responses, then send them for grading.</p>
+                    </li>
+                    <li>
+                        <span class="process__num">04</span>
+                        <strong>View results</strong>
+                        <p>Your score appears here once the assessment is graded.</p>
+                    </li>
+                </ol>
+            </section>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Student Portal.</span>
+                <span>Results are shown as recorded by your assessor.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+</body>
+</html>

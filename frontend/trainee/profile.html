@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>My Profile | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/dashboard.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Student portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar" id="userInitials">T</span>
+            <span class="who__text">
+                <strong id="sidebarName">Trainee</strong>
+                <small>Trainee account</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Main">
+            <p class="nav__label">Training</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payment balance</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Account</p>
+
+            <a class="nav__link is-active" href="profile.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.2"/>
+                    <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3"/>
+                </svg>
+                <span>My profile</span>
+            </a>
+
+            <a class="nav__link nav__link--quiet" href="#" id="logoutButton">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </a>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Student portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="menuToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Student portal</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>My profile</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span id="topbarName">Trainee</span>
+                <span class="avatar avatar--sm" id="topbarInitials">T</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>My profile</h1>
+                    <p class="page__deck">
+                        The identity and training details held against your trainee account.
+                    </p>
+                </div>
+            </header>
+
+            <div class="grid grid--split">
+
+                <section class="panel" aria-labelledby="personal-title">
+                    <header class="panel__head">
+                        <h2 id="personal-title">Personal information</h2>
+                        <span class="panel__meta">Trainee</span>
+                    </header>
+
+                    <div class="identity">
+                        <div>
+                            <h2 id="profileName">Trainee name</h2>
+                            <p id="profileEmail">trainee@email.com</p>
+                        </div>
+                        <span class="status-badge completed">Active</span>
+                    </div>
+
+                    <dl class="facts">
+                        <div>
+                            <dt>Account type</dt>
+                            <dd>Trainee</dd>
+                        </div>
+                        <div>
+                            <dt>Account status</dt>
+                            <dd><span class="status-badge completed">Active</span></dd>
+                        </div>
+                        <div>
+                            <dt>Institution</dt>
+                            <dd>Esperon Dairy Training</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section class="panel" aria-labelledby="training-title">
+                    <header class="panel__head">
+                        <h2 id="training-title">Training details</h2>
+                        <span class="panel__meta">Program</span>
+                    </header>
+
+                    <dl class="facts">
+                        <div>
+                            <dt>Training program</dt>
+                            <dd id="profileProgram">Loading…</dd>
+                        </div>
+                        <div>
+                            <dt>Trainee ID</dt>
+                            <dd id="traineeId">Loading…</dd>
+                        </div>
+                        <div>
+                            <dt>Training status</dt>
+                            <dd><span class="status-badge pending" id="profileStatus">Loading…</span></dd>
+                        </div>
+                        <div>
+                            <dt>Assigned institution</dt>
+                            <dd>Esperon Dairy Training</dd>
+                        </div>
+                    </dl>
+                </section>
+
+            </div>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Student Portal.</span>
+                <span>Profile details are read from your trainee record.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+</body>
+</html>

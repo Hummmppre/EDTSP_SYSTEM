@@ -1,0 +1,261 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Management | EDTSP</title>
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>EDTSP</h2>
+            <p>Administrator Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="trainees.html">Trainees</a>
+            <a href="assessments.html" class="active">Assessments</a>
+            <a href="payments.html">Payments</a>
+            <a href="cow-maintenance.html">Cow Maintenance</a>
+        </nav>
+
+        <button id="logoutBtn" type="button">Logout</button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <header class="dashboard-header">
+            <button id="sidebarToggle" type="button">☰</button>
+            <div>
+                <h1>Assessment Management</h1>
+                <p>Create, assign, and manage trainee assessments.</p>
+            </div>
+        </header>
+
+        <!-- Overview -->
+        <section class="dashboard-overview">
+            <h2>Assessment Overview</h2>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total Assessments</h3>
+                    <p>32</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Pending</h3>
+                    <p>12</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Graded</h3>
+                    <p>20</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Average Score</h3>
+                    <p>86%</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Assessment Management -->
+        <section class="dashboard-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Assessment Records</h2>
+                    <p>Manage assessment assignments and trainee results.</p>
+                </div>
+
+                <button class="primary-btn" id="createAssessmentBtn">
+                    + Create Assessment
+                </button>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="table-controls">
+                <input
+                    type="search"
+                    id="assessmentSearch"
+                    placeholder="Search assessment or trainee..."
+                >
+
+                <select id="assessmentStatusFilter">
+                    <option value="all">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Graded">Graded</option>
+                </select>
+            </div>
+
+            <!-- Assessment Table -->
+            <div class="table-wrapper">
+                <table class="trainee-table">
+                    <thead>
+                        <tr>
+                            <th>Assessment</th>
+                            <th>Subject</th>
+                            <th>Trainee</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="assessmentTableBody">
+
+                        <tr>
+                            <td>Dairy Production Assessment</td>
+                            <td>Dairy Production</td>
+                            <td>Juan Dela Cruz</td>
+                            <td>85/100</td>
+                            <td>Nov 05, 2026</td>
+                            <td><span class="status-badge completed">Completed</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+
+                        <tr>
+                            <td>Animal Nutrition Assessment</td>
+                            <td>Animal Nutrition</td>
+                            <td>Maria Santos</td>
+                            <td>—</td>
+                            <td>Nov 08, 2026</td>
+                            <td><span class="status-badge pending">Pending</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+
+                        <tr>
+                            <td>Farm Safety Assessment</td>
+                            <td>Farm Safety</td>
+                            <td>Pedro Reyes</td>
+                            <td>92/100</td>
+                            <td>Nov 06, 2026</td>
+                            <td><span class="status-badge completed">Graded</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+<!-- Create Assessment Modal -->
+<div class="admin-modal" id="assessmentModal">
+    <div class="admin-modal-content">
+
+        <div class="modal-heading">
+            <div>
+                <h2>Create Assessment</h2>
+                <p>Assign an assessment to selected trainees.</p>
+            </div>
+            <button type="button" class="modal-close" id="closeAssessmentModal">&times;</button>
+        </div>
+
+        <form id="assessmentForm">
+
+            <div class="form-group">
+                <label for="assessmentTitle">Assessment Title</label>
+                <input type="text" id="assessmentTitle" required
+                    placeholder="Enter assessment title">
+            </div>
+
+            <div class="form-group">
+                <label for="assessmentSubject">Subject</label>
+                <input type="text" id="assessmentSubject" required
+                    placeholder="Enter subject">
+            </div>
+                <div class="form-group">
+             <label for="assessmentType">Assessment Type</label>
+             <select id="assessmentType" required>
+                <option value="">Select Assessment Type</option>
+                <option value="Written">Written Assessment</option>
+                <option value="Practical">Practical Assessment</option>
+                <option value="Oral">Oral Assessment</option>
+                <option value="Performance">Performance Assessment</option>
+            </select>
+        </div>
+            <div class="form-group">
+                <label for="totalScore">Total Score</label>
+                <input type="number" id="totalScore" min="1" required
+                    placeholder="e.g. 100">
+            </div>
+
+            <div class="form-group">
+                <label for="assessmentDate">Assessment Date</label>
+                <input type="date" id="assessmentDate">
+            </div>
+            <div class="form-group">
+                <label for="assessmen   tDueDate">Due Date</label>
+                <input type="date" id="assessmentDueDate">
+            </div>
+
+            <div class="form-group">
+                <label>Select Trainees</label>
+
+                <div class="trainee-selection">
+                    <label>
+                        <input type="checkbox" id="selectAllTrainees">
+                        Select All
+                    </label>
+
+                    <label>
+                        <input type="checkbox" name="trainees" value="Juan Dela Cruz">
+                        Juan Dela Cruz
+                    </label>
+
+                    <label>
+                        <input type="checkbox" name="trainees" value="Maria Santos">
+                        Maria Santos
+                    </label>
+
+                    <label>
+                        <input type="checkbox" name="trainees" value="Pedro Reyes">
+                        Pedro Reyes
+                    </label>
+
+                    <label>
+                        <input type="checkbox" name="trainees" value="Ana Garcia">
+                        Ana Garcia
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="assessmentRemarks">Instructions / Remarks</label>
+                <textarea id="assessmentRemarks" rows="3"
+                    placeholder="Enter additional instructions or remarks"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" id="cancelAssessment">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-btn">
+                    Create Assessment
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script src="../js/admin.js" defer></script>
+<script src="../js/admin-assessments.js" defer></script>
+
+</body>
+</html>

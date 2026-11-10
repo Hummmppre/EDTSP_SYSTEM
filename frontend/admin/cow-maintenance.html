@@ -1,0 +1,358 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cow Maintenance Management | EDTSP</title>
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>EDTSP</h2>
+            <p>Administrator Portal</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="trainees.html">Trainees</a>
+            <a href="assessments.html">Assessments</a>
+            <a href="payments.html">Payments</a>
+            <a href="cow-maintenance.html" class="active">Cow Maintenance</a>
+        </nav>
+
+        <button id="logoutBtn" type="button">Logout</button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <header class="dashboard-header">
+            <button id="sidebarToggle" type="button">☰</button>
+            <div>
+                <h1>Cow Maintenance Management</h1>
+                <p>Manage cow records, feeding, medication, and daily care schedules.</p>
+            </div>
+        </header>
+
+        <!-- Overview -->
+        <section class="dashboard-overview">
+            <h2>Maintenance Overview</h2>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total Cows</h3>
+                    <p>24</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Healthy Cows</h3>
+                    <p>20</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Pending Activities</h3>
+                    <p>8</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Completed Today</h3>
+                    <p>16</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cow Records -->
+        <section class="dashboard-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Cow Records</h2>
+                    <p>Manage registered cows and their health information.</p>
+                </div>
+
+                <button class="primary-btn" id="addCowBtn">
+                    + Add Cow
+                </button>
+            </div>
+
+            <div class="table-controls">
+                <input type="search" id="cowSearch"
+                    placeholder="Search by cow ID or name...">
+
+                <select id="cowHealthFilter">
+                    <option value="all">All Health Status</option>
+                    <option value="Healthy">Healthy</option>
+                    <option value="Under Observation">Under Observation</option>
+                    <option value="Under Treatment">Under Treatment</option>
+                </select>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="trainee-table">
+                    <thead>
+                        <tr>
+                            <th>Cow ID</th>
+                            <th>Cow Name</th>
+                            <th>Breed</th>
+                            <th>Age</th>
+                            <th>Assigned Trainee</th>
+                            <th>Health Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="cowTableBody">
+                        <tr data-health="Healthy">
+                            <td>COW-001</td>
+                            <td>Bella</td>
+                            <td>Holstein</td>
+                            <td>3 Years</td>
+                            <td>Juan Dela Cruz</td>
+                            <td><span class="status-badge completed">Healthy</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+
+                        <tr data-health="Under Observation">
+                            <td>COW-002</td>
+                            <td>Daisy</td>
+                            <td>Jersey</td>
+                            <td>4 Years</td>
+                            <td>Maria Santos</td>
+                            <td><span class="status-badge pending">Under Observation</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+
+                        <tr data-health="Under Treatment">
+                            <td>COW-003</td>
+                            <td>Molly</td>
+                            <td>Holstein</td>
+                            <td>2 Years</td>
+                            <td>Pedro Reyes</td>
+                            <td><span class="status-badge inactive">Under Treatment</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Daily Maintenance -->
+        <section class="dashboard-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Daily Maintenance Activities</h2>
+                    <p>Monitor the daily care and maintenance of cows.</p>
+                </div>
+
+                <button class="primary-btn" id="addActivityBtn">
+                    + Add Activity
+                </button>
+            </div>
+
+            <div class="table-controls">
+                <input type="search" id="activitySearch"
+                    placeholder="Search cow or activity...">
+
+                <select id="activityTypeFilter">
+                    <option value="all">All Activities</option>
+                    <option value="Feeding">Feeding</option>
+                    <option value="Medication">Medication</option>
+                    <option value="Drinking">Drinking</option>
+                </select>
+
+                <select id="activityStatusFilter">
+                    <option value="all">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="trainee-table">
+                    <thead>
+                        <tr>
+                            <th>Cow</th>
+                            <th>Activity</th>
+                            <th>Description</th>
+                            <th>Schedule</th>
+                            <th>Assigned Trainee</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="activityTableBody">
+                        <tr data-type="Feeding" data-status="Completed">
+                            <td>Bella (COW-001)</td>
+                            <td>Feeding</td>
+                            <td>Fresh grass and concentrate</td>
+                            <td>7:00 AM</td>
+                            <td>Juan Dela Cruz</td>
+                            <td><span class="status-badge completed">Completed</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+
+                        <tr data-type="Medication" data-status="Pending">
+                            <td>Daisy (COW-002)</td>
+                            <td>Medication</td>
+                            <td>Scheduled health treatment</td>
+                            <td>9:00 AM</td>
+                            <td>Maria Santos</td>
+                            <td><span class="status-badge pending">Pending</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+
+                        <tr data-type="Drinking" data-status="Completed">
+                            <td>Molly (COW-003)</td>
+                            <td>Drinking</td>
+                            <td>Clean drinking water</td>
+                            <td>10:00 AM</td>
+                            <td>Pedro Reyes</td>
+                            <td><span class="status-badge completed">Completed</span></td>
+                            <td><button class="view-btn">View</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+<!-- Add Cow Modal -->
+<div class="admin-modal" id="cowModal">
+    <div class="admin-modal-content">
+
+        <div class="modal-heading">
+            <div>
+                <h2>Add Cow Record</h2>
+                <p>Enter the cow's basic information.</p>
+            </div>
+
+            <button type="button" class="modal-close" id="closeCowModal">&times;</button>
+        </div>
+
+        <form id="cowForm">
+
+            <div class="form-group">
+                <label for="cowId">Cow ID</label>
+                <input type="text" id="cowId" required placeholder="e.g. COW-004">
+            </div>
+
+            <div class="form-group">
+                <label for="cowName">Cow Name</label>
+                <input type="text" id="cowName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="cowBreed">Breed</label>
+                <input type="text" id="cowBreed" required>
+            </div>
+
+            <div class="form-group">
+                <label for="cowAge">Age</label>
+                <input type="number" id="cowAge" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="cowTrainee">Assigned Trainee</label>
+                <input type="text" id="cowTrainee" placeholder="Enter trainee name">
+            </div>
+
+            <div class="form-group">
+                <label for="cowHealth">Health Status</label>
+                <select id="cowHealth" required>
+                    <option value="Healthy">Healthy</option>
+                    <option value="Under Observation">Under Observation</option>
+                    <option value="Under Treatment">Under Treatment</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" id="cancelCow">Cancel</button>
+                <button type="submit" class="primary-btn">Save Cow</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- Add Activity Modal -->
+<div class="admin-modal" id="activityModal">
+    <div class="admin-modal-content">
+
+        <div class="modal-heading">
+            <div>
+                <h2>Add Maintenance Activity</h2>
+                <p>Create a feeding, medication, or drinking schedule.</p>
+            </div>
+
+            <button type="button" class="modal-close" id="closeActivityModal">&times;</button>
+        </div>
+
+        <form id="activityForm">
+
+            <div class="form-group">
+                <label for="activityCow">Cow</label>
+                <select id="activityCow" required>
+                    <option value="">Select cow</option>
+                    <option value="Bella (COW-001)">Bella (COW-001)</option>
+                    <option value="Daisy (COW-002)">Daisy (COW-002)</option>
+                    <option value="Molly (COW-003)">Molly (COW-003)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="activityType">Activity Type</label>
+                <select id="activityType" required>
+                    <option value="">Select activity</option>
+                    <option value="Feeding">Feeding</option>
+                    <option value="Medication">Medication</option>
+                    <option value="Drinking">Drinking</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="activityDescription">Description</label>
+                <textarea id="activityDescription" rows="3" required
+                    placeholder="Enter activity details"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="activityDate">Schedule Date</label>
+                <input type="date" id="activityDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="activityTime">Schedule Time</label>
+                <input type="time" id="activityTime" required>
+            </div>
+
+            <div class="form-group">
+                <label for="activityTrainee">Assigned Trainee</label>
+                <input type="text" id="activityTrainee" required
+                    placeholder="Enter trainee name">
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" id="cancelActivity">Cancel</button>
+                <button type="submit" class="primary-btn">Save Activity</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script src="../js/admin.js" defer></script>
+<script src="../js/admin-cow.js" defer></script>
+
+</body>
+</html>

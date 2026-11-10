@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Admin Dashboard | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar">A</span>
+            <span class="who__text">
+                <strong>Administrator</strong>
+                <small>Full access</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Administration">
+            <p class="nav__label">Records</p>
+
+            <a class="nav__link is-active" href="dashboard.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="trainees.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"/>
+                    <path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7"/>
+                    <path d="M16 5.6a3 3 0 0 1 0 5.6"/>
+                    <path d="M18.5 19c-.2-1.6-.7-2.9-1.6-3.9 2.5-.2 4.3 1.3 4.9 3.9"/>
+                </svg>
+                <span>Trainees</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payments</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </button>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Administrator portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="sidebarToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Administration</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Dashboard</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span>Administrator</span>
+                <span class="avatar avatar--sm">A</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>Administrator dashboard</h1>
+                    <p class="page__deck">
+                        What needs attention across trainees, assessments, payments,
+                        and animal care — before the next training day.
+                    </p>
+                </div>
+                <span class="demo-tag">Demo data</span>
+            </header>
+
+            <section class="ledger" aria-label="Administration summary">
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Total trainees</span>
+                    <strong class="ledger__value" id="totalTrainees">24</strong>
+                    <span class="ledger__note">Registered participants</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Active trainees</span>
+                    <strong class="ledger__value" id="activeTrainees">18</strong>
+                    <span class="ledger__note">Currently in training</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Total assessments</span>
+                    <strong class="ledger__value" id="totalAssessments">32</strong>
+                    <span class="ledger__note">Assigned to date</span>
+                </div>
+
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Pending assessments</span>
+                    <strong class="ledger__value" id="pendingAssessments">12</strong>
+                    <span class="ledger__note">Awaiting completion</span>
+                </div>
+
+            </section>
+
+            <section class="panel" aria-labelledby="recent-title">
+                <header class="panel__head">
+                    <h2 id="recent-title">Recent assessments</h2>
+                    <a class="text-link" href="assessments.html">All assessments</a>
+                </header>
+
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Recent assessments table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Assessment</th>
+                                <th scope="col">Trainee</th>
+                                <th scope="col">Date</th>
+                                <th scope="col" class="num">Score</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="recentAssessments">
+                            <tr>
+                                <td class="name">Dairy production assessment</td>
+                                <td>Juan Dela Cruz</td>
+                                <td>Nov 05, 2026</td>
+                                <td class="num">85/100</td>
+                                <td><span class="status-badge completed">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td class="name">Animal nutrition assessment</td>
+                                <td>Maria Santos</td>
+                                <td>Nov 08, 2026</td>
+                                <td class="num">—</td>
+                                <td><span class="status-badge pending">Pending</span></td>
+                            </tr>
+                            <tr>
+                                <td class="name">Farm safety assessment</td>
+                                <td>Pedro Reyes</td>
+                                <td>Nov 06, 2026</td>
+                                <td class="num">92/100</td>
+                                <td><span class="status-badge completed">Graded</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
+                <span>Figures shown here are demo data.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+</body>
+</html>

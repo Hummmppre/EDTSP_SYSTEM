@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | EDTSP</title>
+    <link rel="stylesheet" href="css/auth.css">
+    <script src="js/auth.js" defer></script>
+</head>
+<body>
+
+    <main class="auth-container">
+
+        <section class="auth-brand">
+            <a href="index.html" class="brand-logo">
+                <span class="brand-icon">E</span>
+                <span>
+                    ESPERON
+                    <small>DAIRY TRAINING</small>
+                </span>
+            </a>
+
+            <div class="brand-content">
+                <span class="eyebrow">JOIN ESPERON DAIRY TRAINING</span>
+                <h1>Start Your Journey!</h1>
+                <p>
+                    Create your trainee account and gain access
+                    to your training activities, assessments,
+                    and learning progress.
+                </p>
+            </div>
+
+            <p class="brand-footer">
+                Learn. Train. Grow.
+            </p>
+        </section>
+
+        <section class="auth-form-section">
+            <div class="auth-card">
+
+                <a href="index.html" class="back-link">
+                    ← Back to Home
+                </a>
+
+                <div class="form-heading">
+                    <span class="eyebrow">CREATE AN ACCOUNT</span>
+                    <h2>Create Your EDTSP Account</h2>
+                    <p>Fill in your information to get started.</p>
+                </div>
+
+                <form id="registerForm">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input
+                                type="text"
+                                id="firstName"
+                                name="firstName"
+                                placeholder="First name"
+                                autocomplete="given-name"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input
+                                type="text"
+                                id="lastName"
+                                name="lastName"
+                                placeholder="Last name"
+                                autocomplete="family-name"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerEmail">Email Address</label>
+                        <input
+                            type="email"
+                            id="registerEmail"
+                            name="email"
+                            placeholder="Enter your email"
+                            autocomplete="email"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerRole">Account Role</label>
+                        <select id="registerRole" name="role" required>
+                            <option value="trainee" selected>Trainee</option>
+                            <option value="admin" disabled>
+                                Administrator (Invitation Required)
+                            </option>
+                        </select>
+                        <small class="field-note">
+                            Administrator accounts require authorization.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <div class="password-wrapper">
+                            <input
+                                type="password"
+                                id="registerPassword"
+                                name="password"
+                                placeholder="Create a password"
+                                autocomplete="new-password"
+                                minlength="8"
+                                required
+                            >
+                            <button type="button"
+                                class="toggle-password"
+                                data-target="registerPassword">
+                                Show
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                placeholder="Confirm your password"
+                                autocomplete="new-password"
+                                required
+                            >
+                            <button type="button"
+                                class="toggle-password"
+                                data-target="confirmPassword">
+                                Show
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="auth-button">
+                        Create Account
+                    </button>
+
+                </form>
+
+                <p class="auth-switch">
+                    Already have an account?
+                    <a href="login.html">Sign In</a>
+                </p>
+
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>
