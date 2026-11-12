@@ -1,66 +1,122 @@
-
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-const protect = (req, res, next) => {
+const sendAuthError = (res, status, message, code) =>
+    res.status(status).json({
+        success: false,
+        message,
+        code
+    });
+
+/**
+ * Verify the bearer token AND re-read the account, so a deactivated user or a
+ * revoked session is rejected on the very next request.
+ */
+const protect = async (req, res, next) => {
     try {
-        // Get the token from the request header
         const authHeader = req.headers.authorization;
 
-        console.log("Authorization header received:", !!authHeader);
-console.log(
-    "Authorization header starts correctly:",
-    authHeader ? authHeader.startsWith("Bearer ") : false
-
-
-);
-
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res.status(401).json({
-                success: false,
-                message: "Access denied. Please log in."
-            });
+            return sendAuthError(
+                res,
+                401,
+                "Access denied. Please log in.",
+                "NO_TOKEN"
+            );
         }
 
-        const token = authHeader.split(" ")[1];
+        const token = authHeader.slice(7).trim();
 
-        // Verify the token using the secret in .env
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (!token) {
+            return sendAuthError(
+                res,
+                401,
+                "Access denied. Please log in.",
+                "NO_TOKEN"
+            );
+        }
 
-        // Make the logged-in user's information available to the route
-        req.user = decoded;
+        let decoded;
 
-        next();
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (error) {
+            return sendAuthError(
+                res,
+                401,
+                "Invalid or expired login session.",
+                "INVALID_SESSION"
+            );
+        }
 
+        const user = await User.findById(decoded.id).select(
+            "role status tokenVersion"
+        );
+
+        if (!user) {
+            return sendAuthError(
+                res,
+                401,
+                "This account no longer exists.",
+                "INVALID_SESSION"
+            );
+        }
+
+        if (user.status !== "active") {
+            return sendAuthError(
+                res,
+                403,
+                "This account has been deactivated. Contact the administrator.",
+                "ACCOUNT_INACTIVE"
+            );
+        }
+
+        if (Number(decoded.tokenVersion || 0) !== Number(user.tokenVersion || 0)) {
+            return sendAuthError(
+                res,
+                401,
+                "Your session has ended. Please sign in again.",
+                "SESSION_REVOKED"
+            );
+        }
+
+        req.user = {
+            id: user._id.toString(),
+            role: user.role,
+            status: user.status
+        };
+
+        return next();
     } catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid or expired login session."
-        });
+        return next(error);
     }
 };
 
 // Allow only trainee accounts
 const traineeOnly = (req, res, next) => {
-    if (req.user.role !== "trainee") {
-        return res.status(403).json({
-            success: false,
-            message: "Access denied. Trainee accounts only."
-        });
+    if (!req.user || req.user.role !== "trainee") {
+        return sendAuthError(
+            res,
+            403,
+            "Access denied. Trainee accounts only.",
+            "FORBIDDEN_ROLE"
+        );
     }
 
-    next();
+    return next();
 };
 
-
 const adminOnly = (req, res, next) => {
-    if (req.user.role !== "admin") {
-        return res.status(403).json({
-            success: false,
-            message: "Access denied. Administrator accounts only."
-        });
+    if (!req.user || req.user.role !== "admin") {
+        return sendAuthError(
+            res,
+            403,
+            "Access denied. Administrator accounts only.",
+            "FORBIDDEN_ROLE"
+        );
     }
 
-    next();
+    return next();
 };
 
 module.exports = { protect, traineeOnly, adminOnly };

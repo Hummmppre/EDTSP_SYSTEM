@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Programs | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/api.js" defer></script>
+    <script src="../js/session.js" defer></script>
+    <script src="../js/ui.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-programs.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar">A</span>
+            <span class="who__text">
+                <strong>Administrator</strong>
+                <small>Full access</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Administration">
+            <p class="nav__label">Records</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="trainees.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"/>
+                    <path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7"/>
+                    <path d="M16 5.6a3 3 0 0 1 0 5.6"/>
+                    <path d="M18.5 19c-.2-1.6-.7-2.9-1.6-3.9 2.5-.2 4.3 1.3 4.9 3.9"/>
+                </svg>
+                <span>Trainees</span>
+            </a>
+
+            <a class="nav__link is-active" href="programs.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h10"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payments</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="openPasswordModal" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="10" rx="2"/>
+                    <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/>
+                </svg>
+                <span>Change password</span>
+            </button>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </button>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Administrator portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="sidebarToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Administration</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Programs</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span>Administrator</span>
+                <span class="avatar avatar--sm">A</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>Training programs</h1>
+                    <p class="page__deck">
+                        Each program's total fee defines the balance shown to enrolled trainees.
+                    </p>
+                </div>
+            </header>
+
+            <section class="ledger" aria-label="Program summary">
+                <div class="ledger__cell">
+                    <span class="ledger__label">Programs</span>
+                    <strong class="ledger__value" id="ledgerPrograms">—</strong>
+                    <span class="ledger__note">Configured programs</span>
+                </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Active programs</span>
+                    <strong class="ledger__value" id="ledgerActive">—</strong>
+                    <span class="ledger__note">Open for assignment</span>
+                </div>
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Trainees enrolled</span>
+                    <strong class="ledger__value" id="ledgerEnrolled">—</strong>
+                    <span class="ledger__note">Assigned to a program</span>
+                </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Total fees configured</span>
+                    <strong class="ledger__value" id="ledgerFee">—</strong>
+                    <span class="ledger__note" id="ledgerFeeNote">Sum of program fees</span>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="program-title">
+                <header class="panel__head">
+                    <h2 id="program-title">Programs</h2>
+                    <button type="button" class="btn btn--primary" id="newProgramBtn">New program</button>
+                </header>
+
+                <div class="toolbar">
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5"/>
+                            <path d="m16 16 4 4"/>
+                        </svg>
+                        <span class="sr-only">Search programs by name or code</span>
+                        <input type="search" id="programSearch" placeholder="Search name or code">
+                    </label>
+
+                    <div class="select">
+                        <label class="sr-only" for="programActiveFilter">Filter by state</label>
+                        <select id="programActiveFilter">
+                            <option value="all">All programs</option>
+                            <option value="true">Active only</option>
+                            <option value="false">Inactive only</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                </div>
+
+                <p class="state" id="programState" role="status">Loading programs…</p>
+
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Programs table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Code</th>
+                                <th scope="col">Program</th>
+                                <th scope="col" class="num">Total fee</th>
+                                <th scope="col" class="num">Trainees</th>
+                                <th scope="col">State</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="programTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pager" id="programPager" hidden></div>
+            </section>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
+                <span>Editing a fee recalculates outstanding balances immediately.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+<div class="admin-modal" id="programModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2 id="programModalTitle">New program</h2>
+                <p>Fee changes affect every enrolled trainee's balance right away.</p>
+            </div>
+            <button type="button" class="modal-close" data-close-program aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="programForm" novalidate>
+            <div class="form-grid">
+                <label class="field">
+                    <span class="field__label">Program name</span>
+                    <input type="text" id="programName" placeholder="Dairy Production Training">
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Code</span>
+                    <input type="text" id="programCode" placeholder="DAIRY" autocomplete="off">
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Total fee (PHP)</span>
+                    <input type="number" id="programFee" min="0" step="0.01" placeholder="18000">
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Active</span>
+                    <select id="programActive">
+                        <option value="true">Active — can be assigned</option>
+                        <option value="false">Inactive — hidden from assignment</option>
+                    </select>
+                </label>
+
+                <label class="field field--full">
+                    <span class="field__label">Description</span>
+                    <textarea id="programDescription" rows="3" placeholder="What this program covers"></textarea>
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" id="deleteProgramBtn" hidden>Delete</button>
+                <button type="button" class="btn btn--ghost" data-close-program>Cancel</button>
+                <button type="submit" class="btn btn--primary">Save program</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="admin-modal" id="passwordModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2>Change password</h2>
+                <p>Other sessions will be signed out when the password changes.</p>
+            </div>
+            <button type="button" class="modal-close" data-close-password aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="passwordForm" novalidate>
+            <label class="field field--full">
+                <span class="field__label">Current password</span>
+                <input type="password" id="currentPassword" autocomplete="current-password">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">New password</span>
+                <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">Confirm new password</span>
+                <input type="password" id="confirmNewPassword" autocomplete="new-password">
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" data-close-password>Cancel</button>
+                <button type="submit" class="btn btn--primary">Update password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

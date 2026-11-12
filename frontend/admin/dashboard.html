@@ -7,8 +7,12 @@
     <title>Admin Dashboard | EDTSP</title>
 
     <link rel="stylesheet" href="../css/portal.css">
-    <script src="../js/admin.js" defer></script>
+    <script src="../js/api.js" defer></script>
+    <script src="../js/session.js" defer></script>
+    <script src="../js/ui.js" defer></script>
     <script src="../js/portal.js" defer></script>
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-dashboard.js" defer></script>
 </head>
 <body>
 
@@ -58,6 +62,13 @@
                 <span>Trainees</span>
             </a>
 
+            <a class="nav__link" href="programs.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h10"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
             <a class="nav__link" href="assessments.html">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="5" y="5" width="14" height="16" rx="2"/>
@@ -87,6 +98,14 @@
             </a>
 
             <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="openPasswordModal" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="10" rx="2"/>
+                    <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/>
+                </svg>
+                <span>Change password</span>
+            </button>
 
             <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -141,38 +160,37 @@
                         and animal care — before the next training day.
                     </p>
                 </div>
-                <span class="demo-tag">Demo data</span>
             </header>
 
             <section class="ledger" aria-label="Administration summary">
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Total trainees</span>
-                    <strong class="ledger__value" id="totalTrainees">24</strong>
+                    <strong class="ledger__value" id="totalTrainees">—</strong>
                     <span class="ledger__note">Registered participants</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Active trainees</span>
-                    <strong class="ledger__value" id="activeTrainees">18</strong>
-                    <span class="ledger__note">Currently in training</span>
+                    <strong class="ledger__value" id="activeTrainees">—</strong>
+                    <span class="ledger__note">Accounts able to sign in</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Total assessments</span>
-                    <strong class="ledger__value" id="totalAssessments">32</strong>
+                    <strong class="ledger__value" id="totalAssessments">—</strong>
                     <span class="ledger__note">Assigned to date</span>
                 </div>
 
                 <div class="ledger__cell ledger__cell--focus">
                     <span class="ledger__label">Pending assessments</span>
-                    <strong class="ledger__value" id="pendingAssessments">12</strong>
-                    <span class="ledger__note">Awaiting completion</span>
+                    <strong class="ledger__value" id="pendingAssessments">—</strong>
+                    <span class="ledger__note">Awaiting grading</span>
                 </div>
 
             </section>
 
-            <section class="panel" aria-labelledby="recent-title">
+            <section class="panel" id="recentAssessmentsPanel" aria-labelledby="recent-title" hidden>
                 <header class="panel__head">
                     <h2 id="recent-title">Recent assessments</h2>
                     <a class="text-link" href="assessments.html">All assessments</a>
@@ -190,42 +208,74 @@
                             </tr>
                         </thead>
 
-                        <tbody id="recentAssessments">
-                            <tr>
-                                <td class="name">Dairy production assessment</td>
-                                <td>Juan Dela Cruz</td>
-                                <td>Nov 05, 2026</td>
-                                <td class="num">85/100</td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="name">Animal nutrition assessment</td>
-                                <td>Maria Santos</td>
-                                <td>Nov 08, 2026</td>
-                                <td class="num">—</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td class="name">Farm safety assessment</td>
-                                <td>Pedro Reyes</td>
-                                <td>Nov 06, 2026</td>
-                                <td class="num">92/100</td>
-                                <td><span class="status-badge completed">Graded</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="recentAssessments"></tbody>
                     </table>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="money-title">
+                <header class="panel__head">
+                    <h2 id="money-title">Fee collection</h2>
+                    <a class="text-link" href="payments.html">Payments</a>
+                </header>
+
+                <div class="panel__body">
+                    <dl class="facts">
+                        <div>
+                            <dt>Collected (verified)</dt>
+                            <dd class="amount" id="collectedValue">—</dd>
+                        </div>
+                        <div>
+                            <dt>Outstanding balance</dt>
+                            <dd class="amount balance" id="outstandingValue">—</dd>
+                        </div>
+                    </dl>
                 </div>
             </section>
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
-                <span>Figures shown here are demo data.</span>
+                <span>Figures are read live from the training records.</span>
             </footer>
 
         </main>
 
     </div>
 
+</div>
+
+<div class="admin-modal" id="passwordModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2>Change password</h2>
+                <p>Other sessions will be signed out when the password changes.</p>
+            </div>
+            <button type="button" class="modal-close" data-close-password aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="passwordForm" novalidate>
+            <label class="field field--full">
+                <span class="field__label">Current password</span>
+                <input type="password" id="currentPassword" autocomplete="current-password">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">New password</span>
+                <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">Confirm new password</span>
+                <input type="password" id="confirmNewPassword" autocomplete="new-password">
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" data-close-password>Cancel</button>
+                <button type="submit" class="btn btn--primary">Update password</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 </body>

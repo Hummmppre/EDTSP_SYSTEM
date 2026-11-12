@@ -1,26 +1,23 @@
 {
-  "name": "backend",
+  "name": "edtsp-system",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "EDTSP — Esperon Dairy Training Student Portal (Express API + static portal)",
+  "main": "backend/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "dev": "npm --prefix backend run dev",
+    "start": "npm --prefix backend run start",
+    "test": "npm --prefix backend test",
+    "lint": "eslint .",
+    "seed:demo": "npm --prefix backend run seed:demo",
+    "create-admin": "npm --prefix backend run create-admin"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^18.0.9",
-    "express": "^5.3.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.12.0"
-  },
+  "license": "MIT",
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0"
   }
 }

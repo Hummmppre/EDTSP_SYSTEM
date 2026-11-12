@@ -401,3 +401,14 @@ a {
         align-items: flex-start;
     }
 }
+
+/* SVG menu icon (replaces the old glyph) */
+.menu-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}

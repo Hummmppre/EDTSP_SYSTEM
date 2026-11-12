@@ -7,8 +7,12 @@
     <title>Payment Balance | EDTSP</title>
 
     <link rel="stylesheet" href="../css/portal.css">
-    <script src="../js/dashboard.js" defer></script>
+    <script src="../js/api.js" defer></script>
+    <script src="../js/session.js" defer></script>
+    <script src="../js/ui.js" defer></script>
+    <script src="../js/upload.js" defer></script>
     <script src="../js/portal.js" defer></script>
+    <script src="../js/payments.js" defer></script>
 </head>
 <body>
 
@@ -133,149 +137,150 @@
 
             <header class="page__head">
                 <div>
-                    <h1>My payment balance</h1>
+                    <h1>Payment balance</h1>
                     <p class="page__deck">
-                        Training fees, verified payments, and the amount still outstanding
-                        on your trainee account.
+                        Your training fee, verified payments, and the submissions awaiting review.
                     </p>
                 </div>
-                <span class="demo-tag">Demo records</span>
             </header>
 
-            <section class="ledger" aria-label="Payment summary">
-
+            <section class="ledger" aria-label="Fee summary">
                 <div class="ledger__cell">
-                    <span class="ledger__label">Total training fee</span>
-                    <strong class="ledger__value">₱18,000</strong>
-                    <span class="ledger__note">Total program cost</span>
+                    <span class="ledger__label">Total fee</span>
+                    <strong class="ledger__value" id="feeTotal">—</strong>
+                    <span class="ledger__note">Set by your program</span>
                 </div>
-
                 <div class="ledger__cell">
-                    <span class="ledger__label">Amount paid</span>
-                    <strong class="ledger__value">₱13,500</strong>
-                    <span class="ledger__note">Verified payments</span>
+                    <span class="ledger__label">Paid</span>
+                    <strong class="ledger__value" id="feePaid">—</strong>
+                    <span class="ledger__note">Verified payments only</span>
                 </div>
-
                 <div class="ledger__cell ledger__cell--focus">
-                    <span class="ledger__label">Remaining balance</span>
-                    <strong class="ledger__value">₱4,500</strong>
-                    <span class="ledger__note">Still required</span>
+                    <span class="ledger__label">Balance</span>
+                    <strong class="ledger__value" id="feeBalance">—</strong>
+                    <span class="ledger__note" id="feeCaption">Reading your fee record…</span>
                 </div>
-
                 <div class="ledger__cell">
-                    <span class="ledger__label">Payment status</span>
-                    <strong class="ledger__value">Partial</strong>
-                    <span class="ledger__note">Payment still required</span>
+                    <span class="ledger__label">Standing</span>
+                    <strong class="ledger__value"><span class="status-badge pending" id="feeStatus">—</span></strong>
+                    <span class="ledger__note">Unpaid, partial, or fully paid</span>
                 </div>
-
             </section>
 
-            <section class="panel" aria-labelledby="history-title">
+            <div class="grid grid--split">
+
+                <section class="panel" aria-labelledby="submit-title" id="paymentFormPanel">
+                    <header class="panel__head">
+                        <h2 id="submit-title">Submit a payment</h2>
+                        <span class="panel__meta">Pending review</span>
+                    </header>
+
+                    <div class="panel__body">
+                        <p class="field-note" id="paymentFormNote"></p>
+
+                        <form class="modal-form" id="paymentForm" novalidate>
+                            <div class="form-grid">
+                                <label class="field">
+                                    <span class="field__label">Amount (PHP)</span>
+                                    <input type="number" id="paymentAmount" min="0.01" step="0.01"
+                                           placeholder="4500">
+                                </label>
+
+                                <label class="field">
+                                    <span class="field__label">Payment date</span>
+                                    <input type="date" id="paymentDate">
+                                </label>
+
+                                <label class="field">
+                                    <span class="field__label">Method</span>
+                                    <select id="paymentMethod">
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="GCash">GCash</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </label>
+
+                                <label class="field">
+                                    <span class="field__label">Reference number</span>
+                                    <input type="text" id="paymentReference"
+                                           placeholder="Bank or GCash reference">
+                                </label>
+
+                                <label class="field field--full">
+                                    <span class="field__label">Receipt image (optional)</span>
+                                    <input type="file" id="paymentReceipt" accept="image/*">
+                                    <span class="field-note" id="receiptHint">
+                                        Images up to 4 MB. Uploads are optional — a reference number is enough.
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="modal-actions">
+                                <button type="submit" class="btn btn--primary" id="submitPayment">
+                                    Submit payment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="panel" aria-labelledby="progress-title">
+                    <header class="panel__head">
+                        <h2 id="progress-title">Fee progress</h2>
+                        <span class="panel__meta">Verified only</span>
+                    </header>
+
+                    <div class="panel__body">
+                        <div class="figure-row">
+                            <div class="figure"><span id="feePercent">0%</span></div>
+                            <p class="figure-caption" id="feePercentCaption">
+                                Verified payments count toward the total fee.
+                            </p>
+                        </div>
+
+                        <div class="meter__track">
+                            <span class="meter__fill" id="feeMeter" style="width:0%"></span>
+                        </div>
+
+                        <p class="meter__note">
+                            Pending submissions appear in the history below and reduce your balance only
+                            after an administrator verifies them.
+                        </p>
+                    </div>
+                </section>
+
+            </div>
+
+            <section class="panel" aria-labelledby="history-title" style="margin-top:20px">
                 <header class="panel__head">
                     <h2 id="history-title">Payment history</h2>
-                    <span class="panel__meta">1 record</span>
+                    <span class="panel__meta">Newest first</span>
                 </header>
+
+                <p class="state" id="paymentHistoryState" role="status" hidden></p>
 
                 <div class="table-wrap" tabindex="0" role="region" aria-label="Payment history table">
                     <table class="data-table">
                         <thead>
                             <tr>
                                 <th scope="col">Reference</th>
-                                <th scope="col">Payment date</th>
+                                <th scope="col">Date</th>
                                 <th scope="col">Description</th>
                                 <th scope="col">Method</th>
                                 <th scope="col" class="num">Amount</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Receipt / note</th>
                             </tr>
                         </thead>
-
-                        <tbody id="paymentHistoryBody">
-                            <tr>
-                                <td class="id">EDT-PAY-001</td>
-                                <td>October 10, 2026</td>
-                                <td>Initial training payment</td>
-                                <td>Cash</td>
-                                <td class="num">₱13,500</td>
-                                <td><span class="status-badge completed">Verified</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="paymentTableBody"></tbody>
                     </table>
                 </div>
-
-                <p class="empty-state" id="paymentEmptyState" hidden>
-                    No payment records available.
-                </p>
-            </section>
-
-            <section class="panel" aria-labelledby="fee-title" style="margin-top:20px">
-                <header class="panel__head">
-                    <h2 id="fee-title">Training fee progress</h2>
-                    <span class="panel__meta">Current</span>
-                </header>
-
-                <div class="split">
-                    <div>
-                        <div class="figure">75<span class="figure-unit">% paid</span></div>
-                        <div class="meter__track" style="margin-top:20px">
-                            <span class="meter__fill" style="width:75%"></span>
-                        </div>
-                        <p class="meter__note">₱13,500 of ₱18,000 received.</p>
-                    </div>
-
-                    <dl class="facts">
-                        <div>
-                            <dt>Total training fee</dt>
-                            <dd class="amount">₱18,000</dd>
-                        </div>
-                        <div>
-                            <dt>Amount paid</dt>
-                            <dd class="amount">₱13,500</dd>
-                        </div>
-                        <div>
-                            <dt>Remaining balance</dt>
-                            <dd class="amount balance">₱4,500</dd>
-                        </div>
-                        <div>
-                            <dt>Next step</dt>
-                            <dd class="is-note">Settle the balance with the training office.</dd>
-                        </div>
-                    </dl>
-                </div>
-            </section>
-
-            <section class="panel" aria-labelledby="payment-process-title" style="margin-top:20px">
-                <header class="panel__head">
-                    <h2 id="payment-process-title">How a payment is recorded</h2>
-                    <span class="panel__meta">Four steps</span>
-                </header>
-
-                <ol class="process">
-                    <li>
-                        <span class="process__num">01</span>
-                        <strong>Check balance</strong>
-                        <p>Review the outstanding amount above.</p>
-                    </li>
-                    <li>
-                        <span class="process__num">02</span>
-                        <strong>Make payment</strong>
-                        <p>Pay through an authorised payment method.</p>
-                    </li>
-                    <li>
-                        <span class="process__num">03</span>
-                        <strong>Submit proof</strong>
-                        <p>Provide the reference or receipt if required.</p>
-                    </li>
-                    <li>
-                        <span class="process__num">04</span>
-                        <strong>Verification</strong>
-                        <p>The administrator verifies and records the payment.</p>
-                    </li>
-                </ol>
             </section>
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Student Portal.</span>
-                <span>Payment records shown here are demo data.</span>
+                <span>Only verified payments reduce your balance.</span>
             </footer>
 
         </main>

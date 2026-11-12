@@ -1,5 +1,6 @@
-
 const mongoose = require("mongoose");
+
+const ASSESSMENT_TYPES = ["Written", "Practical", "Oral", "Performance"];
 
 const assessmentSchema = new mongoose.Schema(
     {
@@ -21,6 +22,12 @@ const assessmentSchema = new mongoose.Schema(
             trim: true
         },
 
+        assessmentType: {
+            type: String,
+            enum: ASSESSMENT_TYPES,
+            default: "Written"
+        },
+
         score: {
             type: Number,
             min: 0,
@@ -35,11 +42,16 @@ const assessmentSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ["Pending", "Completed", "Graded"],
+            enum: ["Pending", "Graded"],
             default: "Pending"
         },
 
         assessmentDate: {
+            type: Date,
+            default: null
+        },
+
+        dueDate: {
             type: Date,
             default: null
         },
@@ -64,3 +76,4 @@ const Assessment = mongoose.model(
 );
 
 module.exports = Assessment;
+module.exports.ASSESSMENT_TYPES = ASSESSMENT_TYPES;
