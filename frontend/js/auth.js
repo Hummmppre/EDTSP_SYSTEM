@@ -20,6 +20,68 @@ document.querySelectorAll(".toggle-password").forEach(button => {
 
 
 // =============================
+// REDIRECT USER BY ROLE
+// =============================
+
+function redirectByRole(role) {
+    if (role === "admin") {
+        window.location.href = "admin/dashboard.html";
+    } else {
+        window.location.href = "trainee/dashboard.html";
+    }
+}
+
+
+// =============================
+// SAVE AUTHENTICATION DATA
+// =============================
+
+function saveAuthentication(data) {
+    localStorage.setItem("edtspToken", data.token);
+    localStorage.setItem("edtspUser", JSON.stringify(data.user));
+}
+
+
+// =============================
+// GOOGLE SIGN-IN CALLBACK
+// =============================
+
+window.handleGoogleSignIn = async function (response) {
+    if (!response || !response.credential) {
+        return;
+    }
+
+    try {
+        const result = await fetch(`${API_URL}/google`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                credential: response.credential
+            })
+        });
+
+        const data = await result.json();
+
+        if (!result.ok) {
+            alert(data.message || "Google Sign-In failed.");
+            return;
+        }
+
+        saveAuthentication(data);
+
+
+        redirectByRole(data.user.role);
+
+    } catch (error) {
+        console.error("Google Sign-In Error:", error);
+        
+    }
+};
+
+
+// =============================
 // LOGIN FORM
 // =============================
 
@@ -29,11 +91,23 @@ if (loginForm) {
     loginForm.addEventListener("submit", async event => {
         event.preventDefault();
 
-        const email = document.getElementById("loginEmail").value   .trim();
+        const email = document.getElementById("loginEmail").value.trim();
         const password = document.getElementById("loginPassword").value;
 
         if (!email || !password) {
             alert("Please complete all required fields.");
+            return;
+        }
+
+        if (typeof grecaptcha === "undefined") {
+            alert("reCAPTCHA is not loaded. Please refresh the page.");
+            return;
+        }
+
+        const recaptchaToken = grecaptcha.getResponse();
+
+        if (!recaptchaToken) {
+            alert("Please verify that you are not a robot.");
             return;
         }
 
@@ -50,10 +124,11 @@ if (loginForm) {
                 headers: {
                     "Content-Type": "application/json"
                 },
-               body: JSON.stringify({
-                email,
-                password
-            })
+                body: JSON.stringify({
+                    email,
+                    password,
+                    recaptchaToken
+                })
             });
 
             const data = await response.json();
@@ -63,27 +138,21 @@ if (loginForm) {
                 return;
             }
 
-            // Save authentication information
-            localStorage.setItem("edtspToken", data.token);
-            localStorage.setItem(
-                "edtspUser",
-                JSON.stringify(data.user)
-            );
+            saveAuthentication(data);
 
             alert("Login successful! Welcome, " + data.user.firstName + ".");
 
-            // Redirect according to account role
-            if (data.user.role === "admin") {
-                window.location.href = "admin/dashboard.html";
-            } else {
-                window.location.href = "trainee/dashboard.html";
-            }
+            redirectByRole(data.user.role);
 
         } catch (error) {
             console.error("Login Error:", error);
             alert("Unable to connect to the server. Please check your connection.");
 
         } finally {
+            if (typeof grecaptcha !== "undefined") {
+                grecaptcha.reset();
+            }
+
             submitButton.disabled = false;
             submitButton.textContent = "Sign In";
         }
@@ -122,6 +191,18 @@ if (registerForm) {
             return;
         }
 
+        if (typeof grecaptcha === "undefined") {
+            alert("reCAPTCHA is not loaded. Please refresh the page.");
+            return;
+        }
+
+        const recaptchaToken = grecaptcha.getResponse();
+
+        if (!recaptchaToken) {
+            alert("Please verify that you are not a robot.");
+            return;
+        }
+
         const submitButton = registerForm.querySelector(
             'button[type="submit"]'
         );
@@ -139,7 +220,8 @@ if (registerForm) {
                     firstName,
                     lastName,
                     email,
-                    password
+                    password,
+                    recaptchaToken
                 })
             });
 
@@ -159,6 +241,10 @@ if (registerForm) {
             alert("Unable to connect to the server. Please check your connection.");
 
         } finally {
+            if (typeof grecaptcha !== "undefined") {
+                grecaptcha.reset();
+            }
+
             submitButton.disabled = false;
             submitButton.textContent = "Create Account";
         }

@@ -26,14 +26,39 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Sidebar toggle
-    const sidebarToggle = document.getElementById("sidebarToggle");
-    const dashboardContainer = document.querySelector(".dashboard-container");
+    // Navigation collapse and drawers are handled by portal.js
 
-    if (sidebarToggle && dashboardContainer) {
-        sidebarToggle.addEventListener("click", () => {
-            dashboardContainer.classList.toggle("sidebar-collapsed");
-        });
+    // Trainee register search and status filter
+    const traineeTableBody = document.getElementById("traineeTableBody");
+
+    if (traineeTableBody) {
+        const traineeSearch = document.getElementById("traineeSearch");
+        const statusFilter = document.getElementById("statusFilter");
+        const traineeEmpty = document.getElementById("traineeEmpty");
+
+        const filterTrainees = () => {
+            const search = traineeSearch.value.trim().toLowerCase();
+            const status = statusFilter.value;
+            let visible = 0;
+
+            Array.from(traineeTableBody.rows).forEach(row => {
+                const matchesSearch = row.textContent.toLowerCase().includes(search);
+                const badge = row.querySelector(".status-badge");
+                const matchesStatus =
+                    status === "all" ||
+                    (badge && badge.textContent.trim() === status);
+                const show = matchesSearch && matchesStatus;
+
+                row.style.display = show ? "" : "none";
+
+                if (show) visible += 1;
+            });
+
+            if (traineeEmpty) traineeEmpty.hidden = visible !== 0;
+        };
+
+        traineeSearch.addEventListener("input", filterTrainees);
+        statusFilter.addEventListener("change", filterTrainees);
     }
 
     // Logout
@@ -46,5 +71,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
             window.location.href = "../login.html";
         });
+    }
+
+    // Pending application badge in the sidebar
+    const badges = document.querySelectorAll("[data-pending-count]");
+
+    if (badges.length) {
+        fetch("http://localhost:5000/api/admin/applications/pending-count", {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+            .then(response => (response.ok ? response.json() : null))
+            .then(data => {
+                if (!data || !data.success) return;
+
+                badges.forEach(badge => {
+                    badge.textContent = String(data.count);
+                    badge.hidden = data.count === 0;
+                });
+            })
+            .catch(error => {
+                console.error("Pending application badge error:", error);
+            });
     }
 });

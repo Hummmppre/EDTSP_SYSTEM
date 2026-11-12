@@ -21,3 +21,13 @@ Thumbs.db
 # IDE settings
 .vscode/
 .idea/
+
+# Build files
+dist/
+build/
+
+# Environment variables (backend)
+backend/.env
+
+# Browser review data and screenshots
+.review/

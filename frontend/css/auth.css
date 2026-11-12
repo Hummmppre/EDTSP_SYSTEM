@@ -285,3 +285,40 @@ body {
         font-size: 24px;
     }
 }
+
+
+/* GOOGLE SIGN-IN */
+
+.google-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 22px 0;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.google-divider::before,
+.google-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.google-button-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.google-button-container .g_id_signin {
+    max-width: 100%;
+}
+
+.google-button-container iframe {
+    max-width: 100%;
+}
+

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Applications | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-applications.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar">A</span>
+            <span class="who__text">
+                <strong>Administrator</strong>
+                <small>Full access</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Administration">
+            <p class="nav__label">Records</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="trainees.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"/>
+                    <path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7"/>
+                    <path d="M16 5.6a3 3 0 0 1 0 5.6"/>
+                    <path d="M18.5 19c-.2-1.6-.7-2.9-1.6-3.9 2.5-.2 4.3 1.3 4.9 3.9"/>
+                </svg>
+                <span>Trainees</span>
+            </a>
+
+            <a class="nav__link is-active" href="applications.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"/>
+                    <path d="M9 8.5h6M9 12h4"/>
+                    <path d="m9 16 1.8 1.8L15 14"/>
+                </svg>
+                <span>Applications</span>
+                <span class="nav__badge" data-pending-count hidden>0</span>
+            </a>
+
+            <a class="nav__link" href="programs.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 4 3.5 8.5 12 13l8.5-4.5Z"/>
+                    <path d="m3.5 12.5 8.5 4.5 8.5-4.5"/>
+                    <path d="m3.5 16.5 8.5 4.5 8.5-4.5"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payments</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </button>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Administrator portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="sidebarToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Administration</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Applications</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span>Administrator</span>
+                <span class="avatar avatar--sm">A</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>Training applications</h1>
+                    <p class="page__deck">
+                        Review submitted applications, read every answer, and record a decision.
+                    </p>
+                </div>
+            </header>
+
+            <section class="ledger" aria-label="Application summary">
+
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Pending review</span>
+                    <strong class="ledger__value" id="pendingCount">0</strong>
+                    <span class="ledger__note">Submitted or under review</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Approved</span>
+                    <strong class="ledger__value" id="approvedCount">0</strong>
+                    <span class="ledger__note">Enrolment activated</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Rejected</span>
+                    <strong class="ledger__value" id="rejectedCount">0</strong>
+                    <span class="ledger__note">Decisions recorded</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Open batches</span>
+                    <strong class="ledger__value" id="openBatchCount">0</strong>
+                    <span class="ledger__note">With slots remaining</span>
+                </div>
+
+            </section>
+
+            <section class="panel" aria-labelledby="applications-title">
+                <header class="panel__head">
+                    <h2 id="applications-title">Applications</h2>
+                    <span class="panel__meta" id="applicationsMeta">Loading…</span>
+                </header>
+
+                <div class="toolbar">
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5"/>
+                            <path d="m16 16 4 4"/>
+                        </svg>
+                        <span class="sr-only">Search applications by name or email</span>
+                        <input type="search" id="applicationSearch" placeholder="Search name or email">
+                    </label>
+
+                    <div class="select">
+                        <label class="sr-only" for="applicationStatusFilter">Filter by status</label>
+                        <select id="applicationStatusFilter">
+                            <option value="all">All status</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Under review">Under review</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Withdrawn">Withdrawn</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+
+                    <button class="btn btn--ghost" id="exportBtn" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 4v11"/>
+                            <path d="m8 11 4 4 4-4"/>
+                            <path d="M5 20h14"/>
+                        </svg>
+                        Export CSV
+                    </button>
+                </div>
+
+                <p class="state state--inline" id="applicationFeedback" role="status" hidden></p>
+
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Applications table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Applicant</th>
+                                <th scope="col">Program · Batch</th>
+                                <th scope="col">Submitted</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="applicationRows">
+                            <tr>
+                                <td colspan="5">
+                                    <div class="state" role="status">
+                                        <strong>Loading applications</strong>
+                                        <p>Fetching submitted training applications.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="state state--inline" id="applicationEmpty" hidden>
+                    No applications match this status and search.
+                </p>
+            </section>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
+                <span>Decisions are recorded against the administrator account that made them.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+<div class="admin-modal" id="applicationModal" role="dialog" aria-modal="true" aria-labelledby="applicationModalTitle">
+    <div class="admin-modal-content admin-modal-content--wide">
+        <div class="modal-heading">
+            <div>
+                <h2 id="applicationModalTitle">Application</h2>
+                <p id="applicationModalSubtitle">Review every answer before deciding.</p>
+            </div>
+            <button class="modal-close" id="closeApplicationModal" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 6 12 12M18 6 6 18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-form">
+            <dl class="facts" id="applicationDetailFacts"></dl>
+
+            <div id="applicationPriorWrap" hidden style="margin-top:18px">
+                <h3 style="font-size:12px;font-weight:600;margin-bottom:8px">Earlier applications</h3>
+                <dl class="facts" id="applicationPrior"></dl>
+            </div>
+
+            <form id="decisionForm" style="margin-top:20px">
+                <div class="form-grid">
+                    <div class="field field--full">
+                        <span class="field__label">Decision</span>
+                        <div class="segmented">
+                            <label>
+                                <input type="radio" name="decision" value="Approved" checked>
+                                <span>Approve</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="decision" value="Rejected">
+                                <span>Reject</span>
+                            </label>
+                        </div>
+                        <p class="field__hint">
+                            Approving claims a slot in the chosen batch, activates enrolment, and issues a trainee ID.
+                            This decision cannot be undone.
+                        </p>
+                    </div>
+
+                    <div class="field field--full">
+                        <label for="decisionPublicNote">Public message (shown to the applicant)</label>
+                        <textarea id="decisionPublicNote" maxlength="1000"></textarea>
+                        <p class="field__hint">Required when rejecting. It is also included in the decision email.</p>
+                    </div>
+
+                    <div class="field field--full">
+                        <label for="decisionInternalNote">Internal note (administrators only)</label>
+                        <textarea id="decisionInternalNote" maxlength="2000"></textarea>
+                    </div>
+                </div>
+
+                <p class="field__error" id="decisionError" role="alert" hidden></p>
+            </form>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn--ghost" id="cancelDecision" type="button">Cancel</button>
+            <button class="btn btn--primary" id="confirmDecision" type="button">Approve application</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

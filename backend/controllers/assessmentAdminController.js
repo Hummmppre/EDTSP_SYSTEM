@@ -2,6 +2,10 @@
 const mongoose = require("mongoose");
 const Assessment = require("../models/Assessment");
 const User = require("../models/User");
+const {
+    sendAssessmentAssigned,
+    sendAssessmentGraded
+} = require("../lib/mailer");
 
 // ADMIN: Create and assign an assessment
 const createAssessment = async (req, res) => {
@@ -56,7 +60,7 @@ const createAssessment = async (req, res) => {
             _id: { $in: traineeIds },
             role: "trainee",
             status: "active"
-        }).select("_id");
+        }).select("_id firstName lastName email");
 
         if (trainees.length !== new Set(traineeIds.map(String)).size) {
             return res.status(400).json({
@@ -79,10 +83,31 @@ const createAssessment = async (req, res) => {
             { ordered: false }
         );
 
+        // Notify each trainee; a failed email never blocks the assignment.
+        const notifications = await Promise.all(
+            assessments.map(assessment => {
+                const trainee = trainees.find(
+                    item => String(item._id) === String(assessment.user)
+                );
+
+                if (!trainee) return { sent: false };
+
+                return sendAssessmentAssigned({
+                    to: trainee.email,
+                    name: `${trainee.firstName} ${trainee.lastName}`,
+                    assessmentTitle: assessment.assessmentTitle,
+                    subject: assessment.subject,
+                    assessmentDate: assessment.assessmentDate,
+                    totalScore: assessment.totalScore
+                });
+            })
+        );
+
         return res.status(201).json({
             success: true,
             message: "Assessment assigned successfully.",
             count: assessments.length,
+            mail: { sent: notifications.filter(result => result.sent).length },
             assessments
         });
 
@@ -188,9 +213,26 @@ const gradeAssessment = async (req, res) => {
 
         await assessment.save();
 
+        const trainee = await User.findById(assessment.user).select(
+            "firstName lastName email"
+        );
+
+        const mail = trainee
+            ? await sendAssessmentGraded({
+                to: trainee.email,
+                name: `${trainee.firstName} ${trainee.lastName}`,
+                assessmentTitle: assessment.assessmentTitle,
+                subject: assessment.subject,
+                score: assessment.score,
+                totalScore: assessment.totalScore,
+                remarks: assessment.remarks
+            })
+            : { sent: false };
+
         return res.status(200).json({
             success: true,
             message: "Assessment graded successfully.",
+            mail: { sent: Boolean(mail.sent) },
             assessment
         });
 

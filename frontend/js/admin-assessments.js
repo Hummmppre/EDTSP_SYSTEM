@@ -38,6 +38,36 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Search and status filter for the assessment register
+    const searchInput = document.getElementById("assessmentSearch");
+    const statusFilter = document.getElementById("assessmentStatusFilter");
+    const tableBody = document.getElementById("assessmentTableBody");
+    const emptyState = document.getElementById("assessmentEmpty");
+
+    function filterAssessments() {
+        const search = searchInput.value.trim().toLowerCase();
+        const status = statusFilter.value;
+        let visible = 0;
+
+        Array.from(tableBody.rows).forEach((row) => {
+            const matchesSearch = row.textContent.toLowerCase().includes(search);
+            const badge = row.querySelector(".status-badge");
+            const matchesStatus =
+                status === "all" ||
+                (badge && badge.textContent.trim() === status);
+            const show = matchesSearch && matchesStatus;
+
+            row.style.display = show ? "" : "none";
+
+            if (show) visible += 1;
+        });
+
+        emptyState.hidden = visible !== 0;
+    }
+
+    searchInput.addEventListener("input", filterAssessments);
+    statusFilter.addEventListener("change", filterAssessments);
+
     // Create assessment using temporary sample data
     form.addEventListener("submit", (event) => {
         event.preventDefault();

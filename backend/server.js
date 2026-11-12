@@ -26,6 +26,19 @@ app.use("/api/trainee", traineeRoutes);
 const assessmentRoutes = require("./routes/assessmentRoutes");
 app.use("/api/assessments", assessmentRoutes);
 
+// Training application routes (trainee)
+const applicationRoutes = require("./routes/applicationRoutes");
+app.use("/api/applications", applicationRoutes);
+
+// Application review routes (admin)
+const adminApplicationRoutes = require("./routes/adminApplicationRoutes");
+app.use("/api/admin/applications", adminApplicationRoutes);
+
+// Program and batch management routes (admin)
+const { programRoutes, batchRoutes } = require("./routes/programRoutes");
+app.use("/api/admin/programs", programRoutes);
+app.use("/api/admin/batches", batchRoutes);
+
 // Test route
 app.get("/", (req, res) => {
     res.send("EDTSP Backend API is running!");

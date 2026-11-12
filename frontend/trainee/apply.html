@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Apply for training | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/dashboard.js" defer></script>
+    <script src="../js/apply.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Student portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar" id="userInitials">T</span>
+            <span class="who__text">
+                <strong id="sidebarName">Trainee</strong>
+                <small>Trainee account</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Main">
+            <p class="nav__label">Training</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payment balance</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <a class="nav__link is-active" href="apply.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"/>
+                    <path d="M9 8.5h6M9 12h4"/>
+                    <path d="m9 16 1.8 1.8L15 14"/>
+                </svg>
+                <span>Apply for training</span>
+            </a>
+
+            <p class="nav__label">Account</p>
+
+            <a class="nav__link" href="profile.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.2"/>
+                    <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3"/>
+                </svg>
+                <span>My profile</span>
+            </a>
+
+            <a class="nav__link nav__link--quiet" href="#" id="logoutButton">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </a>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Student portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="menuToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Student portal</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Apply for training</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span id="topbarName">Trainee</span>
+                <span class="avatar avatar--sm" id="topbarInitials">T</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>Apply for training</h1>
+                    <p class="page__deck">
+                        Submit your details for review. One application at a time.
+                    </p>
+                </div>
+            </header>
+
+            <div class="grid grid--record">
+
+                <div class="stack">
+
+                    <section class="panel" id="loadingPanel" aria-live="polite">
+                        <div class="state" role="status">
+                            <strong>Loading your application</strong>
+                            <p>Checking your trainee record and the open training batches.</p>
+                        </div>
+                    </section>
+
+                    <section class="panel" id="noticePanel" hidden aria-live="polite">
+                        <div class="state" role="status">
+                            <strong id="noticeTitle">Applications are closed right now.</strong>
+                            <p id="noticeText">There are no open batches accepting applications. Check back with the training office.</p>
+                        </div>
+                        <div class="wizard__actions">
+                            <button class="btn btn--ghost" id="noticeRetry" type="button" hidden>Try again</button>
+                            <a class="btn btn--ghost" href="dashboard.html">Back to dashboard</a>
+                        </div>
+                    </section>
+
+                    <section class="panel" id="statusPanel" hidden aria-labelledby="status-title">
+                        <header class="panel__head">
+                            <h2 id="status-title">Your application</h2>
+                            <span class="status-badge" id="statusBadge" hidden>Submitted</span>
+                        </header>
+
+                        <div class="state" id="statusMessage" hidden>
+                            <strong id="statusMessageTitle"></strong>
+                            <p id="statusMessageText"></p>
+                        </div>
+
+                        <dl class="facts" id="statusFacts" hidden>
+                            <div>
+                                <dt>Program</dt>
+                                <dd id="statusProgram">—</dd>
+                            </div>
+                            <div>
+                                <dt>Batch</dt>
+                                <dd id="statusBatch">—</dd>
+                            </div>
+                            <div>
+                                <dt>Submitted</dt>
+                                <dd id="statusSubmitted">—</dd>
+                            </div>
+                            <div>
+                                <dt>Decision date</dt>
+                                <dd id="statusDecided">—</dd>
+                            </div>
+                            <div id="statusNoteRow" hidden>
+                                <dt>Message from the training office</dt>
+                                <dd class="is-note" id="statusNote"></dd>
+                            </div>
+                        </dl>
+
+                        <div class="wizard__actions">
+                            <button class="btn btn--primary" id="applyAgainBtn" type="button" hidden>Apply for training</button>
+                            <button class="btn btn--ghost" id="withdrawBtn" type="button" hidden>Withdraw application</button>
+                            <a class="btn btn--ghost" href="dashboard.html">Back to dashboard</a>
+                        </div>
+                    </section>
+
+                    <section class="panel" id="wizardPanel" hidden aria-labelledby="wizard-title">
+                        <header class="panel__head">
+                            <h2 id="wizard-title">Application form</h2>
+                            <span class="panel__meta" id="wizardMeta">Step 1 of 5</span>
+                        </header>
+
+                        <ol class="process process--steps" id="wizardSteps">
+                            <li data-step="1">
+                                <span class="process__num">01</span>
+                                <strong>Applicant</strong>
+                                <p>Contact details</p>
+                            </li>
+                            <li data-step="2">
+                                <span class="process__num">02</span>
+                                <strong>Background</strong>
+                                <p>Personal and school</p>
+                            </li>
+                            <li data-step="3">
+                                <span class="process__num">03</span>
+                                <strong>Emergency contact</strong>
+                                <p>Who to reach</p>
+                            </li>
+                            <li data-step="4">
+                                <span class="process__num">04</span>
+                                <strong>Training choice</strong>
+                                <p>Program and batch</p>
+                            </li>
+                            <li data-step="5">
+                                <span class="process__num">05</span>
+                                <strong>Review</strong>
+                                <p>Check and submit</p>
+                            </li>
+                        </ol>
+
+                        <form id="applicationForm" novalidate>
+
+                            <div class="wizard__step" data-step="1">
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="firstName">First name</label>
+                                        <input id="firstName" name="firstName" type="text" autocomplete="given-name" required>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="lastName">Last name</label>
+                                        <input id="lastName" name="lastName" type="text" autocomplete="family-name" required>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="email">Email</label>
+                                        <input id="email" name="email" type="email" autocomplete="email" required>
+                                        <p class="field__hint">The decision is emailed to this address.</p>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="phone">Phone</label>
+                                        <input id="phone" name="phone" type="tel" autocomplete="tel" required>
+                                    </div>
+
+                                    <div class="field field--full">
+                                        <label for="address">Address</label>
+                                        <textarea id="address" name="address" autocomplete="street-address" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="wizard__step" data-step="2" hidden>
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="dateOfBirth">Date of birth</label>
+                                        <input id="dateOfBirth" name="dateOfBirth" type="date" required>
+                                        <p class="field__hint">Applicants must be 18 years or older.</p>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="sex">Sex</label>
+                                        <select id="sex" name="sex" required>
+                                            <option value="">Select</option>
+                                            <option>Female</option>
+                                            <option>Male</option>
+                                            <option>Prefer not to say</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="civilStatus">Civil status</label>
+                                        <select id="civilStatus" name="civilStatus" required>
+                                            <option value="">Select</option>
+                                            <option>Single</option>
+                                            <option>Married</option>
+                                            <option>Widowed</option>
+                                            <option>Separated</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="highestEducation">Highest education</label>
+                                        <select id="highestEducation" name="highestEducation" required>
+                                            <option value="">Select</option>
+                                            <option>Elementary</option>
+                                            <option>High school</option>
+                                            <option>Senior high school</option>
+                                            <option>Vocational</option>
+                                            <option>College</option>
+                                            <option>Postgraduate</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="field field--full">
+                                        <label for="schoolAttended">School attended</label>
+                                        <input id="schoolAttended" name="schoolAttended" type="text" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="wizard__step" data-step="3" hidden>
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="emergencyContactName">Contact name</label>
+                                        <input id="emergencyContactName" name="emergencyContactName" type="text" required>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="emergencyContactPhone">Contact phone</label>
+                                        <input id="emergencyContactPhone" name="emergencyContactPhone" type="tel" required>
+                                    </div>
+
+                                    <div class="field field--full">
+                                        <label for="emergencyContactRelationship">Relationship</label>
+                                        <input id="emergencyContactRelationship" name="emergencyContactRelationship" type="text" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="wizard__step" data-step="4" hidden>
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="program">Program</label>
+                                        <select id="program" name="program" required>
+                                            <option value="">Select a program</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="batch">Preferred batch</label>
+                                        <select id="batch" name="batch" required disabled>
+                                            <option value="">Select a program first</option>
+                                        </select>
+                                        <p class="field__hint" id="programHint" aria-live="polite"></p>
+                                    </div>
+
+                                    <div class="field field--full">
+                                        <label for="motivation">Motivation <span class="field__hint">(optional)</span></label>
+                                        <textarea id="motivation" name="motivation" maxlength="1000"></textarea>
+                                        <p class="field__hint"><span id="motivationCount">0</span>/1000 characters.</p>
+                                    </div>
+
+                                    <div class="field field--full">
+                                        <label class="check-field">
+                                            <input id="acknowledgedTruthful" name="acknowledgedTruthful" type="checkbox">
+                                            <span>I confirm that the information in this application is true and complete.</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="wizard__step" data-step="5" hidden>
+                                <div class="review" id="reviewSummary"></div>
+                                <p class="field__hint">
+                                    Submitting sends this application for review. You cannot edit it afterwards,
+                                    but you can withdraw it while it is under review.
+                                </p>
+                            </div>
+
+                            <p class="field__error" id="submitError" role="alert" hidden></p>
+
+                            <div class="wizard__actions">
+                                <button class="btn btn--ghost" id="backBtn" type="button" hidden>Back</button>
+                                <div class="wizard__actions-end">
+                                    <button class="btn btn--primary" id="nextBtn" type="button">Next</button>
+                                    <button class="btn btn--primary" id="submitBtn" type="submit" hidden>Submit application</button>
+                                </div>
+                            </div>
+
+                        </form>
+                    </section>
+
+                </div>
+
+                <div class="stack">
+
+                    <section class="panel" aria-labelledby="before-title">
+                        <header class="panel__head">
+                            <h2 id="before-title">Before you apply</h2>
+                            <span class="panel__meta">Guidance</span>
+                        </header>
+
+                        <dl class="facts">
+                            <div>
+                                <dt>Eligibility</dt>
+                                <dd>18 years or older with a complete contact and emergency record.</dd>
+                            </div>
+                            <div>
+                                <dt>Applications</dt>
+                                <dd>One open application at a time. Withdraw it to apply again.</dd>
+                            </div>
+                            <div>
+                                <dt>Review</dt>
+                                <dd>The training office reviews every application. Decisions arrive by email.</dd>
+                            </div>
+                            <div>
+                                <dt>Approval</dt>
+                                <dd>Enrolment starts automatically and a trainee ID is issued.</dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                </div>
+
+            </div>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Student Portal.</span>
+                <span>Applications are reviewed by the training office.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+</body>
+</html>

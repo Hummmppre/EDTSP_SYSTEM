@@ -128,64 +128,150 @@ function displayTraineeInformation() {
         setText("profilePhone", traineeProfile.phone || "Not provided");
         setText("profileAddress", traineeProfile.address || "Not provided");
 
-        // Update training status color
+        // Update training status badge
         const statusElement = document.getElementById("profileStatus");
 
         if (statusElement) {
-            statusElement.classList.remove("status-active");
+            const statusStyles = {
+                Ongoing: "ongoing",
+                Completed: "completed",
+                Inactive: "inactive",
+                Pending: "pending"
+            };
 
-            if (traineeProfile.enrollmentStatus === "Ongoing") {
-                statusElement.classList.add("status-active");
-            }
+            statusElement.classList.remove(
+                "ongoing",
+                "completed",
+                "inactive",
+                "pending"
+            );
+
+            statusElement.classList.add(
+                statusStyles[traineeProfile.enrollmentStatus] || "pending"
+            );
         }
     }
 }
 
 
 // =============================
-// SIDEBAR TOGGLE
+// TRAINING APPLICATION PANEL
 // =============================
 
-const sidebar = document.getElementById("sidebar");
-const menuToggle = document.getElementById("menuToggle");
+const APPLICATION_API_URL = "http://localhost:5000/api/applications";
 
-if (menuToggle && sidebar) {
-    menuToggle.addEventListener("click", () => {
-    if (window.innerWidth > 850) {
-        document.querySelector(".dashboard-container")
-            .classList.toggle("sidebar-collapsed");
+const APPLICATION_STATUSES = {
+    "Submitted": { label: "Submitted", className: "submitted" },
+    "Under review": { label: "Under review", className: "under-review" },
+    "Approved": { label: "Approved", className: "approved" },
+    "Rejected": { label: "Rejected", className: "rejected" },
+    "Withdrawn": { label: "Withdrawn", className: "withdrawn" }
+};
+
+function formatApplicationDate(value) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
+}
+
+function showApplicationPanel(state) {
+    const title = document.getElementById("applicationStateTitle");
+    const text = document.getElementById("applicationStateText");
+    const facts = document.getElementById("applicationFacts");
+    const badge = document.getElementById("applicationStatus");
+    const cta = document.getElementById("applicationCta");
+    const link = document.getElementById("applicationLink");
+
+    if (!title || !text) return;
+
+    const application = state.application;
+
+    facts.hidden = !application;
+    badge.hidden = !application;
+
+    if (application) {
+        const style = APPLICATION_STATUSES[application.status] || APPLICATION_STATUSES.Submitted;
+
+        badge.textContent = style.label;
+        badge.className = `status-badge ${style.className}`;
+
+        setText("applicationProgram", application.program ? application.program.name : "—");
+        setText("applicationBatch", application.batch ? application.batch.label : "—");
+        setText("applicationSubmitted", formatApplicationDate(application.submittedAt));
+    }
+
+    if (state.reason === "already_enrolled") {
+        title.textContent = "Already enrolled";
+        text.textContent = "Your enrollment is active. The training office will share schedule details.";
+    } else if (state.reason === "completed") {
+        title.textContent = "Training completed";
+        text.textContent = "Your training is complete, so applications are closed for this account.";
+    } else if (state.reason === "account_inactive") {
+        title.textContent = "Account inactive";
+        text.textContent = "Please contact the administrator to restore access before applying.";
+    } else if (!application) {
+        title.textContent = "No application yet";
+        text.textContent = "Apply for an open training program to start your enrolment.";
+    } else if (application.status === "Submitted" || application.status === "Under review") {
+        title.textContent = "Under review";
+        text.textContent = "We will email you once a decision is made. You can withdraw it before then.";
+    } else if (application.status === "Approved") {
+        title.textContent = "Approved";
+        text.textContent = "Next step: pay the training fee, then wait for schedule details from the training office.";
+    } else if (application.status === "Rejected") {
+        title.textContent = "Not approved";
+        text.textContent = application.publicNote || "You can submit a new application when you are ready.";
     } else {
-        sidebar.classList.toggle("show");
+        title.textContent = "Withdrawn";
+        text.textContent = "This application is closed. You can submit a new one when you are ready.";
     }
-});
+
+    cta.hidden = false;
+    cta.textContent = state.canApply ? "Apply for training" : "View application";
+    link.textContent = state.canApply ? "Apply" : "View";
 }
 
+async function loadApplicationPanel() {
+    if (!document.getElementById("applicationStateTitle")) return;
 
-// Close sidebar after selecting a navigation link
-document.querySelectorAll(".sidebar-nav .nav-link").forEach(link => {
-    link.addEventListener("click", () => {
-        if (window.innerWidth <= 850 && sidebar) {
-            sidebar.classList.remove("show");
+    try {
+        const response = await fetch(`${APPLICATION_API_URL}/me`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (response.status === 401) {
+            localStorage.removeItem("edtspToken");
+            localStorage.removeItem("edtspUser");
+            window.location.href = "../login.html";
+            return;
         }
-    });
-});
 
+        const data = await response.json();
 
-// =============================
-// ACTIVE NAVIGATION
-// =============================
-
-document.querySelectorAll(".sidebar-nav .nav-link").forEach(link => {
-    link.addEventListener("click", () => {
-
-        document.querySelectorAll(".sidebar-nav .nav-link")
-            .forEach(item => item.classList.remove("active"));
-
-        if (link.id !== "logoutButton") {
-            link.classList.add("active");
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Unable to load your application.");
         }
-    });
-});
+
+        showApplicationPanel(data);
+
+    } catch (error) {
+        console.error("Training application error:", error);
+
+        setText("applicationStateTitle", "Application unavailable");
+        setText("applicationStateText", "Open the application page to check your status.");
+    }
+}
 
 
 // =============================
@@ -219,4 +305,5 @@ if (logoutButton) {
 if (token && user && user.role === "trainee") {
     displayTraineeInformation();
     loadTraineeProfile();
+    loadApplicationPanel();
 }

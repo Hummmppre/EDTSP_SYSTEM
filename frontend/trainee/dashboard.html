@@ -76,6 +76,15 @@
                 <span>Cow maintenance</span>
             </a>
 
+            <a class="nav__link" href="apply.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"/>
+                    <path d="M9 8.5h6M9 12h4"/>
+                    <path d="m9 16 1.8 1.8L15 14"/>
+                </svg>
+                <span>Apply for training</span>
+            </a>
+
             <p class="nav__label">Account</p>
 
             <a class="nav__link" href="profile.html">
@@ -282,6 +291,45 @@
 
                 <div class="stack">
 
+                    <section class="panel" aria-labelledby="application-title">
+                        <header class="panel__head">
+                            <h2 id="application-title">Training application</h2>
+                            <a class="text-link" href="apply.html" id="applicationLink">Apply</a>
+                        </header>
+
+                        <div class="panel__body">
+                            <div class="state" id="applicationState" role="status">
+                                <strong id="applicationStateTitle">Loading application</strong>
+                                <p id="applicationStateText">Checking your latest training application.</p>
+                            </div>
+
+                            <dl class="facts" id="applicationFacts" hidden>
+                                <div>
+                                    <dt>Program</dt>
+                                    <dd id="applicationProgram">—</dd>
+                                </div>
+                                <div>
+                                    <dt>Batch</dt>
+                                    <dd id="applicationBatch">—</dd>
+                                </div>
+                                <div>
+                                    <dt>Submitted</dt>
+                                    <dd id="applicationSubmitted">—</dd>
+                                </div>
+                                <div>
+                                    <dt>Status</dt>
+                                    <dd>
+                                        <span class="status-badge" id="applicationStatus">—</span>
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            <div>
+                                <a class="btn btn--primary" href="apply.html" id="applicationCta" hidden>Apply for training</a>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="panel" aria-labelledby="profile-title">
                         <header class="panel__head">
                             <h2 id="profile-title">Profile</h2>
@@ -308,49 +356,48 @@
                         </dl>
                     </section>
 
-                    <section class="panel" aria-labelledby="fee-title">
-                        <header class="panel__head">
-                            <h2 id="fee-title">Training fee</h2>
-                            <a class="text-link" href="payments.html">Records</a>
-                        </header>
-
-                        <div class="panel__body">
-                            <div class="figure-row">
-                                <div class="figure">75<span class="figure-unit">% paid</span></div>
-                                <p class="figure-caption">₱4,500 remains of the ₱18,000 fee.</p>
-                            </div>
-
-                            <div>
-                                <div class="meter__track">
-                                    <span class="meter__fill" style="width:75%"></span>
-                                </div>
-                                <p class="meter__note">75% of the total training fee paid.</p>
-                            </div>
-
-                            <dl class="facts">
-                                <div>
-                                    <dt>Total fee</dt>
-                                    <dd class="amount">₱18,000</dd>
-                                </div>
-                                <div>
-                                    <dt>Paid</dt>
-                                    <dd class="amount">₱13,500</dd>
-                                </div>
-                                <div>
-                                    <dt>Balance</dt>
-                                    <dd class="amount balance">₱4,500</dd>
-                                </div>
-                            </dl>
-                        </div>
-                    </section>
-
                 </div>
 
             </div>
 
+            <section class="panel" aria-labelledby="fee-title">
+                <header class="panel__head">
+                    <h2 id="fee-title">Training fee</h2>
+                    <a class="text-link" href="payments.html">Records</a>
+                </header>
+
+                <div class="split">
+                    <div>
+                        <div class="figure">75<span class="figure-unit">% paid</span></div>
+                        <div class="meter__track" style="margin-top:20px">
+                            <span class="meter__fill" style="width:75%"></span>
+                        </div>
+                        <p class="meter__note">₱13,500 of the ₱18,000 fee received.</p>
+                    </div>
+
+                    <dl class="facts">
+                        <div>
+                            <dt>Total fee</dt>
+                            <dd class="amount">₱18,000</dd>
+                        </div>
+                        <div>
+                            <dt>Paid</dt>
+                            <dd class="amount">₱13,500</dd>
+                        </div>
+                        <div>
+                            <dt>Balance</dt>
+                            <dd class="amount balance">₱4,500</dd>
+                        </div>
+                        <div>
+                            <dt>Next step</dt>
+                            <dd class="is-note">Settle the balance with the training office.</dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Student Portal.</span>
-                <span>Figures marked as demo are not yet connected to live records.</span>
             </footer>
 
         </main>

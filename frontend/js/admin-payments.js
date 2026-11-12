@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusFilter.addEventListener("change", filterPayments);
 
     // View payment record
-    document.querySelectorAll(".view-btn[data-trainee]").forEach((button) => {
+    document.querySelectorAll(".row-action[data-trainee]").forEach((button) => {
         button.addEventListener("click", () => {
             const row = button.closest("tr");
             alert("Payment Details\n\n" + row.innerText);

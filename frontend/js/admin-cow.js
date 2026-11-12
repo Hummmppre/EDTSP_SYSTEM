@@ -27,6 +27,22 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.classList.remove("show");
     }
 
+    function formatSchedule(date, time) {
+        const schedule = new Date(`${date}T${time}`);
+
+        if (Number.isNaN(schedule.getTime())) {
+            return `${date} ${time}`;
+        }
+
+        return schedule.toLocaleString("en-PH", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit"
+        });
+    }
+
     closeCowBtn.addEventListener("click", () => closeModal(cowModal));
     cancelCowBtn.addEventListener("click", () => closeModal(cowModal));
 
@@ -66,12 +82,13 @@ document.addEventListener("DOMContentLoaded", () => {
             cowId,
             cowName,
             cowBreed,
-            `${cowAge} Years`,
+            `${cowAge} years`,
             cowTrainee || "Unassigned"
         ];
 
-        values.forEach((value) => {
+        values.forEach((value, index) => {
             const cell = document.createElement("td");
+            cell.className = index === 0 ? "id" : index === 1 ? "name" : "";
             cell.textContent = value;
             row.appendChild(cell);
         });
@@ -84,16 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
         badge.textContent = cowHealth;
         statusCell.appendChild(badge);
         row.appendChild(statusCell);
-
-        const actionCell = document.createElement("td");
-        const viewBtn = document.createElement("button");
-        viewBtn.className = "view-btn";
-        viewBtn.textContent = "View";
-        viewBtn.addEventListener("click", () => {
-            alert("Cow Record\n\n" + values.join("\n") + "\n" + cowHealth);
-        });
-        actionCell.appendChild(viewBtn);
-        row.appendChild(actionCell);
 
         document.getElementById("cowTableBody").appendChild(row);
 
@@ -121,12 +128,13 @@ document.addEventListener("DOMContentLoaded", () => {
             cow,
             type,
             description,
-            `${date} ${time}`,
+            formatSchedule(date, time),
             trainee
         ];
 
-        values.forEach((value) => {
+        values.forEach((value, index) => {
             const cell = document.createElement("td");
+            cell.className = index === 0 ? "name" : "";
             cell.textContent = value;
             row.appendChild(cell);
         });
@@ -137,16 +145,6 @@ document.addEventListener("DOMContentLoaded", () => {
         badge.textContent = "Pending";
         statusCell.appendChild(badge);
         row.appendChild(statusCell);
-
-        const actionCell = document.createElement("td");
-        const viewBtn = document.createElement("button");
-        viewBtn.className = "view-btn";
-        viewBtn.textContent = "View";
-        viewBtn.addEventListener("click", () => {
-            alert("Maintenance Activity\n\n" + values.join("\n") + "\nStatus: Pending");
-        });
-        actionCell.appendChild(viewBtn);
-        row.appendChild(actionCell);
 
         document.getElementById("activityTableBody").appendChild(row);
 

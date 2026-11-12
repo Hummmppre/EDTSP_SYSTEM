@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Programs | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-programs.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+</head>
+<body>
+
+<div class="shell" id="shell">
+
+    <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar">A</span>
+            <span class="who__text">
+                <strong>Administrator</strong>
+                <small>Full access</small>
+            </span>
+        </div>
+
+        <nav class="nav" aria-label="Administration">
+            <p class="nav__label">Records</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="trainees.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"/>
+                    <path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7"/>
+                    <path d="M16 5.6a3 3 0 0 1 0 5.6"/>
+                    <path d="M18.5 19c-.2-1.6-.7-2.9-1.6-3.9 2.5-.2 4.3 1.3 4.9 3.9"/>
+                </svg>
+                <span>Trainees</span>
+            </a>
+
+            <a class="nav__link" href="applications.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"/>
+                    <path d="M9 8.5h6M9 12h4"/>
+                    <path d="m9 16 1.8 1.8L15 14"/>
+                </svg>
+                <span>Applications</span>
+                <span class="nav__badge" data-pending-count hidden>0</span>
+            </a>
+
+            <a class="nav__link is-active" href="programs.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 4 3.5 8.5 12 13l8.5-4.5Z"/>
+                    <path d="m3.5 12.5 8.5 4.5 8.5-4.5"/>
+                    <path d="m3.5 16.5 8.5 4.5 8.5-4.5"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payments</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </button>
+        </nav>
+
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Administrator portal · 2026</span>
+        </p>
+
+    </aside>
+
+    <div class="scrim" aria-hidden="true"></div>
+
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="sidebarToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Administration</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Programs</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span>Administrator</span>
+                <span class="avatar avatar--sm">A</span>
+            </div>
+        </header>
+
+        <main class="page">
+
+            <header class="page__head">
+                <div>
+                    <h1>Programs &amp; batches</h1>
+                    <p class="page__deck">
+                        What applicants can apply for, the training fee, and the slots in each batch.
+                    </p>
+                </div>
+                <button class="btn btn--primary" id="newProgramBtn" type="button">New program</button>
+            </header>
+
+            <section class="ledger" aria-label="Program summary">
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Programs</span>
+                    <strong class="ledger__value" id="programCount">0</strong>
+                    <span class="ledger__note">Total programs</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Open batches</span>
+                    <strong class="ledger__value" id="openBatchCount">0</strong>
+                    <span class="ledger__note">Accepting applications</span>
+                </div>
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Total slots</span>
+                    <strong class="ledger__value" id="totalSlots">0</strong>
+                    <span class="ledger__note">Across all batches</span>
+                </div>
+
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Slots remaining</span>
+                    <strong class="ledger__value" id="slotsRemaining">0</strong>
+                    <span class="ledger__note">Before batches fill</span>
+                </div>
+
+            </section>
+
+            <p class="state state--inline" id="programFeedback" role="status" hidden></p>
+
+            <div class="stack" id="programList">
+                <section class="panel">
+                    <div class="state" role="status">
+                        <strong>Loading programs</strong>
+                        <p>Fetching programs and their batches.</p>
+                    </div>
+                </section>
+            </div>
+
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
+                <span>Closing a program stops new applications; existing applications stay reviewable.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+</div>
+
+<div class="admin-modal" id="programModal" role="dialog" aria-modal="true" aria-labelledby="programModalTitle">
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2 id="programModalTitle">New program</h2>
+                <p>Program details and the first batch trainees can apply for.</p>
+            </div>
+            <button class="modal-close" id="closeProgramModal" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 6 12 12M18 6 6 18"/>
+                </svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="programForm" novalidate>
+            <div class="form-grid">
+                <div class="field field--full">
+                    <label for="programName">Name</label>
+                    <input id="programName" type="text" required>
+                </div>
+
+                <div class="field field--full">
+                    <label for="programDescription">Description</label>
+                    <textarea id="programDescription" required></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="programFee">Training fee (₱)</label>
+                    <input id="programFee" type="number" min="0" step="1" required>
+                </div>
+
+                <div class="field" id="programStatusField" hidden>
+                    <label for="programStatus">Status</label>
+                    <select id="programStatus">
+                        <option>Open</option>
+                        <option>Closed</option>
+                    </select>
+                </div>
+
+                <fieldset class="first-batch field--full" id="firstBatchFields">
+                    <legend>First batch</legend>
+                    <p class="first-batch__hint">
+                        A program is only shown to trainees once it has an open batch.
+                    </p>
+
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="firstBatchLabel">Label</label>
+                            <input id="firstBatchLabel" type="text" value="Batch 1" required>
+                        </div>
+
+                        <div class="field">
+                            <label for="firstBatchCapacity">Slot capacity</label>
+                            <input id="firstBatchCapacity" type="number" min="1" step="1" required>
+                        </div>
+
+                        <div class="field field--full">
+                            <label for="firstBatchIntake">Intake date <span class="field__hint">(optional)</span></label>
+                            <input id="firstBatchIntake" type="date">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <p class="field__error" id="programError" role="alert" hidden></p>
+        </form>
+
+        <div class="modal-actions">
+            <button class="btn btn--ghost" id="cancelProgram" type="button">Cancel</button>
+            <button class="btn btn--primary" id="saveProgram" type="button">Create program</button>
+        </div>
+    </div>
+</div>
+
+<div class="admin-modal" id="batchModal" role="dialog" aria-modal="true" aria-labelledby="batchModalTitle">
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2 id="batchModalTitle">New batch</h2>
+                <p id="batchModalSubtitle">Batch label, capacity, and intake date.</p>
+            </div>
+            <button class="modal-close" id="closeBatchModal" type="button" aria-label="Close">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 6 12 12M18 6 6 18"/>
+                </svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="batchForm" novalidate>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="batchLabel">Label</label>
+                    <input id="batchLabel" type="text" placeholder="Batch 1 · 2026" required>
+                </div>
+
+                <div class="field">
+                    <label for="batchCapacity">Slot capacity</label>
+                    <input id="batchCapacity" type="number" min="1" step="1" required>
+                </div>
+
+                <div class="field">
+                    <label for="batchIntake">Intake date <span class="field__hint">(optional)</span></label>
+                    <input id="batchIntake" type="date">
+                </div>
+
+                <div class="field" id="batchStatusField" hidden>
+                    <label for="batchStatus">Status</label>
+                    <select id="batchStatus">
+                        <option>Open</option>
+                        <option>Closed</option>
+                    </select>
+                </div>
+            </div>
+
+            <p class="field__error" id="batchError" role="alert" hidden></p>
+        </form>
+
+        <div class="modal-actions">
+            <button class="btn btn--ghost" id="cancelBatch" type="button">Cancel</button>
+            <button class="btn btn--primary" id="saveBatch" type="button">Create batch</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

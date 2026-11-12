@@ -1,5 +1,10 @@
+const ASSESSMENTS_API_URL = "http://localhost:5000/api/assessments/me";
 
-const API_URL = "http://localhost:5000/api/assessments/me";
+const STATUS_STYLES = {
+    Pending: "pending",
+    Completed: "completed",
+    Graded: "completed"
+};
 
 document.addEventListener("DOMContentLoaded", loadAssessments);
 
@@ -14,7 +19,7 @@ async function loadAssessments() {
     const assessmentList = document.getElementById("assessmentList");
 
     try {
-        const response = await fetch(API_URL, {
+        const response = await fetch(ASSESSMENTS_API_URL, {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -28,15 +33,51 @@ async function loadAssessments() {
             throw new Error(data.message || "Unable to load assessments.");
         }
 
-        displayAssessmentSummary(data.assessments);
-        displayAssessmentList(data.assessments);
+        const assessments = Array.isArray(data.assessments) ? data.assessments : [];
+
+        displayAssessmentSummary(assessments);
+        displayAssessmentList(assessments);
 
     } catch (error) {
         console.error("Assessment loading error:", error);
 
-        assessmentList.textContent =
-            "Unable to load assessments. Please refresh the page.";
+        showAssessmentState(
+            assessmentList,
+            "Assessments unavailable",
+            "We could not load your assessment records. Refresh the page to try again.",
+            "alert"
+        );
     }
+}
+
+function showAssessmentState(container, title, text, role) {
+    const state = document.createElement("div");
+    const heading = document.createElement("strong");
+    const copy = document.createElement("p");
+
+    state.className = "state";
+
+    if (role) state.setAttribute("role", role);
+
+    heading.textContent = title;
+    copy.textContent = text;
+
+    state.append(heading, copy);
+    container.replaceChildren(state);
+}
+
+function formatDate(value) {
+    if (!value) return "";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
 }
 
 // Display assessment summary
@@ -82,76 +123,77 @@ function displayAssessmentSummary(assessments) {
 function displayAssessmentList(assessments) {
     const container = document.getElementById("assessmentList");
 
-    container.replaceChildren();
-
     if (assessments.length === 0) {
-        const message = document.createElement("p");
-        message.className = "empty-state";
-        message.textContent = "You currently have no assigned assessments.";
-
-        container.appendChild(message);
+        showAssessmentState(
+            container,
+            "No assessments assigned",
+            "When the training office assigns an assessment, it will appear here with its dates and result."
+        );
         return;
     }
 
-    assessments.forEach(assessment => {
-        const card = document.createElement("div");
-        card.className = "progress-item";
+    container.replaceChildren();
 
-        const info = document.createElement("div");
-        info.className = "progress-info";
+    assessments.forEach(assessment => {
+        const item = document.createElement("article");
+        item.className = "assessment-item";
+
+        const top = document.createElement("div");
+        top.className = "assessment-item__top";
+
+        const identity = document.createElement("div");
 
         const title = document.createElement("strong");
-        title.textContent = assessment.assessmentTitle;
-
-        const status = document.createElement("span");
-        status.textContent = assessment.status;
-
-        info.append(title, status);
+        title.textContent = assessment.assessmentTitle || "Untitled assessment";
 
         const subject = document.createElement("p");
-        subject.textContent = assessment.subject;
+        subject.className = "assessment-item__subject";
+        subject.textContent = assessment.subject || "No subject recorded";
 
-        card.append(info, subject);
+        identity.append(title, subject);
 
-        if (assessment.assessmentDate) {
-            const date = document.createElement("p");
-            date.textContent =
-                "Assessment Date: " +
-                new Date(assessment.assessmentDate).toLocaleDateString();
+        const status = document.createElement("span");
+        status.className = `status-badge ${STATUS_STYLES[assessment.status] || "pending"}`;
+        status.textContent = assessment.status || "Pending";
 
-            card.appendChild(date);
-        }
+        top.append(identity, status);
 
-        if (assessment.status === "Graded" && assessment.score !== null) {
+        const date = formatDate(assessment.assessmentDate);
+        const meta = document.createElement("p");
+        meta.className = "assessment-item__meta";
+        meta.textContent = date
+            ? `Assessment date · ${date}`
+            : "Assessment date not set";
+
+        item.append(top, meta);
+
+        if (
+            ["Graded", "Completed"].includes(assessment.status) &&
+            assessment.score !== null &&
+            assessment.score !== undefined
+        ) {
             const result = document.createElement("div");
-            result.className = "assessment-result";
+            result.className = "assessment-item__result";
 
-            const score = document.createElement("div");
-            score.className = "assessment-score";
+            const score = document.createElement("span");
+            score.className = "assessment-item__score";
             score.textContent = assessment.score;
 
-            const details = document.createElement("div");
+            const points = document.createElement("span");
+            points.textContent = `out of ${assessment.totalScore} points`;
 
-            const label = document.createElement("strong");
-            label.textContent = "Your Score";
-
-            const points = document.createElement("p");
-            points.textContent =
-                `${assessment.score} out of ${assessment.totalScore} points`;
-
-            details.append(label, points);
-            result.append(score, details);
-
-            card.appendChild(result);
+            result.append(score, points);
+            item.append(result);
         }
 
         if (assessment.remarks) {
             const remarks = document.createElement("p");
-            remarks.textContent = "Remarks: " + assessment.remarks;
+            remarks.className = "assessment-item__remarks";
+            remarks.textContent = assessment.remarks;
 
-            card.appendChild(remarks);
+            item.append(remarks);
         }
 
-        container.appendChild(card);
+        container.append(item);
     });
 }

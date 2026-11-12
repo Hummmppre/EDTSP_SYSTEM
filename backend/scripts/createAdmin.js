@@ -7,6 +7,7 @@ const readline = require("readline");
 require("dotenv").config();
 
 const User = require("../models/User");
+const { sendWelcomeEmail } = require("../lib/mailer");
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -55,6 +56,18 @@ async function createAdmin() {
         console.log("Name:", admin.firstName, admin.lastName);
         console.log("Email:", admin.email);
         console.log("Role:", admin.role);
+
+        const mail = await sendWelcomeEmail({
+            to: admin.email,
+            name: `${admin.firstName} ${admin.lastName}`,
+            role: "admin"
+        });
+
+        console.log(
+            mail.sent
+                ? "Welcome email sent."
+                : `Welcome email was not sent: ${mail.error}`
+        );
 
     } catch (error) {
         console.error("\nAdmin setup failed:", error.message);

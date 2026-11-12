@@ -1,271 +1,418 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f2ede1">
     <title>Payment Management | EDTSP</title>
-    <link rel="stylesheet" href="../css/admin.css">
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-payments.js" defer></script>
+    <script src="../js/portal.js" defer></script>
 </head>
 <body>
 
-<div class="dashboard-container">
+<div class="shell" id="shell">
 
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>EDTSP</h2>
-            <p>Administrator Portal</p>
+    <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar">A</span>
+            <span class="who__text">
+                <strong>Administrator</strong>
+                <small>Full access</small>
+            </span>
         </div>
 
-        <nav class="sidebar-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="trainees.html">Trainees</a>
-            <a href="assessments.html">Assessments</a>
-            <a href="payments.html" class="active">Payments</a>
-            <a href="cow-maintenance.html">Cow Maintenance</a>
+        <nav class="nav" aria-label="Administration">
+            <p class="nav__label">Records</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="trainees.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"/>
+                    <path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7"/>
+                    <path d="M16 5.6a3 3 0 0 1 0 5.6"/>
+                    <path d="M18.5 19c-.2-1.6-.7-2.9-1.6-3.9 2.5-.2 4.3 1.3 4.9 3.9"/>
+                </svg>
+                <span>Trainees</span>
+            </a>
+
+            <a class="nav__link" href="applications.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v15a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 20V5A1.5 1.5 0 0 1 7 3.5Z"/>
+                    <path d="M9 8.5h6M9 12h4"/>
+                    <path d="m9 16 1.8 1.8L15 14"/>
+                </svg>
+                <span>Applications</span>
+                <span class="nav__badge" data-pending-count hidden>0</span>
+            </a>
+
+            <a class="nav__link" href="programs.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 4 3.5 8.5 12 13l8.5-4.5Z"/>
+                    <path d="m3.5 12.5 8.5 4.5 8.5-4.5"/>
+                    <path d="m3.5 16.5 8.5 4.5 8.5-4.5"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link is-active" href="payments.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payments</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </button>
         </nav>
 
-        <button id="logoutBtn" type="button">Logout</button>
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Administrator portal · 2026</span>
+        </p>
+
     </aside>
 
-    <main class="main-content">
+    <div class="scrim" aria-hidden="true"></div>
 
-        <header class="dashboard-header">
-            <button id="sidebarToggle" type="button">☰</button>
-            <div>
-                <h1>Payment Management</h1>
-                <p>Manage training fees, payment records, and trainee balances.</p>
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="sidebarToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Administration</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Payments</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span>Administrator</span>
+                <span class="avatar avatar--sm">A</span>
             </div>
         </header>
 
-        <!-- Payment Summary -->
-        <section class="dashboard-overview">
-            <h2>Payment Overview</h2>
+        <main class="page">
 
-            <div class="stats-container">
-                <div class="stat-card">
-                    <h3>Total Training Fees</h3>
-                    <p id="totalFees">₱432,000</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Total Collected</h3>
-                    <p id="totalCollected">₱318,000</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Outstanding Balance</h3>
-                    <p id="outstandingBalance">₱114,000</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Fully Paid Trainees</h3>
-                    <p id="fullyPaidCount">12</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Payment Records -->
-        <section class="dashboard-section">
-
-            <div class="section-heading">
+            <header class="page__head">
                 <div>
-                    <h2>Payment Records</h2>
-                    <p>Monitor individual trainee accounts and payment status.</p>
+                    <h1>Payment management</h1>
+                    <p class="page__deck">
+                        Training fees, verified payments, and outstanding balances for every trainee.
+                    </p>
+                </div>
+                <span class="demo-tag">Demo data</span>
+            </header>
+
+            <section class="ledger" aria-label="Payment summary">
+
+                <div class="ledger__cell">
+                    <span class="ledger__label">Total training fees</span>
+                    <strong class="ledger__value" id="totalFees">₱432,000</strong>
+                    <span class="ledger__note">Billed across all trainees</span>
                 </div>
 
-                <button class="primary-btn" id="recordPaymentBtn">
-                    + Record Payment
-                </button>
-            </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Total collected</span>
+                    <strong class="ledger__value" id="totalCollected">₱318,000</strong>
+                    <span class="ledger__note">Verified payments</span>
+                </div>
 
-            <div class="table-controls">
-                <input
-                    type="search"
-                    id="paymentSearch"
-                    placeholder="Search trainee name or ID..."
-                >
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Outstanding balance</span>
+                    <strong class="ledger__value" id="outstandingBalance">₱114,000</strong>
+                    <span class="ledger__note">Still to collect</span>
+                </div>
 
-                <select id="paymentStatusFilter">
-                    <option value="all">All Payment Status</option>
-                    <option value="Fully Paid">Fully Paid</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Unpaid">Unpaid</option>
-                </select>
-            </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Fully paid trainees</span>
+                    <strong class="ledger__value" id="fullyPaidCount">12</strong>
+                    <span class="ledger__note">Settled accounts</span>
+                </div>
 
-            <div class="table-wrapper">
-                <table class="trainee-table">
-                    <thead>
-                        <tr>
-                            <th>Trainee ID</th>
-                            <th>Trainee Name</th>
-                            <th>Total Fee</th>
-                            <th>Amount Paid</th>
-                            <th>Balance</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
+            </section>
 
-                    <tbody id="paymentTableBody">
-                        <tr data-status="Fully Paid">
-                            <td>EDT-2026-001</td>
-                            <td>Juan Dela Cruz</td>
-                            <td>₱18,000</td>
-                            <td>₱18,000</td>
-                            <td>₱0</td>
-                            <td><span class="status-badge completed">Fully Paid</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-001">View</button></td>
-                        </tr>
+            <section class="panel" aria-labelledby="payment-records-title">
+                <header class="panel__head">
+                    <h2 id="payment-records-title">Payment records</h2>
+                    <button class="btn btn--primary btn--sm" id="recordPaymentBtn" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        Record payment
+                    </button>
+                </header>
 
-                        <tr data-status="Partial">
-                            <td>EDT-2026-002</td>
-                            <td>Maria Santos</td>
-                            <td>₱18,000</td>
-                            <td>₱10,000</td>
-                            <td>₱8,000</td>
-                            <td><span class="status-badge pending">Partial</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-002">View</button></td>
-                        </tr>
+                <div class="toolbar">
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5"/>
+                            <path d="m16 16 4 4"/>
+                        </svg>
+                        <span class="sr-only">Search payments by trainee name or ID</span>
+                        <input type="search" id="paymentSearch" placeholder="Search trainee name or ID">
+                    </label>
 
-                        <tr data-status="Unpaid">
-                            <td>EDT-2026-003</td>
-                            <td>Pedro Reyes</td>
-                            <td>₱18,000</td>
-                            <td>₱0</td>
-                            <td>₱18,000</td>
-                            <td><span class="status-badge inactive">Unpaid</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-003">View</button></td>
-                        </tr>
+                    <div class="select">
+                        <label class="sr-only" for="paymentStatusFilter">Filter by payment status</label>
+                        <select id="paymentStatusFilter">
+                            <option value="all">All payment status</option>
+                            <option value="Fully Paid">Fully paid</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Unpaid">Unpaid</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                </div>
 
-                        <tr data-status="Partial">
-                            <td>EDT-2026-004</td>
-                            <td>Ana Garcia</td>
-                            <td>₱18,000</td>
-                            <td>₱5,000</td>
-                            <td>₱13,000</td>
-                            <td><span class="status-badge pending">Partial</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-004">View</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Trainee payment accounts table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Trainee ID</th>
+                                <th scope="col">Trainee name</th>
+                                <th scope="col" class="num">Total fee</th>
+                                <th scope="col" class="num">Amount paid</th>
+                                <th scope="col" class="num">Balance</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
 
-        </section>
+                        <tbody id="paymentTableBody">
+                            <tr data-status="Fully Paid">
+                                <td class="id">EDT-2026-001</td>
+                                <td class="name">Juan Dela Cruz</td>
+                                <td class="num">₱18,000</td>
+                                <td class="num">₱18,000</td>
+                                <td class="num">₱0</td>
+                                <td><span class="status-badge completed">Fully Paid</span></td>
+                                <td>
+                                    <button class="row-action" type="button" data-trainee="EDT-2026-001"
+                                            aria-label="View payments for EDT-2026-001">View</button>
+                                </td>
+                            </tr>
+                            <tr data-status="Partial">
+                                <td class="id">EDT-2026-002</td>
+                                <td class="name">Maria Santos</td>
+                                <td class="num">₱18,000</td>
+                                <td class="num">₱10,000</td>
+                                <td class="num">₱8,000</td>
+                                <td><span class="status-badge pending">Partial</span></td>
+                                <td>
+                                    <button class="row-action" type="button" data-trainee="EDT-2026-002"
+                                            aria-label="View payments for EDT-2026-002">View</button>
+                                </td>
+                            </tr>
+                            <tr data-status="Unpaid">
+                                <td class="id">EDT-2026-003</td>
+                                <td class="name">Pedro Reyes</td>
+                                <td class="num">₱18,000</td>
+                                <td class="num">₱0</td>
+                                <td class="num">₱18,000</td>
+                                <td><span class="status-badge inactive">Unpaid</span></td>
+                                <td>
+                                    <button class="row-action" type="button" data-trainee="EDT-2026-003"
+                                            aria-label="View payments for EDT-2026-003">View</button>
+                                </td>
+                            </tr>
+                            <tr data-status="Partial">
+                                <td class="id">EDT-2026-004</td>
+                                <td class="name">Ana Garcia</td>
+                                <td class="num">₱18,000</td>
+                                <td class="num">₱5,000</td>
+                                <td class="num">₱13,000</td>
+                                <td><span class="status-badge pending">Partial</span></td>
+                                <td>
+                                    <button class="row-action" type="button" data-trainee="EDT-2026-004"
+                                            aria-label="View payments for EDT-2026-004">View</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-        <!-- Payment History -->
-        <section class="dashboard-section">
-            <h2>Recent Payment Transactions</h2>
-            <p class="section-description">A record of recently received payments.</p>
+            <section class="panel" aria-labelledby="transactions-title">
+                <header class="panel__head">
+                    <h2 id="transactions-title">Recent payment transactions</h2>
+                    <span class="panel__meta">2 records</span>
+                </header>
 
-            <div class="table-wrapper">
-                <table class="trainee-table">
-                    <thead>
-                        <tr>
-                            <th>Transaction ID</th>
-                            <th>Trainee</th>
-                            <th>Amount</th>
-                            <th>Payment Method</th>
-                            <th>Payment Date</th>
-                            <th>Reference Number</th>
-                        </tr>
-                    </thead>
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Recent payment transactions table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Transaction ID</th>
+                                <th scope="col">Trainee</th>
+                                <th scope="col" class="num">Amount</th>
+                                <th scope="col">Method</th>
+                                <th scope="col">Payment date</th>
+                                <th scope="col">Reference no.</th>
+                            </tr>
+                        </thead>
 
-                    <tbody id="transactionTableBody">
-                        <tr>
-                            <td>PAY-001</td>
-                            <td>Juan Dela Cruz</td>
-                            <td>₱18,000</td>
-                            <td>Cash</td>
-                            <td>Nov 05, 2026</td>
-                            <td>—</td>
-                        </tr>
+                        <tbody id="transactionTableBody">
+                            <tr>
+                                <td class="id">PAY-001</td>
+                                <td>Juan Dela Cruz</td>
+                                <td class="num">₱18,000</td>
+                                <td>Cash</td>
+                                <td>Nov 05, 2026</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td class="id">PAY-002</td>
+                                <td>Maria Santos</td>
+                                <td class="num">₱10,000</td>
+                                <td>GCash</td>
+                                <td>Nov 06, 2026</td>
+                                <td>GC-2026-002</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-                        <tr>
-                            <td>PAY-002</td>
-                            <td>Maria Santos</td>
-                            <td>₱10,000</td>
-                            <td>GCash</td>
-                            <td>Nov 06, 2026</td>
-                            <td>GC-2026-002</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
+                <span>Records shown here are demo data.</span>
+            </footer>
 
-    </main>
+        </main>
+
+    </div>
+
 </div>
 
-<!-- Record Payment Modal -->
-<div class="admin-modal" id="paymentModal">
+<!-- Record payment -->
+<div class="admin-modal" id="paymentModal" data-portal-modal role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
     <div class="admin-modal-content">
 
         <div class="modal-heading">
             <div>
-                <h2>Record Payment</h2>
+                <h2 id="paymentModalTitle">Record payment</h2>
                 <p>Enter the details of a trainee's payment.</p>
             </div>
-
-            <button type="button" class="modal-close" id="closePaymentModal">&times;</button>
+            <button type="button" class="modal-close" id="closePaymentModal" aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
         </div>
 
-        <form id="paymentForm">
+        <form class="modal-form" id="paymentForm">
 
-            <div class="form-group">
-                <label for="paymentTrainee">Trainee</label>
-                <select id="paymentTrainee" required>
-                    <option value="">Select a trainee</option>
-                    <option value="EDT-2026-001">Juan Dela Cruz</option>
-                    <option value="EDT-2026-002">Maria Santos</option>
-                    <option value="EDT-2026-003">Pedro Reyes</option>
-                    <option value="EDT-2026-004">Ana Garcia</option>
-                </select>
-            </div>
+            <div class="form-grid">
 
-            <div class="form-group">
-                <label for="paymentAmount">Payment Amount (₱)</label>
-                <input type="number" id="paymentAmount" min="0.01" step="0.01" required>
-            </div>
+                <div class="field field--full">
+                    <label for="paymentTrainee">Trainee</label>
+                    <select id="paymentTrainee" required>
+                        <option value="">Select a trainee</option>
+                        <option value="EDT-2026-001">Juan Dela Cruz</option>
+                        <option value="EDT-2026-002">Maria Santos</option>
+                        <option value="EDT-2026-003">Pedro Reyes</option>
+                        <option value="EDT-2026-004">Ana Garcia</option>
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="paymentDate">Payment Date</label>
-                <input type="date" id="paymentDate" required>
-            </div>
+                <div class="field">
+                    <label for="paymentAmount">Payment amount (₱)</label>
+                    <input type="number" id="paymentAmount" min="0.01" step="0.01" required>
+                </div>
 
-            <div class="form-group">
-                <label for="paymentMethod">Payment Method</label>
-                <select id="paymentMethod" required>
-                    <option value="">Select payment method</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="GCash">GCash</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
+                <div class="field">
+                    <label for="paymentDate">Payment date</label>
+                    <input type="date" id="paymentDate" required>
+                </div>
 
-            <div class="form-group">
-                <label for="referenceNumber">Reference Number</label>
-                <input type="text" id="referenceNumber" placeholder="Optional reference number">
-            </div>
+                <div class="field">
+                    <label for="paymentMethod">Payment method</label>
+                    <select id="paymentMethod" required>
+                        <option value="">Select method</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank transfer</option>
+                        <option value="GCash">GCash</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="paymentRemarks">Remarks</label>
-                <textarea id="paymentRemarks" rows="3" placeholder="Additional information"></textarea>
+                <div class="field">
+                    <label for="referenceNumber">Reference number</label>
+                    <input type="text" id="referenceNumber" placeholder="Optional">
+                </div>
+
+                <div class="field field--full">
+                    <label for="paymentRemarks">Remarks</label>
+                    <textarea id="paymentRemarks" rows="3" placeholder="Additional information"></textarea>
+                </div>
+
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="cancelPayment">Cancel</button>
-                <button type="submit" class="primary-btn">Save Payment</button>
+                <button type="button" class="btn btn--ghost" id="cancelPayment">Cancel</button>
+                <button type="submit" class="btn btn--primary">Save payment</button>
             </div>
 
         </form>
+
     </div>
 </div>
-
-<script src="../js/admin.js" defer></script>
-<script src="../js/admin-payments.js" defer></script>
 
 </body>
 </html>
