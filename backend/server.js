@@ -34,6 +34,10 @@ app.use("/api/applications", applicationRoutes);
 const adminApplicationRoutes = require("./routes/adminApplicationRoutes");
 app.use("/api/admin/applications", adminApplicationRoutes);
 
+// System settings routes (admin)
+const systemSettingsRoutes = require("./routes/systemSettingsRoutes");
+app.use("/api/system-settings", systemSettingsRoutes);
+
 // Program and batch management routes (admin)
 const { programRoutes, batchRoutes } = require("./routes/programRoutes");
 app.use("/api/admin/programs", programRoutes);
