@@ -160,36 +160,36 @@
                         Create assessments, assign them to trainees, and track every result.
                     </p>
                 </div>
-                <span class="demo-tag">Demo data</span>
+                <span class="demo-tag"></span>
             </header>
 
-            <section class="ledger" aria-label="Assessment summary">
+          <section class="ledger" aria-label="Assessment summary">
 
-                <div class="ledger__cell">
-                    <span class="ledger__label">Total assessments</span>
-                    <strong class="ledger__value">32</strong>
-                    <span class="ledger__note">Assigned to date</span>
-                </div>
+    <div class="ledger__cell">
+        <span class="ledger__label">Total assessments</span>
+        <strong class="ledger__value" id="totalAssessments">0</strong>
+        <span class="ledger__note">Assigned to date</span>
+    </div>
 
-                <div class="ledger__cell ledger__cell--focus">
-                    <span class="ledger__label">Pending</span>
-                    <strong class="ledger__value">12</strong>
-                    <span class="ledger__note">Awaiting completion</span>
-                </div>
+    <div class="ledger__cell ledger__cell--focus">
+        <span class="ledger__label">Pending</span>
+        <strong class="ledger__value" id="pendingAssessments">0</strong>
+        <span class="ledger__note">Awaiting completion</span>
+    </div>
 
-                <div class="ledger__cell">
-                    <span class="ledger__label">Graded</span>
-                    <strong class="ledger__value">20</strong>
-                    <span class="ledger__note">Results recorded</span>
-                </div>
+    <div class="ledger__cell">
+        <span class="ledger__label">Graded</span>
+        <strong class="ledger__value" id="gradedAssessments">0</strong>
+        <span class="ledger__note">Results recorded</span>
+    </div>
 
-                <div class="ledger__cell">
-                    <span class="ledger__label">Average score</span>
-                    <strong class="ledger__value">86%</strong>
-                    <span class="ledger__note">Across graded work</span>
-                </div>
+    <div class="ledger__cell">
+        <span class="ledger__label">Average score</span>
+        <strong class="ledger__value" id="averageScore">0%</strong>
+        <span class="ledger__note">Across graded work</span>
+    </div>
 
-            </section>
+</section>
 
             <section class="panel" aria-labelledby="assessment-records-title">
                 <header class="panel__head">
@@ -225,42 +225,24 @@
                 <div class="table-wrap" tabindex="0" role="region" aria-label="Assessment records table">
                     <table class="data-table">
                         <thead>
-                            <tr>
-                                <th scope="col">Assessment</th>
-                                <th scope="col">Subject</th>
-                                <th scope="col">Trainee</th>
-                                <th scope="col" class="num">Score</th>
-                                <th scope="col">Date</th>
-                                <th scope="col">Status</th>
-                            </tr>
-                        </thead>
+                    <tr>
+                        <th scope="col">Assessment</th>
+                        <th scope="col">Subject</th>
+                        <th scope="col">Trainee</th>
+                        <th scope="col" class="num">Score</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
 
                         <tbody id="assessmentTableBody">
-                            <tr>
-                                <td class="name">Dairy production assessment</td>
-                                <td>Dairy production</td>
-                                <td>Juan Dela Cruz</td>
-                                <td class="num">85/100</td>
-                                <td>Nov 05, 2026</td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="name">Animal nutrition assessment</td>
-                                <td>Animal nutrition</td>
-                                <td>Maria Santos</td>
-                                <td class="num">—</td>
-                                <td>Nov 08, 2026</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td class="name">Farm safety assessment</td>
-                                <td>Farm safety</td>
-                                <td>Pedro Reyes</td>
-                                <td class="num">92/100</td>
-                                <td>Nov 06, 2026</td>
-                                <td><span class="status-badge completed">Graded</span></td>
-                            </tr>
-                        </tbody>
+    <tr>
+        <td colspan="8" class="text-center">
+            Loading assessment records...
+        </td>
+    </tr>
+</tbody>
                     </table>
                 </div>
 
@@ -320,15 +302,13 @@
                         <option value="Performance">Performance assessment</option>
                     </select>
                 </div>
-
+                    <div class="field">
+                <label for="assessmentDueDate">Due Date</label>
+                <input type="date" id="assessmentDueDate">
+            </div>
                 <div class="field">
                     <label for="totalScore">Total score</label>
                     <input type="number" id="totalScore" min="1" required placeholder="100">
-                </div>
-
-                <div class="field">
-                    <label for="assessmentDueDate">Due date</label>
-                    <input type="date" id="assessmentDueDate">
                 </div>
 
                 <div class="field field--full">
@@ -339,32 +319,14 @@
                 <div class="field field--full">
                     <label>Select trainees</label>
 
-                    <div class="trainee-selection">
-                        <label>
-                            <input type="checkbox" id="selectAllTrainees">
-                            Select all
-                        </label>
+                    <div class="trainee-selection" id="traineeSelection">
+    <label>
+        <input type="checkbox" id="selectAllTrainees">
+        Select all
+    </label>
 
-                        <label>
-                            <input type="checkbox" name="trainees" value="Juan Dela Cruz">
-                            Juan Dela Cruz
-                        </label>
-
-                        <label>
-                            <input type="checkbox" name="trainees" value="Maria Santos">
-                            Maria Santos
-                        </label>
-
-                        <label>
-                            <input type="checkbox" name="trainees" value="Pedro Reyes">
-                            Pedro Reyes
-                        </label>
-
-                        <label>
-                            <input type="checkbox" name="trainees" value="Ana Garcia">
-                            Ana Garcia
-                        </label>
-                    </div>
+    <p id="traineeLoading">Loading trainee accounts...</p>
+</div>
                 </div>
 
                 <div class="field field--full">
@@ -382,6 +344,59 @@
 
         </form>
 
+    </div>
+</div>
+
+<!-- Grade Assessment Modal -->
+<div class="admin-modal" id="gradeModal">
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2>Grade Assessment</h2>
+                <p>Enter the trainee's assessment score and remarks.</p>
+            </div>
+            <button type="button" class="modal-close" id="closeGradeModal">
+                &times;
+            </button>
+        </div>
+
+        <form id="gradeForm">
+            <div class="modal-form">
+                <div class="form-grid">
+                    <div class="field field--full">
+                        <label for="gradeAssessmentTitle">Assessment</label>
+                        <input type="text" id="gradeAssessmentTitle" readonly>
+                    </div>
+
+                    <div class="field field--full">
+                        <label for="gradeTraineeName">Trainee</label>
+                        <input type="text" id="gradeTraineeName" readonly>
+                    </div>
+
+                    <div class="field field--full">
+                        <label for="gradeScore">Score</label>
+                        <input type="number" id="gradeScore" min="0" required
+                            placeholder="Enter trainee score">
+                        <small id="gradeTotalScore"></small>
+                    </div>
+
+                    <div class="field field--full">
+                        <label for="gradeRemarks">Remarks</label>
+                        <textarea id="gradeRemarks" rows="3"
+                            placeholder="Enter remarks (optional)"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" id="cancelGrade">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn--primary">
+                    Save Grade
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

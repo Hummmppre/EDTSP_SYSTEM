@@ -48,6 +48,7 @@ function saveAuthentication(data) {
 
 window.handleGoogleSignIn = async function (response) {
     if (!response || !response.credential) {
+        alert("Google authentication did not return a valid credential.");
         return;
     }
 
@@ -71,12 +72,13 @@ window.handleGoogleSignIn = async function (response) {
 
         saveAuthentication(data);
 
+        alert("Google Sign-In successful! Welcome, " + data.user.firstName + ".");
 
         redirectByRole(data.user.role);
 
     } catch (error) {
         console.error("Google Sign-In Error:", error);
-        
+        alert("Unable to connect to the server. Please try again.");
     }
 };
 

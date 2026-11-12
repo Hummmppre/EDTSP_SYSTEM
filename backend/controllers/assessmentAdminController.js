@@ -11,14 +11,15 @@ const {
 const createAssessment = async (req, res) => {
     try {
         const {
-            traineeIds,
-            assessmentTitle,
-            subject,
-            totalScore,
-            assessmentDate,
-            remarks
-        } = req.body;
-
+    traineeIds,
+    assessmentTitle,
+    subject,
+    assessmentType,
+    totalScore,
+    assessmentDate,
+    dueDate,
+    remarks
+} = req.body;
         // Validate required fields
         if (
             !Array.isArray(traineeIds) ||
@@ -68,20 +69,21 @@ const createAssessment = async (req, res) => {
                 message: "Some trainee accounts do not exist or are inactive."
             });
         }
-
-        // Create one assessment record for each trainee
-        const assessments = await Assessment.insertMany(
-            trainees.map(trainee => ({
-                user: trainee._id,
-                assessmentTitle: assessmentTitle.trim(),
-                subject: subject.trim(),
-                totalScore: Number(totalScore),
-                assessmentDate: assessmentDate || null,
-                remarks: remarks || "",
-                status: "Pending"
-            })),
-            { ordered: false }
-        );
+            // Create one assessment record for each trainee
+            const assessments = await Assessment.insertMany(
+                trainees.map(trainee => ({
+                    user: trainee._id,
+                    assessmentTitle: assessmentTitle.trim(),
+                    subject: subject.trim(),
+                    assessmentType: assessmentType || "",
+                    totalScore: Number(totalScore),
+                    assessmentDate: assessmentDate || null,
+                    dueDate: dueDate || null,
+                    remarks: remarks || "",
+                    status: "Pending"
+                })),
+                { ordered: false }
+            );
 
         // Notify each trainee; a failed email never blocks the assignment.
         const notifications = await Promise.all(
@@ -121,17 +123,48 @@ const createAssessment = async (req, res) => {
     }
 };
 
-// ADMIN: View all assessment records
+   // ADMIN: View all assessment records and summary
 const getAllAssessments = async (req, res) => {
     try {
         const assessments = await Assessment.find()
             .populate("user", "firstName lastName email")
             .sort({ createdAt: -1 });
 
+        const totalAssessments = assessments.length;
+
+        const pendingAssessments = assessments.filter(
+            assessment => assessment.status === "Pending"
+        ).length;
+
+        const gradedAssessments = assessments.filter(
+            assessment => assessment.status === "Graded"
+        ).length;
+
+        const gradedRecords = assessments.filter(
+            assessment =>
+                assessment.status === "Graded" &&
+                assessment.score !== null &&
+                assessment.score !== undefined
+        );
+
+        const averageScore = gradedRecords.length > 0
+            ? gradedRecords.reduce(
+                (total, assessment) =>
+                    total + (assessment.score / assessment.totalScore) * 100,
+                0
+            ) / gradedRecords.length
+            : 0;
+
         return res.status(200).json({
             success: true,
-            count: assessments.length,
-            assessments
+            count: totalAssessments,
+            assessments,
+            summary: {
+                totalAssessments,
+                pendingAssessments,
+                gradedAssessments,
+                averageScore: Number(averageScore.toFixed(1))
+            }
         });
 
     } catch (error) {

@@ -20,6 +20,16 @@ const assessmentSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+        assessmentType: {
+    type: String,
+    enum: ["Written", "Practical", "Oral", "Performance", ""],
+    default: ""
+},
+
+dueDate: {
+    type: Date,
+    default: null
+},
 
         score: {
             type: Number,

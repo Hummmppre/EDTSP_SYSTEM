@@ -158,33 +158,55 @@ function displayAssessmentList(assessments) {
 
         top.append(identity, status);
 
-        const date = formatDate(assessment.assessmentDate);
-        const meta = document.createElement("p");
-        meta.className = "assessment-item__meta";
-        meta.textContent = date
-            ? `Assessment date · ${date}`
-            : "Assessment date not set";
+       const details = document.createElement("div");
+details.className = "assessment-item__meta";
 
-        item.append(top, meta);
+const type = document.createElement("p");
+type.textContent = `Type: ${assessment.assessmentType || "Not specified"}`;
+
+const date = document.createElement("p");
+date.textContent = assessment.assessmentDate
+    ? `Assessment date: ${formatDate(assessment.assessmentDate)}`
+    : "Assessment date: Not set";
+
+const dueDate = document.createElement("p");
+dueDate.textContent = assessment.dueDate
+    ? `Due date: ${formatDate(assessment.dueDate)}`
+    : "Due date: Not set";
+
+details.append(type, date, dueDate);
+item.append(top, details);
 
         if (
-            ["Graded", "Completed"].includes(assessment.status) &&
-            assessment.score !== null &&
-            assessment.score !== undefined
-        ) {
-            const result = document.createElement("div");
-            result.className = "assessment-item__result";
+    assessment.status === "Graded" &&
+    assessment.score !== null &&
+    assessment.score !== undefined
+) {
+    const result = document.createElement("div");
+    result.className = "assessment-item__result";
 
-            const score = document.createElement("span");
-            score.className = "assessment-item__score";
-            score.textContent = assessment.score;
+    const percentage =
+        (Number(assessment.score) / Number(assessment.totalScore)) * 100;
 
-            const points = document.createElement("span");
-            points.textContent = `out of ${assessment.totalScore} points`;
+    const score = document.createElement("span");
+    score.className = "assessment-item__score";
+    score.textContent = `${assessment.score} / ${assessment.totalScore}`;
 
-            result.append(score, points);
-            item.append(result);
-        }
+    const percentageText = document.createElement("span");
+    percentageText.textContent = `${percentage.toFixed(1)}%`;
+
+    const outcome = document.createElement("strong");
+    outcome.textContent = percentage >= 75
+        ? "Passed"
+        : "Needs Improvement";
+
+    outcome.className = percentage >= 75
+        ? "assessment-result-passed"
+        : "assessment-result-failed";
+
+    result.append(score, percentageText, outcome);
+    item.append(result);
+}
 
         if (assessment.remarks) {
             const remarks = document.createElement("p");
