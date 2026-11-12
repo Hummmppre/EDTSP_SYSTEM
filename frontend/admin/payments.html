@@ -1,271 +1,378 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Management | EDTSP</title>
-    <link rel="stylesheet" href="../css/admin.css">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Payments | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/api.js" defer></script>
+    <script src="../js/session.js" defer></script>
+    <script src="../js/ui.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-payments.js" defer></script>
 </head>
 <body>
 
-<div class="dashboard-container">
+<div class="shell" id="shell">
 
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>EDTSP</h2>
-            <p>Administrator Portal</p>
+    <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar">A</span>
+            <span class="who__text">
+                <strong>Administrator</strong>
+                <small>Full access</small>
+            </span>
         </div>
 
-        <nav class="sidebar-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="trainees.html">Trainees</a>
-            <a href="assessments.html">Assessments</a>
-            <a href="payments.html" class="active">Payments</a>
-            <a href="cow-maintenance.html">Cow Maintenance</a>
+        <nav class="nav" aria-label="Administration">
+            <p class="nav__label">Records</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="trainees.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"/>
+                    <path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7"/>
+                    <path d="M16 5.6a3 3 0 0 1 0 5.6"/>
+                    <path d="M18.5 19c-.2-1.6-.7-2.9-1.6-3.9 2.5-.2 4.3 1.3 4.9 3.9"/>
+                </svg>
+                <span>Trainees</span>
+            </a>
+
+            <a class="nav__link" href="programs.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h10"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link is-active" href="payments.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payments</span>
+            </a>
+
+            <a class="nav__link" href="cow-maintenance.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="openPasswordModal" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="10" rx="2"/>
+                    <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/>
+                </svg>
+                <span>Change password</span>
+            </button>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </button>
         </nav>
 
-        <button id="logoutBtn" type="button">Logout</button>
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Administrator portal · 2026</span>
+        </p>
+
     </aside>
 
-    <main class="main-content">
+    <div class="scrim" aria-hidden="true"></div>
 
-        <header class="dashboard-header">
-            <button id="sidebarToggle" type="button">☰</button>
-            <div>
-                <h1>Payment Management</h1>
-                <p>Manage training fees, payment records, and trainee balances.</p>
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="sidebarToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Administration</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Payments</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span>Administrator</span>
+                <span class="avatar avatar--sm">A</span>
             </div>
         </header>
 
-        <!-- Payment Summary -->
-        <section class="dashboard-overview">
-            <h2>Payment Overview</h2>
+        <main class="page">
 
-            <div class="stats-container">
-                <div class="stat-card">
-                    <h3>Total Training Fees</h3>
-                    <p id="totalFees">₱432,000</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Total Collected</h3>
-                    <p id="totalCollected">₱318,000</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Outstanding Balance</h3>
-                    <p id="outstandingBalance">₱114,000</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Fully Paid Trainees</h3>
-                    <p id="fullyPaidCount">12</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Payment Records -->
-        <section class="dashboard-section">
-
-            <div class="section-heading">
+            <header class="page__head">
                 <div>
-                    <h2>Payment Records</h2>
-                    <p>Monitor individual trainee accounts and payment status.</p>
+                    <h1>Payments</h1>
+                    <p class="page__deck">
+                        Record payments, verify trainee submissions, and track outstanding fees.
+                    </p>
+                </div>
+            </header>
+
+            <section class="ledger" aria-label="Payment summary">
+                <div class="ledger__cell">
+                    <span class="ledger__label">Collected</span>
+                    <strong class="ledger__value" id="ledgerCollected">—</strong>
+                    <span class="ledger__note">Verified payments only</span>
+                </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Outstanding</span>
+                    <strong class="ledger__value" id="ledgerOutstanding">—</strong>
+                    <span class="ledger__note">Across all enrolled trainees</span>
+                </div>
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Pending verification</span>
+                    <strong class="ledger__value" id="ledgerPending">—</strong>
+                    <span class="ledger__note">Awaiting your decision</span>
+                </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Payment records</span>
+                    <strong class="ledger__value" id="ledgerCount">—</strong>
+                    <span class="ledger__note">All statuses</span>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="payments-title">
+                <header class="panel__head">
+                    <h2 id="payments-title">Payment records</h2>
+                    <button type="button" class="btn btn--primary" id="recordPaymentBtn">Record payment</button>
+                </header>
+
+                <div class="toolbar">
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5"/>
+                            <path d="m16 16 4 4"/>
+                        </svg>
+                        <span class="sr-only">Search payments by reference or trainee</span>
+                        <input type="search" id="paymentSearch" placeholder="Search reference or trainee">
+                    </label>
+
+                    <div class="select">
+                        <label class="sr-only" for="paymentStatusFilter">Filter by status</label>
+                        <select id="paymentStatusFilter">
+                            <option value="all">All status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Verified">Verified</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
                 </div>
 
-                <button class="primary-btn" id="recordPaymentBtn">
-                    + Record Payment
-                </button>
-            </div>
+                <p class="state" id="paymentState" role="status">Loading payments…</p>
 
-            <div class="table-controls">
-                <input
-                    type="search"
-                    id="paymentSearch"
-                    placeholder="Search trainee name or ID..."
-                >
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Payment records table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Trainee</th>
+                                <th scope="col">Program</th>
+                                <th scope="col" class="num">Amount</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Method</th>
+                                <th scope="col">Payer note</th>
+                                <th scope="col">Receipt</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentTableBody"></tbody>
+                    </table>
+                </div>
 
-                <select id="paymentStatusFilter">
-                    <option value="all">All Payment Status</option>
-                    <option value="Fully Paid">Fully Paid</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Unpaid">Unpaid</option>
-                </select>
-            </div>
+                <div class="pager" id="paymentPager" hidden></div>
+            </section>
 
-            <div class="table-wrapper">
-                <table class="trainee-table">
-                    <thead>
-                        <tr>
-                            <th>Trainee ID</th>
-                            <th>Trainee Name</th>
-                            <th>Total Fee</th>
-                            <th>Amount Paid</th>
-                            <th>Balance</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
+                <span>Only verified payments reduce a trainee's balance.</span>
+            </footer>
 
-                    <tbody id="paymentTableBody">
-                        <tr data-status="Fully Paid">
-                            <td>EDT-2026-001</td>
-                            <td>Juan Dela Cruz</td>
-                            <td>₱18,000</td>
-                            <td>₱18,000</td>
-                            <td>₱0</td>
-                            <td><span class="status-badge completed">Fully Paid</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-001">View</button></td>
-                        </tr>
+        </main>
 
-                        <tr data-status="Partial">
-                            <td>EDT-2026-002</td>
-                            <td>Maria Santos</td>
-                            <td>₱18,000</td>
-                            <td>₱10,000</td>
-                            <td>₱8,000</td>
-                            <td><span class="status-badge pending">Partial</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-002">View</button></td>
-                        </tr>
+    </div>
 
-                        <tr data-status="Unpaid">
-                            <td>EDT-2026-003</td>
-                            <td>Pedro Reyes</td>
-                            <td>₱18,000</td>
-                            <td>₱0</td>
-                            <td>₱18,000</td>
-                            <td><span class="status-badge inactive">Unpaid</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-003">View</button></td>
-                        </tr>
-
-                        <tr data-status="Partial">
-                            <td>EDT-2026-004</td>
-                            <td>Ana Garcia</td>
-                            <td>₱18,000</td>
-                            <td>₱5,000</td>
-                            <td>₱13,000</td>
-                            <td><span class="status-badge pending">Partial</span></td>
-                            <td><button class="view-btn" data-trainee="EDT-2026-004">View</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-        </section>
-
-        <!-- Payment History -->
-        <section class="dashboard-section">
-            <h2>Recent Payment Transactions</h2>
-            <p class="section-description">A record of recently received payments.</p>
-
-            <div class="table-wrapper">
-                <table class="trainee-table">
-                    <thead>
-                        <tr>
-                            <th>Transaction ID</th>
-                            <th>Trainee</th>
-                            <th>Amount</th>
-                            <th>Payment Method</th>
-                            <th>Payment Date</th>
-                            <th>Reference Number</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="transactionTableBody">
-                        <tr>
-                            <td>PAY-001</td>
-                            <td>Juan Dela Cruz</td>
-                            <td>₱18,000</td>
-                            <td>Cash</td>
-                            <td>Nov 05, 2026</td>
-                            <td>—</td>
-                        </tr>
-
-                        <tr>
-                            <td>PAY-002</td>
-                            <td>Maria Santos</td>
-                            <td>₱10,000</td>
-                            <td>GCash</td>
-                            <td>Nov 06, 2026</td>
-                            <td>GC-2026-002</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
 </div>
 
-<!-- Record Payment Modal -->
-<div class="admin-modal" id="paymentModal">
+<div class="admin-modal" id="paymentModal" hidden>
     <div class="admin-modal-content">
-
         <div class="modal-heading">
             <div>
-                <h2>Record Payment</h2>
-                <p>Enter the details of a trainee's payment.</p>
+                <h2>Record payment</h2>
+                <p>Payments recorded here still need verification unless you mark them verified.</p>
             </div>
-
-            <button type="button" class="modal-close" id="closePaymentModal">&times;</button>
+            <button type="button" class="modal-close" data-close-payment aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
         </div>
 
-        <form id="paymentForm">
+        <form class="modal-form" id="paymentForm" novalidate>
+            <div class="form-grid">
+                <label class="field field--full">
+                    <span class="field__label">Trainee</span>
+                    <select id="paymentTrainee">
+                        <option value="">Select a trainee</option>
+                    </select>
+                    <span class="field-note" id="paymentTraineeHelp"></span>
+                </label>
 
-            <div class="form-group">
-                <label for="paymentTrainee">Trainee</label>
-                <select id="paymentTrainee" required>
-                    <option value="">Select a trainee</option>
-                    <option value="EDT-2026-001">Juan Dela Cruz</option>
-                    <option value="EDT-2026-002">Maria Santos</option>
-                    <option value="EDT-2026-003">Pedro Reyes</option>
-                    <option value="EDT-2026-004">Ana Garcia</option>
-                </select>
+                <label class="field">
+                    <span class="field__label">Amount (PHP)</span>
+                    <input type="number" id="paymentAmount" min="0.01" step="0.01" placeholder="4500">
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Payment date</span>
+                    <input type="date" id="paymentDate">
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Method</span>
+                    <select id="paymentMethod">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="GCash">GCash</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Payer reference</span>
+                    <input type="text" id="paymentReference" placeholder="Optional reference">
+                </label>
+
+                <label class="field field--full">
+                    <span class="field__label">Remarks</span>
+                    <textarea id="paymentRemarks" rows="2" placeholder="Optional note"></textarea>
+                </label>
             </div>
 
-            <div class="form-group">
-                <label for="paymentAmount">Payment Amount (₱)</label>
-                <input type="number" id="paymentAmount" min="0.01" step="0.01" required>
-            </div>
-
-            <div class="form-group">
-                <label for="paymentDate">Payment Date</label>
-                <input type="date" id="paymentDate" required>
-            </div>
-
-            <div class="form-group">
-                <label for="paymentMethod">Payment Method</label>
-                <select id="paymentMethod" required>
-                    <option value="">Select payment method</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="GCash">GCash</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="referenceNumber">Reference Number</label>
-                <input type="text" id="referenceNumber" placeholder="Optional reference number">
-            </div>
-
-            <div class="form-group">
-                <label for="paymentRemarks">Remarks</label>
-                <textarea id="paymentRemarks" rows="3" placeholder="Additional information"></textarea>
-            </div>
+            <label class="checkbox-line">
+                <input type="checkbox" id="paymentVerified">
+                <span>Record as verified (counts toward the trainee's paid total immediately)</span>
+            </label>
 
             <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="cancelPayment">Cancel</button>
-                <button type="submit" class="primary-btn">Save Payment</button>
+                <button type="button" class="btn btn--ghost" data-close-payment>Cancel</button>
+                <button type="submit" class="btn btn--primary">Record payment</button>
             </div>
-
         </form>
     </div>
 </div>
 
-<script src="../js/admin.js" defer></script>
-<script src="../js/admin-payments.js" defer></script>
+<div class="admin-modal" id="rejectModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2>Reject payment</h2>
+                <p id="rejectRef">—</p>
+            </div>
+            <button type="button" class="modal-close" data-close-reject aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="rejectForm" novalidate>
+            <label class="field field--full">
+                <span class="field__label">Reason shown to the trainee</span>
+                <textarea id="rejectReason" rows="3" placeholder="For example: reference could not be matched to a transfer."></textarea>
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" data-close-reject>Cancel</button>
+                <button type="submit" class="btn btn--primary">Reject payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="admin-modal" id="passwordModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2>Change password</h2>
+                <p>Other sessions will be signed out when the password changes.</p>
+            </div>
+            <button type="button" class="modal-close" data-close-password aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="passwordForm" novalidate>
+            <label class="field field--full">
+                <span class="field__label">Current password</span>
+                <input type="password" id="currentPassword" autocomplete="current-password">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">New password</span>
+                <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">Confirm new password</span>
+                <input type="password" id="confirmNewPassword" autocomplete="new-password">
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" data-close-password>Cancel</button>
+                <button type="submit" class="btn btn--primary">Update password</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 </body>
 </html>

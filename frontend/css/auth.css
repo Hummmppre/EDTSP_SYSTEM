@@ -285,3 +285,60 @@ body {
         font-size: 24px;
     }
 }
+
+/* ---------- Inline auth messaging ---------- */
+
+.auth-message {
+    margin-bottom: 18px;
+    padding: 11px 13px;
+    font-size: 12px;
+    line-height: 1.6;
+    border: 1px solid var(--line);
+    border-left-width: 2px;
+    border-radius: 4px;
+    color: var(--ink-2);
+    background: var(--surface, #fffdf7);
+}
+
+.auth-message a {
+    font-weight: 600;
+    color: #235231;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.auth-message p {
+    margin-top: 6px;
+}
+
+.auth-message--error {
+    border-left-color: #9c3d25;
+    color: #7d2f1c;
+}
+
+.auth-message--info {
+    border-left-color: #2e566f;
+}
+
+.auth-message--success {
+    border-left-color: #2c6b3f;
+    color: #245633;
+}
+
+.field-error {
+    display: block;
+    margin-top: 7px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #9c3d25;
+}
+
+.form-group input[aria-invalid="true"],
+.form-group select[aria-invalid="true"] {
+    border-color: #9c3d25;
+    box-shadow: 0 0 0 3px rgba(156, 61, 37, 0.12);
+}
+
+.auth-card form[hidden] {
+    display: none;
+}

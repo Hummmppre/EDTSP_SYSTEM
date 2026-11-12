@@ -7,9 +7,11 @@
     <title>Assessments | EDTSP</title>
 
     <link rel="stylesheet" href="../css/portal.css">
-    <script src="../js/dashboard.js" defer></script>
-    <script src="../js/assessments.js" defer></script>
+    <script src="../js/api.js" defer></script>
+    <script src="../js/session.js" defer></script>
+    <script src="../js/ui.js" defer></script>
     <script src="../js/portal.js" defer></script>
+    <script src="../js/assessments.js" defer></script>
 </head>
 <body>
 
@@ -145,25 +147,25 @@
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Total assessments</span>
-                    <strong class="ledger__value" id="totalAssessments">0</strong>
+                    <strong class="ledger__value" id="totalAssessments">—</strong>
                     <span class="ledger__note">Assigned to you</span>
                 </div>
 
                 <div class="ledger__cell">
-                    <span class="ledger__label">Completed</span>
-                    <strong class="ledger__value" id="completedAssessments">0</strong>
-                    <span class="ledger__note">Submitted or graded</span>
+                    <span class="ledger__label">Graded</span>
+                    <strong class="ledger__value" id="completedAssessments">—</strong>
+                    <span class="ledger__note">Results recorded</span>
                 </div>
 
                 <div class="ledger__cell ledger__cell--focus">
                     <span class="ledger__label">Pending</span>
-                    <strong class="ledger__value" id="pendingAssessments">0</strong>
-                    <span class="ledger__note">Still to complete</span>
+                    <strong class="ledger__value" id="pendingAssessments">—</strong>
+                    <span class="ledger__note">Awaiting a score</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Average score</span>
-                    <strong class="ledger__value" id="averageScore">0/100</strong>
+                    <strong class="ledger__value" id="averageScore">—</strong>
                     <span class="ledger__note">Graded assessments only</span>
                 </div>
 
@@ -175,40 +177,35 @@
                     <span class="panel__meta">Live records</span>
                 </header>
 
-                <div class="assessment-list" id="assessmentList" aria-live="polite">
-                    <div class="state" role="status">
-                        <strong>Loading assessments</strong>
-                        <p>Fetching the assessments assigned to your trainee account.</p>
-                    </div>
-                </div>
+                <div class="assessment-list" id="assessmentList" aria-live="polite"></div>
             </section>
 
             <section class="panel" aria-labelledby="process-title" style="margin-top:20px">
                 <header class="panel__head">
-                    <h2 id="process-title">How an assessment runs</h2>
+                    <h2 id="process-title">How an assessment is graded</h2>
                     <span class="panel__meta">Four steps</span>
                 </header>
 
                 <ol class="process">
                     <li>
                         <span class="process__num">01</span>
-                        <strong>View assessment</strong>
-                        <p>Check the tests assigned to you and their dates.</p>
+                        <strong>Assessment assigned</strong>
+                        <p>An administrator assigns the assessment with its type and due date.</p>
                     </li>
                     <li>
                         <span class="process__num">02</span>
-                        <strong>Answer questions</strong>
-                        <p>Complete every required question before submitting.</p>
+                        <strong>Complete the work</strong>
+                        <p>Finish the written, practical, oral, or performance requirement.</p>
                     </li>
                     <li>
                         <span class="process__num">03</span>
-                        <strong>Submit answers</strong>
-                        <p>Review your responses, then send them for grading.</p>
+                        <strong>Assessor records a score</strong>
+                        <p>The score is entered against the total points for that assessment.</p>
                     </li>
                     <li>
                         <span class="process__num">04</span>
-                        <strong>View results</strong>
-                        <p>Your score appears here once the assessment is graded.</p>
+                        <strong>Result appears here</strong>
+                        <p>Your score, remarks, and average update immediately after grading.</p>
                     </li>
                 </ol>
             </section>

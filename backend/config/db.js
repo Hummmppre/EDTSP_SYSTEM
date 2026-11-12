@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
-const dns = require("dns");
 
-// Use Google's public DNS for MongoDB Atlas SRV lookups
-const resolver = new dns.promises.Resolver();
-resolver.setServers(["8.8.8.8", "8.8.4.4"]);
-
-dns.promises.resolveSrv = resolver.resolveSrv.bind(resolver);
+const READY_STATES = {
+    0: "Uninitialized",
+    1: "Connected",
+    2: "Connecting",
+    3: "Disconnecting"
+};
 
 const connectDB = async () => {
     try {
@@ -14,12 +14,15 @@ const connectDB = async () => {
         );
 
         console.log(`MongoDB Connected: ${connection.connection.host}`);
-        console.log(`Database Name: ${connection.connection.name}`);
-
     } catch (error) {
         console.error("MongoDB Connection Failed:", error.message);
         process.exit(1);
     }
 };
 
+const databaseState = () =>
+    READY_STATES[mongoose.connection.readyState] || "Uninitialized";
+
 module.exports = connectDB;
+module.exports.READY_STATES = READY_STATES;
+module.exports.databaseState = databaseState;

@@ -1,222 +1,308 @@
-
-// =============================
-// EDTSP TRAINEE DASHBOARD
-// =============================
-
-const API_URL = "http://localhost:5000/api/trainee";
-
-const token = localStorage.getItem("edtspToken");
-const userData = localStorage.getItem("edtspUser");
-
-let user = null;
-let traineeProfile = null;
-
-// =============================
-// AUTHENTICATION CHECK
-// =============================
-
-if (!token || !userData) {
-    window.location.href = "../login.html";
-} else {
-    try {
-        user = JSON.parse(userData);
-
-        if (!user || user.role !== "trainee") {
-            localStorage.removeItem("edtspToken");
-            localStorage.removeItem("edtspUser");
-            window.location.href = "../login.html";
-        }
-
-    } catch (error) {
-        localStorage.removeItem("edtspToken");
-        localStorage.removeItem("edtspUser");
-        window.location.href = "../login.html";
-    }
-}
-
-
-// =============================
-// SAFE ELEMENT DISPLAY
-// =============================
-
-function setText(id, value) {
-    const element = document.getElementById(id);
-
-    if (element) {
-        element.textContent = value ?? "";
-    }
-}
-
-
-// =============================
-// LOAD TRAINEE INFORMATION
-// =============================
-
-async function loadTraineeProfile() {
-    try {
-        const response = await fetch(`${API_URL}/me`, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.status === 401) {
-            localStorage.removeItem("edtspToken");
-            localStorage.removeItem("edtspUser");
-            window.location.href = "../login.html";
-            return;
-        }
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || "Unable to load trainee information.");
-        }
-
-        user = data.user;
-        traineeProfile = data.profile;
-
-        // Update saved account information
-        localStorage.setItem("edtspUser", JSON.stringify(user));
-
-        displayTraineeInformation();
-
-        console.log("Trainee information loaded successfully.");
-
-    } catch (error) {
-        console.error("Trainee profile error:", error);
-    }
-}
-
-
-// =============================
-// DISPLAY TRAINEE INFORMATION
-// =============================
-
-function displayTraineeInformation() {
+/**
+ * Trainee dashboard — every figure comes from the API.
+ */
+(function initTraineeDashboard() {
+    const user = window.EDTSP.session.requireRole("trainee");
     if (!user) return;
 
-    const firstName = user.firstName || "";
-    const lastName = user.lastName || "";
+    const { api, ui, session } = window.EDTSP;
+    const { setText, formatMoney, formatNumber, formatDate, state, statusBadge } = ui;
 
-    const fullName = `${firstName} ${lastName}`.trim();
+    window.EDTSP.session.bindLogout(document.getElementById("logoutButton"));
 
-    const initials =
-        `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    const progressList = document.getElementById("progressList");
+    const careList = document.getElementById("careList");
 
-    // Sidebar
-    setText("sidebarName", fullName);
-    setText("userInitials", initials);
+    const loadProfile = async () => {
+        const data = await api.get("/trainee/me");
+        const profile = data.profile || {};
+        const fullName = `${data.user.firstName} ${data.user.lastName}`.trim();
 
-    // Topbar
-    setText("topbarName", fullName);
-    setText("topbarInitials", initials);
-
-    // Welcome message
-    setText("welcomeName", firstName);
-
-    // Profile information
-    setText("profileName", fullName);
-    setText("profileEmail", user.email);
-
-    // MongoDB trainee profile
-    if (traineeProfile) {
-        setText("traineeId", traineeProfile.traineeId || "Not assigned");
-        setText("profileProgram", traineeProfile.program || "Not assigned");
-        setText("profileStatus", traineeProfile.enrollmentStatus || "Pending");
-        setText("profilePhone", traineeProfile.phone || "Not provided");
-        setText("profileAddress", traineeProfile.address || "Not provided");
-
-        // Update training status color
-        const statusElement = document.getElementById("profileStatus");
-
-        if (statusElement) {
-            statusElement.classList.remove("status-active");
-
-            if (traineeProfile.enrollmentStatus === "Ongoing") {
-                statusElement.classList.add("status-active");
-            }
-        }
-    }
-}
-
-
-// =============================
-// SIDEBAR TOGGLE
-// =============================
-
-const sidebar = document.getElementById("sidebar");
-const menuToggle = document.getElementById("menuToggle");
-
-if (menuToggle && sidebar) {
-    menuToggle.addEventListener("click", () => {
-    if (window.innerWidth > 850) {
-        document.querySelector(".dashboard-container")
-            .classList.toggle("sidebar-collapsed");
-    } else {
-        sidebar.classList.toggle("show");
-    }
-});
-}
-
-
-// Close sidebar after selecting a navigation link
-document.querySelectorAll(".sidebar-nav .nav-link").forEach(link => {
-    link.addEventListener("click", () => {
-        if (window.innerWidth <= 850 && sidebar) {
-            sidebar.classList.remove("show");
-        }
-    });
-});
-
-
-// =============================
-// ACTIVE NAVIGATION
-// =============================
-
-document.querySelectorAll(".sidebar-nav .nav-link").forEach(link => {
-    link.addEventListener("click", () => {
-
-        document.querySelectorAll(".sidebar-nav .nav-link")
-            .forEach(item => item.classList.remove("active"));
-
-        if (link.id !== "logoutButton") {
-            link.classList.add("active");
-        }
-    });
-});
-
-
-// =============================
-// LOGOUT
-// =============================
-
-const logoutButton = document.getElementById("logoutButton");
-
-if (logoutButton) {
-    logoutButton.addEventListener("click", event => {
-        event.preventDefault();
-
-        const confirmLogout = confirm(
-            "Are you sure you want to log out?"
+        session.paintIdentity(data.user);
+        setText("profileName", fullName);
+        setText("profileEmail", data.user.email);
+        setText("profileProgram", profile.programName || "Not assigned");
+        setText("programValue", profile.programName || "Pending");
+        setText(
+            "programNote",
+            profile.enrollmentStatus
+                ? `${profile.enrollmentStatus} enrolment`
+                : "No program assigned yet"
         );
 
-        if (confirmLogout) {
-            localStorage.removeItem("edtspToken");
-            localStorage.removeItem("edtspUser");
-
-            window.location.href = "../login.html";
+        const accountBadge = document.getElementById("profileAccountStatus");
+        if (accountBadge) {
+            accountBadge.replaceWith(
+                Object.assign(statusBadge(data.user.status), {
+                    id: "profileAccountStatus"
+                })
+            );
         }
-    });
-}
 
+        return { user: data.user, profile };
+    };
 
-// =============================
-// INITIALIZE DASHBOARD
-// =============================
+    const loadPayments = async () => {
+        const data = await api.get("/trainee/payments");
+        const summary = data.summary || {};
 
-if (token && user && user.role === "trainee") {
-    displayTraineeInformation();
-    loadTraineeProfile();
-}
+        setText("balanceValue", formatMoney(summary.balance || 0));
+        setText(
+            "balanceNote",
+            summary.totalFee
+                ? `Remaining of ${formatMoney(summary.totalFee)}`
+                : "No fee assigned yet"
+        );
+
+        setText("feeTotal", formatMoney(summary.totalFee || 0));
+        setText("feePaid", formatMoney(summary.paid || 0));
+        setText("feeBalance", formatMoney(summary.balance || 0));
+
+        const percent = summary.totalFee
+            ? Math.min(Math.round((summary.paid / summary.totalFee) * 100), 100)
+            : 0;
+
+        setText("feePercent", String(percent));
+        setText(
+            "feeCaption",
+            summary.totalFee
+                ? `${formatMoney(summary.balance)} remains of the ${formatMoney(summary.totalFee)} fee.`
+                : "No training fee has been assigned to your account yet."
+        );
+
+        const meter = document.getElementById("feeMeter");
+        if (meter) meter.style.width = `${percent}%`;
+
+        const feeState = document.getElementById("feeStatus");
+        if (feeState) {
+            feeState.replaceWith(
+                Object.assign(statusBadge(summary.status, summary.status), {
+                    id: "feeStatus"
+                })
+            );
+        }
+
+        return summary;
+    };
+
+    const loadAssessments = async () => {
+        const data = await api.get("/assessments/me");
+        const assessments = data.assessments || [];
+
+        const graded = assessments.filter(
+            (item) =>
+                item.status === "Graded" &&
+                item.score !== null &&
+                Number.isFinite(Number(item.score))
+        );
+
+        const average = graded.length
+            ? graded.reduce(
+                  (sum, item) => sum + (Number(item.score) / item.totalScore) * 100,
+                  0
+              ) / graded.length
+            : null;
+
+        setText("averageValue", average === null ? "—" : `${formatNumber(average)}/100`);
+        setText(
+            "averageNote",
+            graded.length
+                ? `Across ${graded.length} graded assessment${graded.length === 1 ? "" : "s"}`
+                : "No graded assessments yet"
+        );
+
+        // Per-subject progress instead of invented module meters.
+        const bySubject = new Map();
+
+        assessments.forEach((item) => {
+            const entry = bySubject.get(item.subject) || {
+                subject: item.subject,
+                scores: [],
+                pending: 0
+            };
+
+            if (item.status === "Graded" && item.score !== null) {
+                entry.scores.push((Number(item.score) / item.totalScore) * 100);
+            } else {
+                entry.pending += 1;
+            }
+
+            bySubject.set(item.subject, entry);
+        });
+
+        if (progressList) {
+            progressList.replaceChildren();
+
+            if (bySubject.size === 0) {
+                state(progressList, {
+                    tone: "empty",
+                    title: "No assessment records yet",
+                    message:
+                        "Progress appears here once your assessor assigns your first assessment.",
+                    action: {
+                        label: "Open assessments",
+                        onClick: () => {
+                            window.location.href = "assessments.html";
+                        }
+                    }
+                });
+            } else {
+                bySubject.forEach((entry) => {
+                    const percent = entry.scores.length
+                        ? Math.round(
+                              entry.scores.reduce((sum, value) => sum + value, 0) /
+                                  entry.scores.length
+                          )
+                        : 0;
+
+                    const meter = document.createElement("div");
+                    meter.className = "meter";
+
+                    const row = document.createElement("div");
+                    row.className = "meter__row";
+
+                    const label = document.createElement("span");
+                    label.textContent = entry.subject;
+
+                    const value = document.createElement("span");
+                    value.className = "meter__value";
+                    value.textContent = entry.scores.length
+                        ? `${percent}%`
+                        : `${entry.pending} pending`;
+
+                    row.append(label, value);
+
+                    const track = document.createElement("div");
+                    track.className = "meter__track";
+
+                    const fill = document.createElement("span");
+                    fill.className = "meter__fill";
+                    fill.style.width = `${percent}%`;
+                    track.append(fill);
+
+                    meter.append(row, track);
+                    progressList.append(meter);
+                });
+            }
+
+            const meta = document.getElementById("progressMeta");
+            if (meta) {
+                meta.textContent = `${bySubject.size} subject${bySubject.size === 1 ? "" : "s"}`;
+            }
+        }
+
+        return assessments;
+    };
+
+    const loadCows = async () => {
+        const [cowsData, activitiesData] = await Promise.all([
+            api.get("/trainee/cows"),
+            api.get("/trainee/activities")
+        ]);
+
+        const cows = cowsData.cows || [];
+        const activities = activitiesData.activities || [];
+
+        const todayKey = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Manila"
+        }).format(new Date());
+
+        const todaysActivities = activities.filter((activity) => {
+            if (!activity.scheduledAt) return false;
+            return (
+                new Intl.DateTimeFormat("en-CA", {
+                    timeZone: "Asia/Manila"
+                }).format(new Date(activity.scheduledAt)) === todayKey
+            );
+        });
+
+        const completed = todaysActivities.filter(
+            (activity) => activity.status === "Completed"
+        ).length;
+
+        setText(
+            "careValue",
+            todaysActivities.length ? `${completed}/${todaysActivities.length}` : "—"
+        );
+        setText(
+            "careNote",
+            todaysActivities.length
+                ? "Care tasks completed today"
+                : "No tasks scheduled today"
+        );
+
+        if (careList) {
+            careList.replaceChildren();
+
+            if (cows.length === 0 && activities.length === 0) {
+                state(careList, {
+                    tone: "empty",
+                    title: "No animals assigned to you",
+                    message:
+                        "Your care schedule appears once an administrator assigns animals to your account."
+                });
+            } else {
+                const upcoming = activities.slice(0, 4);
+
+                if (upcoming.length === 0) {
+                    state(careList, {
+                        tone: "empty",
+                        title: "No activities scheduled",
+                        message: "New care tasks will appear in this panel."
+                    });
+                }
+
+                upcoming.forEach((activity) => {
+                    const item = document.createElement("div");
+                    item.className = "care";
+
+                    const text = document.createElement("div");
+                    const title = document.createElement("strong");
+                    title.textContent = `${activity.type} · ${activity.cow.cowId}`;
+
+                    const detail = document.createElement("p");
+                    detail.textContent = `${activity.description} — ${formatDate(
+                        activity.scheduledAt
+                    )}`;
+
+                    text.append(title, detail);
+
+                    const badge = statusBadge(activity.status);
+                    item.append(text, badge);
+                    careList.append(item);
+                });
+            }
+        }
+
+        return { cows, activities };
+    };
+
+    const withOwnState = async (loader, containerId, label) => {
+        try {
+            return await loader();
+        } catch (error) {
+            const container = document.getElementById(containerId);
+
+            if (container) {
+                state(container, {
+                    tone: "error",
+                    title: `Could not load ${label}`,
+                    message: error.message,
+                    action: {
+                        label: "Try again",
+                        onClick: () => window.location.reload()
+                    }
+                });
+            }
+
+            return null;
+        }
+    };
+
+    (async () => {
+        await withOwnState(loadProfile, "profileFacts", "your profile");
+        await withOwnState(loadPayments, "feePanel", "your fee record");
+        await withOwnState(loadAssessments, "progressPanelBody", "assessment progress");
+        await withOwnState(loadCows, "carePanelBody", "animal care");
+    })();
+})();

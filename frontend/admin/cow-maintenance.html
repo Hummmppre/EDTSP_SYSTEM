@@ -1,358 +1,484 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cow Maintenance Management | EDTSP</title>
-    <link rel="stylesheet" href="../css/admin.css">
+    <meta name="theme-color" content="#f2ede1">
+    <title>Cow Maintenance | EDTSP</title>
+
+    <link rel="stylesheet" href="../css/portal.css">
+    <script src="../js/api.js" defer></script>
+    <script src="../js/session.js" defer></script>
+    <script src="../js/ui.js" defer></script>
+    <script src="../js/portal.js" defer></script>
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-cow.js" defer></script>
 </head>
 <body>
 
-<div class="dashboard-container">
+<div class="shell" id="shell">
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>EDTSP</h2>
-            <p>Administrator Portal</p>
+    <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
+
+        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+            <span class="brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 20V10.5L12 4l8 6.5V20"/>
+                    <path d="M9 20v-5.5h6V20"/>
+                    <path d="M9 17h6"/>
+                </svg>
+            </span>
+            <span class="brand__type">Esperon<small>Dairy training</small></span>
+        </a>
+
+        <div class="who">
+            <span class="avatar">A</span>
+            <span class="who__text">
+                <strong>Administrator</strong>
+                <small>Full access</small>
+            </span>
         </div>
 
-        <nav class="sidebar-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="trainees.html">Trainees</a>
-            <a href="assessments.html">Assessments</a>
-            <a href="payments.html">Payments</a>
-            <a href="cow-maintenance.html" class="active">Cow Maintenance</a>
+        <nav class="nav" aria-label="Administration">
+            <p class="nav__label">Records</p>
+
+            <a class="nav__link" href="dashboard.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="4" width="7" height="7" rx="1"/>
+                    <rect x="13" y="4" width="7" height="7" rx="1"/>
+                    <rect x="4" y="13" width="7" height="7" rx="1"/>
+                    <rect x="13" y="13" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="nav__link" href="trainees.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="9" cy="8" r="3"/>
+                    <path d="M3 19c.6-3 3-4.7 6-4.7s5.4 1.7 6 4.7"/>
+                    <path d="M16 5.6a3 3 0 0 1 0 5.6"/>
+                    <path d="M18.5 19c-.2-1.6-.7-2.9-1.6-3.9 2.5-.2 4.3 1.3 4.9 3.9"/>
+                </svg>
+                <span>Trainees</span>
+            </a>
+
+            <a class="nav__link" href="programs.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h10"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
+            <a class="nav__link" href="assessments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="5" width="14" height="16" rx="2"/>
+                    <path d="M9 5V3.5h6V5"/>
+                    <path d="m9 13 2 2 4-4"/>
+                </svg>
+                <span>Assessments</span>
+            </a>
+
+            <a class="nav__link" href="payments.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21Z"/>
+                    <path d="M9 8h6M9 12h6"/>
+                </svg>
+                <span>Payments</span>
+            </a>
+
+            <a class="nav__link is-active" href="cow-maintenance.html" aria-current="page">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 9V7.5A2.5 2.5 0 0 1 8.5 5"/>
+                    <path d="M18 9V7.5A2.5 2.5 0 0 0 15.5 5"/>
+                    <path d="M6 8c0 6.5 2.7 11 6 11s6-4.5 6-11"/>
+                    <path d="M10 14h4"/>
+                    <path d="M10.5 10h.01M13.5 10h.01"/>
+                </svg>
+                <span>Cow maintenance</span>
+            </a>
+
+            <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="openPasswordModal" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="10" rx="2"/>
+                    <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/>
+                </svg>
+                <span>Change password</span>
+            </button>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/>
+                    <path d="M10 12H3"/>
+                    <path d="m6 9-3 3 3 3"/>
+                </svg>
+                <span>Log out</span>
+            </button>
         </nav>
 
-        <button id="logoutBtn" type="button">Logout</button>
+        <p class="sidebar__foot">
+            Esperon Dairy Training
+            <span>Administrator portal · 2026</span>
+        </p>
+
     </aside>
 
-    <!-- Main Content -->
-    <main class="main-content">
+    <div class="scrim" aria-hidden="true"></div>
 
-        <header class="dashboard-header">
-            <button id="sidebarToggle" type="button">☰</button>
-            <div>
-                <h1>Cow Maintenance Management</h1>
-                <p>Manage cow records, feeding, medication, and daily care schedules.</p>
+    <div class="main">
+
+        <header class="topbar">
+            <div class="topbar__left">
+                <button class="icon-btn" id="sidebarToggle" type="button"
+                        aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h16"/>
+                    </svg>
+                </button>
+
+                <p class="topbar__where">
+                    <span>Administration</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                    <strong>Cow maintenance</strong>
+                </p>
+            </div>
+
+            <div class="topbar__user">
+                <span>Administrator</span>
+                <span class="avatar avatar--sm">A</span>
             </div>
         </header>
 
-        <!-- Overview -->
-        <section class="dashboard-overview">
-            <h2>Maintenance Overview</h2>
+        <main class="page">
 
-            <div class="stats-container">
-                <div class="stat-card">
-                    <h3>Total Cows</h3>
-                    <p>24</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Healthy Cows</h3>
-                    <p>20</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Pending Activities</h3>
-                    <p>8</p>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Completed Today</h3>
-                    <p>16</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Cow Records -->
-        <section class="dashboard-section">
-
-            <div class="section-heading">
+            <header class="page__head">
                 <div>
-                    <h2>Cow Records</h2>
-                    <p>Manage registered cows and their health information.</p>
+                    <h1>Cow maintenance</h1>
+                    <p class="page__deck">
+                        Herd health, trainee assignments, and the scheduled care rounds.
+                    </p>
+                </div>
+            </header>
+
+            <section class="ledger" aria-label="Herd summary">
+                <div class="ledger__cell">
+                    <span class="ledger__label">Animals</span>
+                    <strong class="ledger__value" id="ledgerCows">—</strong>
+                    <span class="ledger__note">In the herd record</span>
+                </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Healthy</span>
+                    <strong class="ledger__value" id="ledgerHealthy">—</strong>
+                    <span class="ledger__note">No observation needed</span>
+                </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Under observation</span>
+                    <strong class="ledger__value" id="ledgerObservation">—</strong>
+                    <span class="ledger__note">Monitor closely</span>
+                </div>
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Under treatment</span>
+                    <strong class="ledger__value" id="ledgerTreatment">—</strong>
+                    <span class="ledger__note">Active treatment plan</span>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="herd-title">
+                <header class="panel__head">
+                    <h2 id="herd-title">Herd records</h2>
+                    <button type="button" class="btn btn--primary" id="addCowBtn">Add animal</button>
+                </header>
+
+                <div class="toolbar">
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5"/>
+                            <path d="m16 16 4 4"/>
+                        </svg>
+                        <span class="sr-only">Search animals by ID, name, breed, or trainee</span>
+                        <input type="search" id="cowSearch" placeholder="Search ID, name, breed, or trainee">
+                    </label>
+
+                    <div class="select">
+                        <label class="sr-only" for="cowHealthFilter">Filter by health status</label>
+                        <select id="cowHealthFilter">
+                            <option value="all">All health</option>
+                            <option value="Healthy">Healthy</option>
+                            <option value="Under Observation">Under Observation</option>
+                            <option value="Under Treatment">Under Treatment</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
                 </div>
 
-                <button class="primary-btn" id="addCowBtn">
-                    + Add Cow
-                </button>
-            </div>
+                <p class="state" id="cowState" role="status">Loading animals…</p>
 
-            <div class="table-controls">
-                <input type="search" id="cowSearch"
-                    placeholder="Search by cow ID or name...">
-
-                <select id="cowHealthFilter">
-                    <option value="all">All Health Status</option>
-                    <option value="Healthy">Healthy</option>
-                    <option value="Under Observation">Under Observation</option>
-                    <option value="Under Treatment">Under Treatment</option>
-                </select>
-            </div>
-
-            <div class="table-wrapper">
-                <table class="trainee-table">
-                    <thead>
-                        <tr>
-                            <th>Cow ID</th>
-                            <th>Cow Name</th>
-                            <th>Breed</th>
-                            <th>Age</th>
-                            <th>Assigned Trainee</th>
-                            <th>Health Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="cowTableBody">
-                        <tr data-health="Healthy">
-                            <td>COW-001</td>
-                            <td>Bella</td>
-                            <td>Holstein</td>
-                            <td>3 Years</td>
-                            <td>Juan Dela Cruz</td>
-                            <td><span class="status-badge completed">Healthy</span></td>
-                            <td><button class="view-btn">View</button></td>
-                        </tr>
-
-                        <tr data-health="Under Observation">
-                            <td>COW-002</td>
-                            <td>Daisy</td>
-                            <td>Jersey</td>
-                            <td>4 Years</td>
-                            <td>Maria Santos</td>
-                            <td><span class="status-badge pending">Under Observation</span></td>
-                            <td><button class="view-btn">View</button></td>
-                        </tr>
-
-                        <tr data-health="Under Treatment">
-                            <td>COW-003</td>
-                            <td>Molly</td>
-                            <td>Holstein</td>
-                            <td>2 Years</td>
-                            <td>Pedro Reyes</td>
-                            <td><span class="status-badge inactive">Under Treatment</span></td>
-                            <td><button class="view-btn">View</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Daily Maintenance -->
-        <section class="dashboard-section">
-
-            <div class="section-heading">
-                <div>
-                    <h2>Daily Maintenance Activities</h2>
-                    <p>Monitor the daily care and maintenance of cows.</p>
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Herd records table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Cow ID</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Breed</th>
+                                <th scope="col" class="num">Age</th>
+                                <th scope="col">Assigned trainees</th>
+                                <th scope="col">Health</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cowTableBody"></tbody>
+                    </table>
                 </div>
 
-                <button class="primary-btn" id="addActivityBtn">
-                    + Add Activity
-                </button>
-            </div>
+                <div class="pager" id="cowPager" hidden></div>
+            </section>
 
-            <div class="table-controls">
-                <input type="search" id="activitySearch"
-                    placeholder="Search cow or activity...">
+            <section class="ledger" aria-label="Care activity summary" style="margin-top:20px">
+                <div class="ledger__cell">
+                    <span class="ledger__label">Pending activities</span>
+                    <strong class="ledger__value" id="activityPending">—</strong>
+                    <span class="ledger__note">Not yet completed</span>
+                </div>
+                <div class="ledger__cell">
+                    <span class="ledger__label">Completed activities</span>
+                    <strong class="ledger__value" id="activityCompleted">—</strong>
+                    <span class="ledger__note">Marked by an administrator</span>
+                </div>
+                <div class="ledger__cell ledger__cell--focus">
+                    <span class="ledger__label">Total activities</span>
+                    <strong class="ledger__value" id="activityTotal">—</strong>
+                    <span class="ledger__note">Across all animals</span>
+                </div>
+            </section>
 
-                <select id="activityTypeFilter">
-                    <option value="all">All Activities</option>
-                    <option value="Feeding">Feeding</option>
-                    <option value="Medication">Medication</option>
-                    <option value="Drinking">Drinking</option>
-                </select>
+            <section class="panel" aria-labelledby="activity-title">
+                <header class="panel__head">
+                    <h2 id="activity-title">Care schedule</h2>
+                    <button type="button" class="btn btn--primary" id="addActivityBtn">Add activity</button>
+                </header>
 
-                <select id="activityStatusFilter">
-                    <option value="all">All Status</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </div>
+                <div class="toolbar">
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="11" cy="11" r="6.5"/>
+                            <path d="m16 16 4 4"/>
+                        </svg>
+                        <span class="sr-only">Search activities</span>
+                        <input type="search" id="activitySearch" placeholder="Search description, cow, or trainee">
+                    </label>
 
-            <div class="table-wrapper">
-                <table class="trainee-table">
-                    <thead>
-                        <tr>
-                            <th>Cow</th>
-                            <th>Activity</th>
-                            <th>Description</th>
-                            <th>Schedule</th>
-                            <th>Assigned Trainee</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
+                    <div class="select">
+                        <label class="sr-only" for="activityTypeFilter">Filter by type</label>
+                        <select id="activityTypeFilter">
+                            <option value="all">All types</option>
+                            <option value="Feeding">Feeding</option>
+                            <option value="Drinking">Drinking</option>
+                            <option value="Medication">Medication</option>
+                            <option value="General">General</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
 
-                    <tbody id="activityTableBody">
-                        <tr data-type="Feeding" data-status="Completed">
-                            <td>Bella (COW-001)</td>
-                            <td>Feeding</td>
-                            <td>Fresh grass and concentrate</td>
-                            <td>7:00 AM</td>
-                            <td>Juan Dela Cruz</td>
-                            <td><span class="status-badge completed">Completed</span></td>
-                            <td><button class="view-btn">View</button></td>
-                        </tr>
+                    <div class="select">
+                        <label class="sr-only" for="activityStatusFilter">Filter by status</label>
+                        <select id="activityStatusFilter">
+                            <option value="all">All status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
+                </div>
 
-                        <tr data-type="Medication" data-status="Pending">
-                            <td>Daisy (COW-002)</td>
-                            <td>Medication</td>
-                            <td>Scheduled health treatment</td>
-                            <td>9:00 AM</td>
-                            <td>Maria Santos</td>
-                            <td><span class="status-badge pending">Pending</span></td>
-                            <td><button class="view-btn">View</button></td>
-                        </tr>
+                <p class="state" id="activityState" role="status">Loading activities…</p>
 
-                        <tr data-type="Drinking" data-status="Completed">
-                            <td>Molly (COW-003)</td>
-                            <td>Drinking</td>
-                            <td>Clean drinking water</td>
-                            <td>10:00 AM</td>
-                            <td>Pedro Reyes</td>
-                            <td><span class="status-badge completed">Completed</span></td>
-                            <td><button class="view-btn">View</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <div class="table-wrap" tabindex="0" role="region" aria-label="Care schedule table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Cow</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Description</th>
+                                <th scope="col">Schedule</th>
+                                <th scope="col">Assigned trainees</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody"></tbody>
+                    </table>
+                </div>
 
-        </section>
+                <div class="pager" id="activityPager" hidden></div>
+            </section>
 
-    </main>
+            <footer class="page__foot">
+                <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
+                <span>Only administrators can change an activity's status.</span>
+            </footer>
+
+        </main>
+
+    </div>
+
 </div>
 
-<!-- Add Cow Modal -->
-<div class="admin-modal" id="cowModal">
+<div class="admin-modal" id="cowModal" hidden>
     <div class="admin-modal-content">
-
         <div class="modal-heading">
             <div>
-                <h2>Add Cow Record</h2>
-                <p>Enter the cow's basic information.</p>
+                <h2 id="cowModalTitle">Add animal</h2>
+                <p>Several trainees can be responsible for one animal.</p>
             </div>
-
-            <button type="button" class="modal-close" id="closeCowModal">&times;</button>
+            <button type="button" class="modal-close" data-close-cow aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
         </div>
 
-        <form id="cowForm">
+        <form class="modal-form" id="cowForm" novalidate>
+            <div class="form-grid">
+                <label class="field">
+                    <span class="field__label">Cow ID</span>
+                    <input type="text" id="cowId" placeholder="COW-004" autocomplete="off">
+                </label>
 
-            <div class="form-group">
-                <label for="cowId">Cow ID</label>
-                <input type="text" id="cowId" required placeholder="e.g. COW-004">
-            </div>
+                <label class="field">
+                    <span class="field__label">Name</span>
+                    <input type="text" id="cowName" placeholder="Bella">
+                </label>
 
-            <div class="form-group">
-                <label for="cowName">Cow Name</label>
-                <input type="text" id="cowName" required>
-            </div>
+                <label class="field">
+                    <span class="field__label">Breed</span>
+                    <input type="text" id="cowBreed" placeholder="Holstein">
+                </label>
 
-            <div class="form-group">
-                <label for="cowBreed">Breed</label>
-                <input type="text" id="cowBreed" required>
-            </div>
+                <label class="field">
+                    <span class="field__label">Age (years)</span>
+                    <input type="number" id="cowAge" min="0" max="30" step="1">
+                </label>
 
-            <div class="form-group">
-                <label for="cowAge">Age</label>
-                <input type="number" id="cowAge" min="0" required>
-            </div>
+                <label class="field">
+                    <span class="field__label">Health status</span>
+                    <select id="cowHealth">
+                        <option value="Healthy">Healthy</option>
+                        <option value="Under Observation">Under Observation</option>
+                        <option value="Under Treatment">Under Treatment</option>
+                    </select>
+                </label>
 
-            <div class="form-group">
-                <label for="cowTrainee">Assigned Trainee</label>
-                <input type="text" id="cowTrainee" placeholder="Enter trainee name">
-            </div>
+                <label class="field field--full">
+                    <span class="field__label">Assigned trainees</span>
+                    <select id="cowTrainees" multiple size="5"></select>
+                </label>
 
-            <div class="form-group">
-                <label for="cowHealth">Health Status</label>
-                <select id="cowHealth" required>
-                    <option value="Healthy">Healthy</option>
-                    <option value="Under Observation">Under Observation</option>
-                    <option value="Under Treatment">Under Treatment</option>
-                </select>
+                <label class="field field--full">
+                    <span class="field__label">Notes</span>
+                    <textarea id="cowNotes" rows="2" placeholder="Anything the care team should know"></textarea>
+                </label>
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="cancelCow">Cancel</button>
-                <button type="submit" class="primary-btn">Save Cow</button>
+                <button type="button" class="btn btn--ghost" data-close-cow>Cancel</button>
+                <button type="submit" class="btn btn--primary">Save animal</button>
             </div>
-
         </form>
     </div>
 </div>
 
-<!-- Add Activity Modal -->
-<div class="admin-modal" id="activityModal">
+<div class="admin-modal" id="activityModal" hidden>
     <div class="admin-modal-content">
-
         <div class="modal-heading">
             <div>
-                <h2>Add Maintenance Activity</h2>
-                <p>Create a feeding, medication, or drinking schedule.</p>
+                <h2>Add activity</h2>
+                <p>Leave trainees unselected to use the animal's current assignments.</p>
             </div>
-
-            <button type="button" class="modal-close" id="closeActivityModal">&times;</button>
+            <button type="button" class="modal-close" data-close-activity aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
         </div>
 
-        <form id="activityForm">
+        <form class="modal-form" id="activityForm" novalidate>
+            <div class="form-grid">
+                <label class="field field--full">
+                    <span class="field__label">Cow</span>
+                    <select id="activityCow"></select>
+                </label>
 
-            <div class="form-group">
-                <label for="activityCow">Cow</label>
-                <select id="activityCow" required>
-                    <option value="">Select cow</option>
-                    <option value="Bella (COW-001)">Bella (COW-001)</option>
-                    <option value="Daisy (COW-002)">Daisy (COW-002)</option>
-                    <option value="Molly (COW-003)">Molly (COW-003)</option>
-                </select>
-            </div>
+                <label class="field">
+                    <span class="field__label">Type</span>
+                    <select id="activityType">
+                        <option value="Feeding">Feeding</option>
+                        <option value="Drinking">Drinking</option>
+                        <option value="Medication">Medication</option>
+                        <option value="General" selected>General</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </label>
 
-            <div class="form-group">
-                <label for="activityType">Activity Type</label>
-                <select id="activityType" required>
-                    <option value="">Select activity</option>
-                    <option value="Feeding">Feeding</option>
-                    <option value="Medication">Medication</option>
-                    <option value="Drinking">Drinking</option>
-                </select>
-            </div>
+                <label class="field">
+                    <span class="field__label">Date</span>
+                    <input type="date" id="activityDate">
+                </label>
 
-            <div class="form-group">
-                <label for="activityDescription">Description</label>
-                <textarea id="activityDescription" rows="3" required
-                    placeholder="Enter activity details"></textarea>
-            </div>
+                <label class="field">
+                    <span class="field__label">Time</span>
+                    <input type="time" id="activityTime" value="08:00">
+                </label>
 
-            <div class="form-group">
-                <label for="activityDate">Schedule Date</label>
-                <input type="date" id="activityDate" required>
-            </div>
+                <label class="field field--full">
+                    <span class="field__label">Description</span>
+                    <input type="text" id="activityDescription" placeholder="Morning feed round">
+                </label>
 
-            <div class="form-group">
-                <label for="activityTime">Schedule Time</label>
-                <input type="time" id="activityTime" required>
-            </div>
-
-            <div class="form-group">
-                <label for="activityTrainee">Assigned Trainee</label>
-                <input type="text" id="activityTrainee" required
-                    placeholder="Enter trainee name">
+                <label class="field field--full">
+                    <span class="field__label">Assigned trainees</span>
+                    <select id="activityTrainees" multiple size="4"></select>
+                </label>
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="cancel-btn" id="cancelActivity">Cancel</button>
-                <button type="submit" class="primary-btn">Save Activity</button>
+                <button type="button" class="btn btn--ghost" data-close-activity>Cancel</button>
+                <button type="submit" class="btn btn--primary">Schedule activity</button>
             </div>
-
         </form>
     </div>
 </div>
 
-<script src="../js/admin.js" defer></script>
-<script src="../js/admin-cow.js" defer></script>
+<div class="admin-modal" id="passwordModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2>Change password</h2>
+                <p>Other sessions will be signed out when the password changes.</p>
+            </div>
+            <button type="button" class="modal-close" data-close-password aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="passwordForm" novalidate>
+            <label class="field field--full">
+                <span class="field__label">Current password</span>
+                <input type="password" id="currentPassword" autocomplete="current-password">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">New password</span>
+                <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">Confirm new password</span>
+                <input type="password" id="confirmNewPassword" autocomplete="new-password">
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" data-close-password>Cancel</button>
+                <button type="submit" class="btn btn--primary">Update password</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 </body>
 </html>

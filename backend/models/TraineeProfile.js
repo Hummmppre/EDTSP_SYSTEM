@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const traineeProfileSchema = new mongoose.Schema(
@@ -20,8 +19,15 @@ const traineeProfileSchema = new mongoose.Schema(
         },
 
         program: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Program",
+            default: null
+        },
+
+        // Original free-text program name kept for audit after migration.
+        legacyProgramName: {
             type: String,
-            default: "Dairy Production Training",
+            default: "",
             trim: true
         },
 
@@ -33,12 +39,14 @@ const traineeProfileSchema = new mongoose.Schema(
 
         phone: {
             type: String,
-            trim: true
+            trim: true,
+            default: ""
         },
 
         address: {
             type: String,
-            trim: true
+            trim: true,
+            default: ""
         }
     },
     { timestamps: true }

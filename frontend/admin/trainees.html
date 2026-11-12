@@ -7,8 +7,12 @@
     <title>Trainee Management | EDTSP</title>
 
     <link rel="stylesheet" href="../css/portal.css">
-    <script src="../js/admin.js" defer></script>
+    <script src="../js/api.js" defer></script>
+    <script src="../js/session.js" defer></script>
+    <script src="../js/ui.js" defer></script>
     <script src="../js/portal.js" defer></script>
+    <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-trainees.js" defer></script>
 </head>
 <body>
 
@@ -58,6 +62,13 @@
                 <span>Trainees</span>
             </a>
 
+            <a class="nav__link" href="programs.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 6h16M4 12h16M4 18h10"/>
+                </svg>
+                <span>Programs</span>
+            </a>
+
             <a class="nav__link" href="assessments.html">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="5" y="5" width="14" height="16" rx="2"/>
@@ -87,6 +98,14 @@
             </a>
 
             <p class="nav__label">Session</p>
+
+            <button class="nav__link nav__link--quiet nav__link--button" id="openPasswordModal" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="10" rx="2"/>
+                    <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/>
+                </svg>
+                <span>Change password</span>
+            </button>
 
             <button class="nav__link nav__link--quiet nav__link--button" id="logoutBtn" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -140,41 +159,35 @@
                         Every registered participant, their program, and current enrolment status.
                     </p>
                 </div>
-                <span class="demo-tag">Demo data</span>
             </header>
 
             <section class="ledger" aria-label="Trainee summary">
-
                 <div class="ledger__cell">
                     <span class="ledger__label">Total trainees</span>
-                    <strong class="ledger__value">24</strong>
+                    <strong class="ledger__value" id="ledgerTotal">—</strong>
                     <span class="ledger__note">Registered participants</span>
                 </div>
-
                 <div class="ledger__cell">
                     <span class="ledger__label">Active trainees</span>
-                    <strong class="ledger__value">18</strong>
-                    <span class="ledger__note">Currently in training</span>
+                    <strong class="ledger__value" id="ledgerActive">—</strong>
+                    <span class="ledger__note">Accounts able to sign in</span>
                 </div>
-
                 <div class="ledger__cell ledger__cell--focus">
                     <span class="ledger__label">Pending enrolment</span>
-                    <strong class="ledger__value">04</strong>
+                    <strong class="ledger__value" id="ledgerPending">—</strong>
                     <span class="ledger__note">Awaiting confirmation</span>
                 </div>
-
                 <div class="ledger__cell">
                     <span class="ledger__label">Completed training</span>
-                    <strong class="ledger__value">02</strong>
+                    <strong class="ledger__value" id="ledgerCompleted">—</strong>
                     <span class="ledger__note">Finished the program</span>
                 </div>
-
             </section>
 
             <section class="panel" aria-labelledby="trainee-title">
                 <header class="panel__head">
                     <h2 id="trainee-title">Registered trainees</h2>
-                    <span class="panel__meta">24 records</span>
+                    <button type="button" class="btn btn--ghost" id="resetFilters">Clear filters</button>
                 </header>
 
                 <div class="toolbar">
@@ -183,14 +196,14 @@
                             <circle cx="11" cy="11" r="6.5"/>
                             <path d="m16 16 4 4"/>
                         </svg>
-                        <span class="sr-only">Search trainees by name or email</span>
-                        <input type="search" id="traineeSearch" placeholder="Search name or email">
+                        <span class="sr-only">Search trainees by name, email, or trainee ID</span>
+                        <input type="search" id="traineeSearch" placeholder="Search name, email, or trainee ID">
                     </label>
 
                     <div class="select">
                         <label class="sr-only" for="statusFilter">Filter by enrolment status</label>
                         <select id="statusFilter">
-                            <option value="all">All status</option>
+                            <option value="all">All enrolment</option>
                             <option value="Ongoing">Ongoing</option>
                             <option value="Pending">Pending</option>
                             <option value="Completed">Completed</option>
@@ -198,7 +211,21 @@
                         </select>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
+
+                    <div class="select">
+                        <label class="sr-only" for="accountFilter">Filter by account status</label>
+                        <select id="accountFilter">
+                            <option value="all">All accounts</option>
+                            <option value="active">Active accounts</option>
+                            <option value="inactive">Inactive accounts</option>
+                        </select>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
                 </div>
+
+                <p class="state" id="traineeState" role="status">
+                    Loading trainees…
+                </p>
 
                 <div class="table-wrap" tabindex="0" role="region" aria-label="Registered trainees table">
                     <table class="data-table">
@@ -208,57 +235,126 @@
                                 <th scope="col">Name</th>
                                 <th scope="col">Email</th>
                                 <th scope="col">Program</th>
-                                <th scope="col">Status</th>
+                                <th scope="col">Enrolment</th>
+                                <th scope="col">Account</th>
+                                <th scope="col" class="num">Balance</th>
+                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
-
-                        <tbody id="traineeTableBody">
-                            <tr>
-                                <td class="id">EDT-2026-001</td>
-                                <td class="name">Juan Dela Cruz</td>
-                                <td>juan@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge ongoing">Ongoing</span></td>
-                            </tr>
-                            <tr>
-                                <td class="id">EDT-2026-002</td>
-                                <td class="name">Maria Santos</td>
-                                <td>maria@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td class="id">EDT-2026-003</td>
-                                <td class="name">Pedro Reyes</td>
-                                <td>pedro@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="id">EDT-2026-004</td>
-                                <td class="name">Ana Garcia</td>
-                                <td>ana@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge inactive">Inactive</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="traineeTableBody"></tbody>
                     </table>
                 </div>
 
-                <p class="state state--inline" id="traineeEmpty" hidden>
-                    No trainees match this search and status.
-                </p>
+                <div class="pager" id="traineePager" hidden></div>
             </section>
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
-                <span>Records shown here are demo data.</span>
+                <span>Account changes apply on the trainee's next request.</span>
             </footer>
 
         </main>
 
     </div>
 
+</div>
+
+<div class="admin-modal" id="traineeModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2 id="manageName">Manage trainee</h2>
+                <p id="manageEmail">—</p>
+            </div>
+            <button type="button" class="modal-close" data-close-trainee aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="traineeForm" novalidate>
+            <div class="form-grid">
+                <label class="field">
+                    <span class="field__label">Trainee ID</span>
+                    <input type="text" id="manageTraineeId" placeholder="EDT-2026-001" autocomplete="off">
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Program</span>
+                    <select id="manageProgram">
+                        <option value="">Not assigned</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Enrolment status</span>
+                    <select id="manageEnrollment">
+                        <option value="Pending">Pending</option>
+                        <option value="Ongoing">Ongoing</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span class="field__label">Account access</span>
+                    <select id="manageAccount">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive — signs out immediately</option>
+                    </select>
+                </label>
+            </div>
+
+            <dl class="facts">
+                <div>
+                    <dt>Joined</dt>
+                    <dd id="manageJoined">—</dd>
+                </div>
+                <div>
+                    <dt>Fee standing</dt>
+                    <dd id="manageBalanceNote">—</dd>
+                </div>
+            </dl>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" data-close-trainee>Cancel</button>
+                <button type="submit" class="btn btn--primary">Save changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="admin-modal" id="passwordModal" hidden>
+    <div class="admin-modal-content">
+        <div class="modal-heading">
+            <div>
+                <h2>Change password</h2>
+                <p>Other sessions will be signed out when the password changes.</p>
+            </div>
+            <button type="button" class="modal-close" data-close-password aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <form class="modal-form" id="passwordForm" novalidate>
+            <label class="field field--full">
+                <span class="field__label">Current password</span>
+                <input type="password" id="currentPassword" autocomplete="current-password">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">New password</span>
+                <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+            </label>
+            <label class="field field--full">
+                <span class="field__label">Confirm new password</span>
+                <input type="password" id="confirmNewPassword" autocomplete="new-password">
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn--ghost" data-close-password>Cancel</button>
+                <button type="submit" class="btn btn--primary">Update password</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 </body>
