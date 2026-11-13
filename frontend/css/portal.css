@@ -2277,3 +2277,11 @@ svg {
     background: #f9e7e3;
     border: 1px solid #edcbc4;
 }
+
+/* Secondary line inside a table cell or dialog fact (program name, notes). */
+.field-note {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+}

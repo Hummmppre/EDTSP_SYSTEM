@@ -28,39 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Navigation collapse and drawers are handled by portal.js
 
-    // Trainee register search and status filter
-    const traineeTableBody = document.getElementById("traineeTableBody");
-
-    if (traineeTableBody) {
-        const traineeSearch = document.getElementById("traineeSearch");
-        const statusFilter = document.getElementById("statusFilter");
-        const traineeEmpty = document.getElementById("traineeEmpty");
-
-        const filterTrainees = () => {
-            const search = traineeSearch.value.trim().toLowerCase();
-            const status = statusFilter.value;
-            let visible = 0;
-
-            Array.from(traineeTableBody.rows).forEach(row => {
-                const matchesSearch = row.textContent.toLowerCase().includes(search);
-                const badge = row.querySelector(".status-badge");
-                const matchesStatus =
-                    status === "all" ||
-                    (badge && badge.textContent.trim() === status);
-                const show = matchesSearch && matchesStatus;
-
-                row.style.display = show ? "" : "none";
-
-                if (show) visible += 1;
-            });
-
-            if (traineeEmpty) traineeEmpty.hidden = visible !== 0;
-        };
-
-        traineeSearch.addEventListener("input", filterTrainees);
-        statusFilter.addEventListener("change", filterTrainees);
-    }
-
     // Logout
     const logoutBtn = document.getElementById("logoutBtn");
 

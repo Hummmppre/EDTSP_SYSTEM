@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="../css/portal.css">
     <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-trainees.js" defer></script>
     <script src="../js/portal.js" defer></script>
 </head>
 <body>
@@ -165,33 +166,33 @@
                     <p class="page__deck">
                         Every registered participant, their program, and current enrolment status.
                     </p>
+                    <p class="state state--inline" id="traineeFeedback" role="status" hidden></p>
                 </div>
-                <span class="demo-tag">Demo data</span>
             </header>
 
             <section class="ledger" aria-label="Trainee summary">
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Total trainees</span>
-                    <strong class="ledger__value">24</strong>
+                    <strong class="ledger__value" id="totalTrainees">0</strong>
                     <span class="ledger__note">Registered participants</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Active trainees</span>
-                    <strong class="ledger__value">18</strong>
+                    <strong class="ledger__value" id="activeTrainees">0</strong>
                     <span class="ledger__note">Currently in training</span>
                 </div>
 
                 <div class="ledger__cell ledger__cell--focus">
                     <span class="ledger__label">Pending enrolment</span>
-                    <strong class="ledger__value">04</strong>
+                    <strong class="ledger__value" id="pendingTrainees">0</strong>
                     <span class="ledger__note">Awaiting confirmation</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Completed training</span>
-                    <strong class="ledger__value">02</strong>
+                    <strong class="ledger__value" id="completedTrainees">0</strong>
                     <span class="ledger__note">Finished the program</span>
                 </div>
 
@@ -200,7 +201,7 @@
             <section class="panel" aria-labelledby="trainee-title">
                 <header class="panel__head">
                     <h2 id="trainee-title">Registered trainees</h2>
-                    <span class="panel__meta">24 records</span>
+                    <span class="panel__meta" id="traineeCount">0 records</span>
                 </header>
 
                 <div class="toolbar">
@@ -235,56 +236,95 @@
                                 <th scope="col">Email</th>
                                 <th scope="col">Program</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Action</th>
                             </tr>
                         </thead>
 
-                        <tbody id="traineeTableBody">
-                            <tr>
-                                <td class="id">EDT-2026-001</td>
-                                <td class="name">Juan Dela Cruz</td>
-                                <td>juan@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge ongoing">Ongoing</span></td>
-                            </tr>
-                            <tr>
-                                <td class="id">EDT-2026-002</td>
-                                <td class="name">Maria Santos</td>
-                                <td>maria@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td class="id">EDT-2026-003</td>
-                                <td class="name">Pedro Reyes</td>
-                                <td>pedro@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="id">EDT-2026-004</td>
-                                <td class="name">Ana Garcia</td>
-                                <td>ana@example.com</td>
-                                <td>Dairy production training</td>
-                                <td><span class="status-badge inactive">Inactive</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="traineeTableBody"></tbody>
                     </table>
                 </div>
 
                 <p class="state state--inline" id="traineeEmpty" hidden>
-                    No trainees match this search and status.
+                    No trainees found.
                 </p>
             </section>
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
-                <span>Records shown here are demo data.</span>
+                <span>Trainee records are read live from the training database.</span>
             </footer>
 
         </main>
 
     </div>
 
+</div>
+
+<!-- Trainee record management -->
+<div class="admin-modal" id="traineeModal" data-portal-modal role="dialog" aria-modal="true" aria-labelledby="traineeModalTitle">
+    <div class="admin-modal-content">
+
+        <div class="modal-heading">
+            <div>
+                <h2 id="traineeModalTitle">Manage trainee</h2>
+                <p id="traineeModalSubtitle">Student record</p>
+            </div>
+            <button type="button" class="modal-close" id="closeTraineeModal" aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <div class="modal-form">
+            <dl class="facts" id="traineeFacts"></dl>
+
+            <form id="traineeForm" style="margin-top:20px">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="traineeIdInput">Trainee ID</label>
+                        <input id="traineeIdInput" maxlength="30" placeholder="EDT-2026-001" autocomplete="off">
+                        <p class="field__hint">Issued on approval. Edit only to correct a mistake.</p>
+                    </div>
+
+                    <div class="field">
+                        <label for="enrollmentStatusInput">Enrolment status</label>
+                        <select id="enrollmentStatusInput">
+                            <option value="Pending">Pending</option>
+                            <option value="Ongoing">Ongoing</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="traineePhoneInput">Phone</label>
+                        <input id="traineePhoneInput" maxlength="30" autocomplete="off">
+                    </div>
+
+                    <div class="field">
+                        <label for="traineeAccountStatusInput">Account access</label>
+                        <select id="traineeAccountStatusInput">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <p class="field__hint">Inactive accounts cannot sign in.</p>
+                    </div>
+
+                    <div class="field field--full">
+                        <label for="traineeAddressInput">Address</label>
+                        <input id="traineeAddressInput" maxlength="300" autocomplete="off">
+                    </div>
+                </div>
+
+                <p class="field__error" id="traineeFormError" role="alert" hidden></p>
+            </form>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="btn btn--ghost" id="cancelTraineeModal">Cancel</button>
+            <button type="button" class="btn btn--primary" id="saveTrainee">Save changes</button>
+        </div>
+
+    </div>
 </div>
 
 </body>

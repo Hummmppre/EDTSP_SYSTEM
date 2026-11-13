@@ -2,6 +2,7 @@
 const verifyRecaptcha = require("../utils/recaptcha");
 const verifyGoogleToken = require("../utils/googleAuth");
 const User = require("../models/User");
+const SystemSettings = require("../models/SystemSettings");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendWelcomeEmail } = require("../lib/mailer");
@@ -122,13 +123,21 @@ const login = async (req, res) => {
     try {
         const { email, password, recaptchaToken } = req.body;
 
-        const captchaValid = await verifyRecaptcha(recaptchaToken);
+        // Verify reCAPTCHA only when the administrator has enabled it.
+        const settings = await SystemSettings.findOne();
+        const recaptchaEnabled = settings
+            ? settings.recaptchaEnabled
+            : false;
 
-        if (!captchaValid) {
-            return res.status(400).json({
-                success: false,
-                message: "Please complete the reCAPTCHA verification."
-            });
+        if (recaptchaEnabled) {
+            const captchaValid = await verifyRecaptcha(recaptchaToken);
+
+            if (!captchaValid) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please complete the reCAPTCHA verification."
+                });
+            }
         }
 
         if (!email || !password) {
@@ -160,7 +169,6 @@ const login = async (req, res) => {
             password,
             user.password
         );
-
         if (!passwordMatch) {
             return res.status(401).json({
                 success: false,
@@ -201,7 +209,6 @@ const login = async (req, res) => {
 };
 
 
-
 // GOOGLE SIGN-IN
 const googleLogin = async (req, res) => {
     try {
@@ -214,33 +221,23 @@ const googleLogin = async (req, res) => {
             });
         }
 
-        // Verify the Google ID token and email
+        // Verify the Google ID token
         const googleUser = await verifyGoogleToken(credential);
 
-        // Find an existing EDTSP account using the verified email
+        // Find account using verified Google email
         let user = await User.findOne({
             email: googleUser.email
         });
 
         if (user) {
-            // Check whether this account is already linked to another Google account
-            if (
-                user.googleId &&
-                user.googleId !== googleUser.googleId
-            ) {
+            // Only allow accounts already linked to this Google identity
+            if (!user.googleId || user.googleId !== googleUser.googleId) {
                 return res.status(409).json({
                     success: false,
-                    message: "This EDTSP account is already linked to another Google account."
+                    message: "An account already exists with this email. Please sign in using your email and password."
                 });
             }
 
-            // Link the existing account if it has no Google ID
-            if (!user.googleId) {
-                user.googleId = googleUser.googleId;
-                await user.save();
-            }
-
-            // Check account status
             if (user.status !== "active") {
                 return res.status(403).json({
                     success: false,
@@ -249,7 +246,7 @@ const googleLogin = async (req, res) => {
             }
 
         } else {
-            // Create a new trainee account if the email does not exist
+            // New Google accounts are always created as trainees
             user = await User.create({
                 firstName: googleUser.firstName,
                 lastName: googleUser.lastName,
@@ -260,7 +257,6 @@ const googleLogin = async (req, res) => {
             });
         }
 
-        // Validate account role
         if (!["trainee", "admin"].includes(user.role)) {
             return res.status(403).json({
                 success: false,
@@ -268,7 +264,6 @@ const googleLogin = async (req, res) => {
             });
         }
 
-        // Generate authentication token
         const token = generateToken(user);
 
         return res.status(200).json({
@@ -293,7 +288,6 @@ const googleLogin = async (req, res) => {
         });
     }
 };
-
 
 module.exports = {
     signup,

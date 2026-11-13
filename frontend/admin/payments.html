@@ -164,35 +164,35 @@
                 <div>
                     <h1>Payment management</h1>
                     <p class="page__deck">
-                        Training fees, verified payments, and outstanding balances for every trainee.
+                        Training fees, recorded payments, and outstanding balances for every trainee.
                     </p>
+                    <p class="state state--inline" id="paymentFeedback" role="status" hidden></p>
                 </div>
-                <span class="demo-tag">Demo data</span>
             </header>
 
             <section class="ledger" aria-label="Payment summary">
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Total training fees</span>
-                    <strong class="ledger__value" id="totalFees">₱432,000</strong>
+                    <strong class="ledger__value" id="totalFees">₱0</strong>
                     <span class="ledger__note">Billed across all trainees</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Total collected</span>
-                    <strong class="ledger__value" id="totalCollected">₱318,000</strong>
-                    <span class="ledger__note">Verified payments</span>
+                    <strong class="ledger__value" id="totalCollected">₱0</strong>
+                    <span class="ledger__note">Recorded payments</span>
                 </div>
 
                 <div class="ledger__cell ledger__cell--focus">
                     <span class="ledger__label">Outstanding balance</span>
-                    <strong class="ledger__value" id="outstandingBalance">₱114,000</strong>
+                    <strong class="ledger__value" id="outstandingBalance">₱0</strong>
                     <span class="ledger__note">Still to collect</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Fully paid trainees</span>
-                    <strong class="ledger__value" id="fullyPaidCount">12</strong>
+                    <strong class="ledger__value" id="fullyPaidCount">0</strong>
                     <span class="ledger__note">Settled accounts</span>
                 </div>
 
@@ -235,6 +235,7 @@
                             <tr>
                                 <th scope="col">Trainee ID</th>
                                 <th scope="col">Trainee name</th>
+                                <th scope="col">Program</th>
                                 <th scope="col" class="num">Total fee</th>
                                 <th scope="col" class="num">Amount paid</th>
                                 <th scope="col" class="num">Balance</th>
@@ -243,64 +244,19 @@
                             </tr>
                         </thead>
 
-                        <tbody id="paymentTableBody">
-                            <tr data-status="Fully Paid">
-                                <td class="id">EDT-2026-001</td>
-                                <td class="name">Juan Dela Cruz</td>
-                                <td class="num">₱18,000</td>
-                                <td class="num">₱18,000</td>
-                                <td class="num">₱0</td>
-                                <td><span class="status-badge completed">Fully Paid</span></td>
-                                <td>
-                                    <button class="row-action" type="button" data-trainee="EDT-2026-001"
-                                            aria-label="View payments for EDT-2026-001">View</button>
-                                </td>
-                            </tr>
-                            <tr data-status="Partial">
-                                <td class="id">EDT-2026-002</td>
-                                <td class="name">Maria Santos</td>
-                                <td class="num">₱18,000</td>
-                                <td class="num">₱10,000</td>
-                                <td class="num">₱8,000</td>
-                                <td><span class="status-badge pending">Partial</span></td>
-                                <td>
-                                    <button class="row-action" type="button" data-trainee="EDT-2026-002"
-                                            aria-label="View payments for EDT-2026-002">View</button>
-                                </td>
-                            </tr>
-                            <tr data-status="Unpaid">
-                                <td class="id">EDT-2026-003</td>
-                                <td class="name">Pedro Reyes</td>
-                                <td class="num">₱18,000</td>
-                                <td class="num">₱0</td>
-                                <td class="num">₱18,000</td>
-                                <td><span class="status-badge inactive">Unpaid</span></td>
-                                <td>
-                                    <button class="row-action" type="button" data-trainee="EDT-2026-003"
-                                            aria-label="View payments for EDT-2026-003">View</button>
-                                </td>
-                            </tr>
-                            <tr data-status="Partial">
-                                <td class="id">EDT-2026-004</td>
-                                <td class="name">Ana Garcia</td>
-                                <td class="num">₱18,000</td>
-                                <td class="num">₱5,000</td>
-                                <td class="num">₱13,000</td>
-                                <td><span class="status-badge pending">Partial</span></td>
-                                <td>
-                                    <button class="row-action" type="button" data-trainee="EDT-2026-004"
-                                            aria-label="View payments for EDT-2026-004">View</button>
-                                </td>
-                            </tr>
-                        </tbody>
+                        <tbody id="paymentTableBody"></tbody>
                     </table>
                 </div>
+
+                <p class="empty-state" id="paymentEmpty" hidden>
+                    No payment accounts found.
+                </p>
             </section>
 
             <section class="panel" aria-labelledby="transactions-title">
                 <header class="panel__head">
                     <h2 id="transactions-title">Recent payment transactions</h2>
-                    <span class="panel__meta">2 records</span>
+                    <span class="panel__meta" id="transactionCount">0 records</span>
                 </header>
 
                 <div class="table-wrap" tabindex="0" role="region" aria-label="Recent payment transactions table">
@@ -316,31 +272,14 @@
                             </tr>
                         </thead>
 
-                        <tbody id="transactionTableBody">
-                            <tr>
-                                <td class="id">PAY-001</td>
-                                <td>Juan Dela Cruz</td>
-                                <td class="num">₱18,000</td>
-                                <td>Cash</td>
-                                <td>Nov 05, 2026</td>
-                                <td>—</td>
-                            </tr>
-                            <tr>
-                                <td class="id">PAY-002</td>
-                                <td>Maria Santos</td>
-                                <td class="num">₱10,000</td>
-                                <td>GCash</td>
-                                <td>Nov 06, 2026</td>
-                                <td>GC-2026-002</td>
-                            </tr>
-                        </tbody>
+                        <tbody id="transactionTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
-                <span>Records shown here are demo data.</span>
+                <span>Payment records are read live from the training database.</span>
             </footer>
 
         </main>
@@ -371,10 +310,6 @@
                     <label for="paymentTrainee">Trainee</label>
                     <select id="paymentTrainee" required>
                         <option value="">Select a trainee</option>
-                        <option value="EDT-2026-001">Juan Dela Cruz</option>
-                        <option value="EDT-2026-002">Maria Santos</option>
-                        <option value="EDT-2026-003">Pedro Reyes</option>
-                        <option value="EDT-2026-004">Ana Garcia</option>
                     </select>
                 </div>
 
@@ -411,12 +346,59 @@
 
             </div>
 
+            <p class="state state--inline" id="paymentFormError" role="status" hidden></p>
+
             <div class="modal-actions">
                 <button type="button" class="btn btn--ghost" id="cancelPayment">Cancel</button>
                 <button type="submit" class="btn btn--primary">Save payment</button>
             </div>
 
         </form>
+
+    </div>
+</div>
+
+<!-- Payment account details -->
+<div class="admin-modal" id="paymentDetailsModal" data-portal-modal role="dialog" aria-modal="true" aria-labelledby="paymentDetailsTitle">
+    <div class="admin-modal-content">
+
+        <div class="modal-heading">
+            <div>
+                <h2 id="paymentDetailsTitle">Payment details</h2>
+                <p id="paymentDetailsSubtitle">Program account</p>
+            </div>
+            <button type="button" class="modal-close" id="closePaymentDetails" aria-label="Close dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+        </div>
+
+        <dl class="facts" id="paymentDetailsFacts"></dl>
+
+        <p class="state state--inline" id="paymentDetailsError" role="status" hidden></p>
+
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Payments for this account">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Reference</th>
+                        <th scope="col">Payment date</th>
+                        <th scope="col">Method</th>
+                        <th scope="col">Reference no.</th>
+                        <th scope="col" class="num">Amount</th>
+                        <th scope="col">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentDetailsBody"></tbody>
+            </table>
+        </div>
+
+        <p class="empty-state" id="paymentDetailsEmpty" hidden>
+            No payments recorded for this account yet.
+        </p>
+
+        <div class="modal-actions">
+            <button type="button" class="btn btn--ghost" id="closePaymentDetailsBtn">Close</button>
+        </div>
 
     </div>
 </div>

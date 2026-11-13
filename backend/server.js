@@ -38,10 +38,19 @@ app.use("/api/admin/applications", adminApplicationRoutes);
 const systemSettingsRoutes = require("./routes/systemSettingsRoutes");
 app.use("/api/system-settings", systemSettingsRoutes);
 
+// Payment routes (admin + trainee)
+const { adminPaymentRoutes, traineePaymentRoutes } = require("./routes/paymentRoutes");
+app.use("/api/admin/payments", adminPaymentRoutes);
+app.use("/api/trainee/payments", traineePaymentRoutes);
+
 // Program and batch management routes (admin)
 const { programRoutes, batchRoutes } = require("./routes/programRoutes");
 app.use("/api/admin/programs", programRoutes);
 app.use("/api/admin/batches", batchRoutes);
+
+// Trainee records (admin)
+const adminTraineeRoutes = require("./routes/adminTraineeRoutes");
+app.use("/api/admin/trainees", adminTraineeRoutes);
 
 // Test route
 app.get("/", (req, res) => {
