@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="../css/portal.css">
     <script src="../js/admin.js" defer></script>
+    <script src="../js/admin-dashboard.js" defer></script>
     <script src="../js/portal.js" defer></script>
 </head>
 <body>
@@ -16,7 +17,7 @@
 
     <aside class="sidebar" id="sidebar" aria-label="Administrator portal navigation">
 
-        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+        <a class="brand" href="dashboard.html" aria-label="Esperon Dairy Training">
             <span class="brand__mark" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                     <path d="M4 20V10.5L12 4l8 6.5V20"/>
@@ -167,34 +168,34 @@
                         and animal care — before the next training day.
                     </p>
                 </div>
-                <span class="demo-tag">Demo data</span>
+                <p class="state state--inline" id="dashboardFeedback" role="status" hidden></p>
             </header>
 
             <section class="ledger" aria-label="Administration summary">
 
-                <div class="ledger__cell">
+                <a class="ledger__cell" href="trainees.html">
                     <span class="ledger__label">Total trainees</span>
-                    <strong class="ledger__value" id="totalTrainees">24</strong>
+                    <strong class="ledger__value" id="totalTrainees">0</strong>
                     <span class="ledger__note">Registered participants</span>
-                </div>
+                </a>
 
-                <div class="ledger__cell">
+                <a class="ledger__cell" href="trainees.html">
                     <span class="ledger__label">Active trainees</span>
-                    <strong class="ledger__value" id="activeTrainees">18</strong>
+                    <strong class="ledger__value" id="activeTrainees">0</strong>
                     <span class="ledger__note">Currently in training</span>
-                </div>
+                </a>
 
-                <div class="ledger__cell">
+                <a class="ledger__cell" href="assessments.html">
                     <span class="ledger__label">Total assessments</span>
-                    <strong class="ledger__value" id="totalAssessments">32</strong>
+                    <strong class="ledger__value" id="totalAssessments">0</strong>
                     <span class="ledger__note">Assigned to date</span>
-                </div>
+                </a>
 
-                <div class="ledger__cell ledger__cell--focus">
+                <a class="ledger__cell ledger__cell--focus" href="assessments.html">
                     <span class="ledger__label">Pending assessments</span>
-                    <strong class="ledger__value" id="pendingAssessments">12</strong>
-                    <span class="ledger__note">Awaiting completion</span>
-                </div>
+                    <strong class="ledger__value" id="pendingAssessments">0</strong>
+                    <span class="ledger__note">Pending or completed, not graded yet</span>
+                </a>
 
             </section>
 
@@ -216,36 +217,18 @@
                             </tr>
                         </thead>
 
-                        <tbody id="recentAssessments">
-                            <tr>
-                                <td class="name">Dairy production assessment</td>
-                                <td>Juan Dela Cruz</td>
-                                <td>Nov 05, 2026</td>
-                                <td class="num">85/100</td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td class="name">Animal nutrition assessment</td>
-                                <td>Maria Santos</td>
-                                <td>Nov 08, 2026</td>
-                                <td class="num">—</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td class="name">Farm safety assessment</td>
-                                <td>Pedro Reyes</td>
-                                <td>Nov 06, 2026</td>
-                                <td class="num">92/100</td>
-                                <td><span class="status-badge completed">Graded</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="recentAssessments"></tbody>
                     </table>
                 </div>
+
+                <p class="state state--inline" id="recentAssessmentsEmpty" hidden>
+                    No assessments recorded yet.
+                </p>
             </section>
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
-                <span>Figures shown here are demo data.</span>
+                <span>Figures are read live from the training database.</span>
             </footer>
 
         </main>

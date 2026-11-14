@@ -16,7 +16,7 @@
 
     <aside class="sidebar" id="sidebar" aria-label="Student portal navigation">
 
-        <a class="brand" href="../index.html" aria-label="Esperon Dairy Training">
+        <a class="brand" href="dashboard.html" aria-label="Esperon Dairy Training">
             <span class="brand__mark" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                     <path d="M4 20V10.5L12 4l8 6.5V20"/>
@@ -144,38 +144,38 @@
                 <div>
                     <h1>Welcome back, <span id="welcomeName">Trainee</span>.</h1>
                     <p class="page__deck">
-                        Your training record at a glance — progress, assessments,
-                        fees, and the animals in your care.
+                        Your training record at a glance — assessments, fees,
+                        and the animals in your care.
                     </p>
                 </div>
-                <span class="demo-tag">Demo figures</span>
+                <p class="state state--inline" id="dashboardFeedback" role="status" hidden></p>
             </header>
 
             <section class="ledger" aria-label="Training summary">
 
-                <div class="ledger__cell ledger__cell--focus">
+                <a class="ledger__cell ledger__cell--focus" href="payments.html">
                     <span class="ledger__label">Payment balance</span>
-                    <strong class="ledger__value">₱4,500</strong>
-                    <span class="ledger__note">Remaining of ₱18,000</span>
-                </div>
+                    <strong class="ledger__value" id="paymentBalance">₱0</strong>
+                    <span class="ledger__note" id="paymentBalanceNote">No fee assigned yet</span>
+                </a>
 
-                <div class="ledger__cell">
-                    <span class="ledger__label">Active modules</span>
-                    <strong class="ledger__value">03</strong>
-                    <span class="ledger__note">Training modules</span>
-                </div>
-
-                <div class="ledger__cell">
+                <a class="ledger__cell" href="assessments.html">
                     <span class="ledger__label">Assessment average</span>
-                    <strong class="ledger__value">86/100</strong>
-                    <span class="ledger__note">Overall performance</span>
-                </div>
+                    <strong class="ledger__value" id="assessmentAverage">—</strong>
+                    <span class="ledger__note" id="assessmentAverageNote">No graded assessments yet</span>
+                </a>
 
-                <div class="ledger__cell">
-                    <span class="ledger__label">Cow maintenance</span>
-                    <strong class="ledger__value">2/4</strong>
-                    <span class="ledger__note">Daily care tasks done</span>
-                </div>
+                <a class="ledger__cell" href="assessments.html">
+                    <span class="ledger__label">Pending assessments</span>
+                    <strong class="ledger__value" id="pendingAssessments">0</strong>
+                    <span class="ledger__note" id="pendingAssessmentsNote">Pending or completed, not graded yet</span>
+                </a>
+
+                <a class="ledger__cell" href="profile.html">
+                    <span class="ledger__label">Enrolment status</span>
+                    <strong class="ledger__value" id="enrollmentStatus">Pending</strong>
+                    <span class="ledger__note" id="enrollmentStatusNote">No training record yet</span>
+                </a>
 
             </section>
 
@@ -183,51 +183,13 @@
 
                 <div class="stack">
 
-                    <section class="panel" aria-labelledby="progress-title">
-                        <header class="panel__head">
-                            <h2 id="progress-title">Training progress</h2>
-                            <span class="panel__meta">3 modules</span>
-                        </header>
-
-                        <div class="meter-list">
-
-                            <div class="meter">
-                                <div class="meter__row">
-                                    <span>Dairy farm fundamentals</span>
-                                    <span class="meter__value">68%</span>
-                                </div>
-                                <div class="meter__track">
-                                    <span class="meter__fill" style="width:68%"></span>
-                                </div>
-                            </div>
-
-                            <div class="meter">
-                                <div class="meter__row">
-                                    <span>Animal nutrition &amp; feeding</span>
-                                    <span class="meter__value">42%</span>
-                                </div>
-                                <div class="meter__track">
-                                    <span class="meter__fill" style="width:42%"></span>
-                                </div>
-                            </div>
-
-                            <div class="meter">
-                                <div class="meter__row">
-                                    <span>Farm safety &amp; hygiene</span>
-                                    <span class="meter__value">8%</span>
-                                </div>
-                                <div class="meter__track">
-                                    <span class="meter__fill" style="width:8%"></span>
-                                </div>
-                            </div>
-
-                        </div>
-                    </section>
-
                     <section class="panel" aria-labelledby="care-title">
                         <header class="panel__head">
                             <h2 id="care-title">Cow maintenance</h2>
-                            <a class="text-link" href="cow-maintenance.html">Care schedule</a>
+                            <div class="panel__head-actions">
+                                <span class="panel__meta">Sample data</span>
+                                <a class="text-link" href="cow-maintenance.html">Care schedule</a>
+                            </div>
                         </header>
 
                         <div class="care-list">
@@ -351,7 +313,7 @@
                             </div>
                             <div>
                                 <dt>Status</dt>
-                                <dd><span class="status-badge completed">Active</span></dd>
+                                <dd><span class="status-badge pending" id="profileStatus">Pending</span></dd>
                             </div>
                         </dl>
                     </section>
@@ -368,29 +330,29 @@
 
                 <div class="split">
                     <div>
-                        <div class="figure">75<span class="figure-unit">% paid</span></div>
+                        <div class="figure"><span id="feePercent">0</span><span class="figure-unit">% paid</span></div>
                         <div class="meter__track" style="margin-top:20px">
-                            <span class="meter__fill" style="width:75%"></span>
+                            <span class="meter__fill" id="feeMeterFill" style="width:0%"></span>
                         </div>
-                        <p class="meter__note">₱13,500 of the ₱18,000 fee received.</p>
+                        <p class="meter__note" id="feeNote">No fee assigned yet.</p>
                     </div>
 
                     <dl class="facts">
                         <div>
                             <dt>Total fee</dt>
-                            <dd class="amount">₱18,000</dd>
+                            <dd class="amount" id="feeTotal">₱0</dd>
                         </div>
                         <div>
                             <dt>Paid</dt>
-                            <dd class="amount">₱13,500</dd>
+                            <dd class="amount" id="feePaid">₱0</dd>
                         </div>
                         <div>
                             <dt>Balance</dt>
-                            <dd class="amount balance">₱4,500</dd>
+                            <dd class="amount balance" id="feeBalance">₱0</dd>
                         </div>
                         <div>
                             <dt>Next step</dt>
-                            <dd class="is-note">Settle the balance with the training office.</dd>
+                            <dd class="is-note" id="feeNextStep">Wait for an approved application.</dd>
                         </div>
                     </dl>
                 </div>
@@ -398,6 +360,7 @@
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Student Portal.</span>
+                <span>Cow maintenance is sample data; all other figures come from the training database.</span>
             </footer>
 
         </main>

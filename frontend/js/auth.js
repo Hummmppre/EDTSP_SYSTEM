@@ -7,6 +7,26 @@ let authSettings = {
     recaptchaEnabled: false
 };
 
+function showToast(message, type = "info") {
+    let region = document.querySelector(".edtsp-toast-region");
+
+    if (!region) {
+        region = document.createElement("div");
+        region.className = "edtsp-toast-region";
+        region.setAttribute("aria-live", "polite");
+        document.body.appendChild(region);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = "edtsp-toast";
+    toast.dataset.type = type;
+    toast.setAttribute("role", type === "error" ? "alert" : "status");
+    toast.textContent = message;
+    region.appendChild(toast);
+
+    setTimeout(() => toast.remove(), 4500);
+}
+
 // =============================
 // LOAD AUTHENTICATION SETTINGS
 // =============================
@@ -156,12 +176,12 @@ function saveAuthentication(data) {
 
 window.handleGoogleSignIn = async function (response) {
     if (!authSettings.googleAuthEnabled) {
-        alert("Google Authentication is currently disabled.");
+        showToast("Google Authentication is currently disabled.", "error");
         return;
     }
 
-    if (!response || !response.credential) {
-        alert("Google authentication did not return a valid credential.");
+    if (!response || !response.credential) {    
+        showToast("Google authentication did not return a valid credential.", "error");
         return;
     }
 
@@ -178,18 +198,22 @@ window.handleGoogleSignIn = async function (response) {
 
         const data = await result.json();
 
-        if (!result.ok) {
-            alert(data.message || "Google Sign-In failed.");
-            return;
-        }
+       if (!result.ok) {
+    if (result.status >= 500) {
+        console.error("Google sign-in server error:", data);
+        showToast("Google sign-in is temporarily unavailable. Please try again shortly.", "error");
+    } else {
+        showToast(data.message || "Google Sign-In failed.", "error");
+    }
+    return;
+}
 
         saveAuthentication(data);
-        alert("Google Sign-In successful! Welcome, " + data.user.firstName + ".");
         redirectByRole(data.user.role);
 
     } catch (error) {
         console.error("Google Sign-In Error:", error);
-        alert("Unable to connect to the server. Please try again.");
+        showToast("Unable to connect to the server. Please try again.", "error");
     }
 };
 
@@ -229,8 +253,8 @@ if (loginForm) {
         const password = document.getElementById("loginPassword").value;
 
         if (!email || !password) {
-            alert("Please complete all required fields.");
-            return;
+        showToast("Please complete all required fields.", "error");         
+        return;
         }
 
         let recaptchaToken;
@@ -238,10 +262,9 @@ if (loginForm) {
         try {
             recaptchaToken = getRecaptchaToken();
         } catch (error) {
-            alert(error.message);
-            return;
-        }
-
+         showToast(error.message, "error");
+         return;
+}
         const submitButton = loginForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = "Signing In...";
@@ -261,10 +284,15 @@ if (loginForm) {
 
             const data = await response.json();
 
-            if (!response.ok) {
-                alert(data.message || "Login failed.");
-                return;
+                    if (!response.ok) {
+            if (response.status >= 500) {
+                console.error("Login server error:", data);
+                showToast("We couldn’t sign you in right now. Please try again shortly.", "error");
+            } else {
+                showToast(data.message || "Login failed.", "error");
             }
+            return;
+        }
 
             saveAuthentication(data);
             alert("Login successful! Welcome, " + data.user.firstName + ".");
@@ -272,8 +300,7 @@ if (loginForm) {
 
         } catch (error) {
             console.error("Login Error:", error);
-            alert("Unable to connect to the server. Please check your connection.");
-
+            showToast("Unable to connect to the server. Please check your connection.", "error");
         } finally {
             if (authSettings.recaptchaEnabled &&
                 typeof grecaptcha !== "undefined") {
@@ -303,17 +330,17 @@ if (registerForm) {
         const confirmPassword = document.getElementById("confirmPassword").value;
 
         if (!firstName || !lastName || !email || !password || !confirmPassword) {
-            alert("Please complete all required fields.");
+        showToast("Please complete all required fields.", "error");
             return;
         }
 
         if (password.length < 8) {
-            alert("Password must contain at least 8 characters.");
+        showToast("Password must contain at least 8 characters.", "error");
             return;
         }
 
         if (password !== confirmPassword) {
-            alert("Passwords do not match.");
+            showToast("Passwords do not match.", "error");
             return;
         }
 
@@ -322,7 +349,7 @@ if (registerForm) {
         try {
             recaptchaToken = getRecaptchaToken();
         } catch (error) {
-            alert(error.message);
+            showToast(error.message, "error");
             return;
         }
 
@@ -348,16 +375,26 @@ if (registerForm) {
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.message || "Registration failed.");
-                return;
-            }
+    if (response.status >= 500) {
+        console.error("Registration server error:", data);
+        showToast("We couldn’t create your account right now. Please try again shortly.", "error");
+    } else {
+        showToast(data.message || "Registration failed.", "error");
+    }
+    return;
+}
+                saveAuthentication(data);
+                showToast(
+                    `Welcome, ${data.user.firstName}! Your account was created successfully.`,
+                    "success"
+                );
 
-            alert("Account created successfully! You can now sign in.");
-            window.location.href = "login.html";
-
+        setTimeout(() => {
+            window.location.href = "trainee/dashboard.html";
+        }, 2000);
         } catch (error) {
             console.error("Registration Error:", error);
-            alert("Unable to connect to the server. Please check your connection.");
+            showToast("Unable to connect to the server. Please check your connection.", "error");
 
         } finally {
             if (authSettings.recaptchaEnabled &&

@@ -28,13 +28,28 @@ const signup = async (req, res) => {
     try {
         const { firstName, lastName, email, password, recaptchaToken } = req.body;
 
-        const captchaValid = await verifyRecaptcha(recaptchaToken);
+        // Verify reCAPTCHA only when the administrator has enabled it.
+        const settings = await SystemSettings.findOne();
+        const recaptchaEnabled = settings
+            ? settings.recaptchaEnabled
+            : false;
 
-        if (!captchaValid) {
-            return res.status(400).json({
-                success: false,
-                message: "Please complete the reCAPTCHA verification."
-            });
+        if (recaptchaEnabled) {
+            if (!process.env.RECAPTCHA_SECRET_KEY) {
+                return res.status(503).json({
+                    success: false,
+                    message: "reCAPTCHA verification is not configured. Please contact the administrator."
+                });
+            }
+
+            const captchaValid = await verifyRecaptcha(recaptchaToken);
+
+            if (!captchaValid) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please complete the reCAPTCHA verification."
+                });
+            }
         }
 
         if (!firstName || !lastName || !email || !password) {
@@ -97,6 +112,7 @@ const signup = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: "Trainee account created successfully!",
+            token: generateToken(newUser),
             mail: { sent: Boolean(mail && mail.sent) },
             user: {
                 id: newUser._id,
@@ -130,6 +146,13 @@ const login = async (req, res) => {
             : false;
 
         if (recaptchaEnabled) {
+            if (!process.env.RECAPTCHA_SECRET_KEY) {
+                return res.status(503).json({
+                    success: false,
+                    message: "reCAPTCHA verification is not configured. Please contact the administrator."
+                });
+            }
+
             const captchaValid = await verifyRecaptcha(recaptchaToken);
 
             if (!captchaValid) {
@@ -218,6 +241,16 @@ const googleLogin = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Google authentication credential is required."
+            });
+        }
+
+        // Google Sign-In must honor the administrator's setting, not just the UI.
+        const settings = await SystemSettings.findOne();
+
+        if (!settings || !settings.googleAuthEnabled) {
+            return res.status(503).json({
+                success: false,
+                message: "Google Sign-In is currently disabled."
             });
         }
 

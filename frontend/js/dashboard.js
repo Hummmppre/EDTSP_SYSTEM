@@ -151,6 +151,196 @@ function displayTraineeInformation() {
             );
         }
     }
+
+    displayEnrollmentCard();
+}
+
+
+// =============================
+// DASHBOARD SUMMARY (LIVE)
+// =============================
+
+const DASHBOARD_PAYMENTS_URL = `${API_URL}/payments`;
+const DASHBOARD_ASSESSMENTS_URL = "http://localhost:5000/api/assessments/me";
+
+const ENROLLMENT_NOTES = {
+    Pending: "Awaiting confirmation",
+    Ongoing: "Currently in training",
+    Completed: "Training completed",
+    Inactive: "Enrolment inactive"
+};
+
+function formatMoney(value) {
+    const amount = Number(value || 0);
+    const hasCents = Math.round(amount * 100) % 100 !== 0;
+
+    return `₱${amount.toLocaleString("en-PH", {
+        minimumFractionDigits: hasCents ? 2 : 0,
+        maximumFractionDigits: 2
+    })}`;
+}
+
+function setDashboardFeedback(message) {
+    const feedback = document.getElementById("dashboardFeedback");
+
+    if (!feedback) return;
+
+    feedback.textContent = message || "";
+    feedback.hidden = !message;
+}
+
+function displayEnrollmentCard() {
+    if (!document.getElementById("enrollmentStatus")) return;
+
+    const status = (traineeProfile && traineeProfile.enrollmentStatus) || "Pending";
+
+    setText("enrollmentStatus", status);
+    setText(
+        "enrollmentStatusNote",
+        traineeProfile
+            ? (ENROLLMENT_NOTES[status] || "Training record on file")
+            : "No training record yet"
+    );
+}
+
+function renderPaymentSummary(summary = {}) {
+    const fee = Number(summary.totalFee) || 0;
+    const paid = Number(summary.totalPaid) || 0;
+    const balance = Number(summary.balance) || 0;
+    const accountCount = Number(summary.accountCount) || 0;
+    const percent = fee > 0 ? Math.min(100, Math.round((paid / fee) * 100)) : 0;
+
+    setText("paymentBalance", formatMoney(balance));
+    setText(
+        "paymentBalanceNote",
+        accountCount ? `of ${formatMoney(fee)} total fee` : "No fee assigned yet"
+    );
+
+    setText("feePercent", String(percent));
+    setText("feeTotal", formatMoney(fee));
+    setText("feePaid", formatMoney(paid));
+    setText("feeBalance", formatMoney(balance));
+    setText(
+        "feeNote",
+        !accountCount
+            ? "No fee assigned yet."
+            : (fee > 0
+                ? `${formatMoney(paid)} of the ${formatMoney(fee)} fee received.`
+                : "No fee due for this program.")
+    );
+    setText(
+        "feeNextStep",
+        !accountCount
+            ? "Wait for an approved application."
+            : (balance > 0
+                ? "Settle the balance with the training office."
+                : "Fully paid. No balance due.")
+    );
+
+    const meter = document.getElementById("feeMeterFill");
+
+    if (meter) meter.style.width = `${percent}%`;
+}
+
+function renderAssessmentSummary(assessments) {
+    const graded = assessments.filter(assessment =>
+        assessment.status === "Graded" &&
+        typeof assessment.score === "number" &&
+        Number(assessment.totalScore) > 0
+    );
+
+    if (graded.length) {
+        const average = graded.reduce(
+            (total, assessment) =>
+                total + (assessment.score / Number(assessment.totalScore)) * 100,
+            0
+        ) / graded.length;
+
+        setText("assessmentAverage", `${Math.round(average)}/100`);
+        setText(
+            "assessmentAverageNote",
+            `Based on ${graded.length} graded assessment${graded.length === 1 ? "" : "s"}`
+        );
+    } else {
+        setText("assessmentAverage", "—");
+        setText("assessmentAverageNote", "No graded assessments yet");
+    }
+
+    const pending = assessments.filter(
+        assessment =>
+            assessment.status === "Pending" ||
+            assessment.status === "Completed"
+    ).length;
+
+    setText("pendingAssessments", String(pending));
+    setText("pendingAssessmentsNote", "Pending or completed, not graded yet");
+}
+
+async function fetchDashboardJson(url) {
+    const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (response.status === 401) {
+        const error = new Error("Your session has expired.");
+
+        error.unauthorized = true;
+        throw error;
+    }
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to load dashboard data.");
+    }
+
+    return data;
+}
+
+async function loadDashboardSummary() {
+    if (!document.getElementById("paymentBalance")) return;
+
+    setDashboardFeedback("Loading dashboard data…");
+
+    const [paymentResult, assessmentResult] = await Promise.allSettled([
+        fetchDashboardJson(DASHBOARD_PAYMENTS_URL),
+        fetchDashboardJson(DASHBOARD_ASSESSMENTS_URL)
+    ]);
+
+    const unauthorized = [paymentResult, assessmentResult].some(
+        result => result.status === "rejected" &&
+            result.reason &&
+            result.reason.unauthorized
+    );
+
+    if (unauthorized) {
+        localStorage.removeItem("edtspToken");
+        localStorage.removeItem("edtspUser");
+        window.location.href = "../login.html";
+        return;
+    }
+
+    const failed = [];
+
+    if (paymentResult.status === "fulfilled") {
+        renderPaymentSummary(paymentResult.value.summary || {});
+    } else {
+        console.error("Dashboard payment summary error:", paymentResult.reason);
+        failed.push("payments");
+    }
+
+    if (assessmentResult.status === "fulfilled") {
+        renderAssessmentSummary(assessmentResult.value.assessments || []);
+    } else {
+        console.error("Dashboard assessment summary error:", assessmentResult.reason);
+        failed.push("assessments");
+    }
+
+    setDashboardFeedback(
+        failed.length
+            ? `Some dashboard data could not load: ${failed.join(" and ")}.`
+            : ""
+    );
 }
 
 
@@ -306,4 +496,5 @@ if (token && user && user.role === "trainee") {
     displayTraineeInformation();
     loadTraineeProfile();
     loadApplicationPanel();
+    loadDashboardSummary();
 }

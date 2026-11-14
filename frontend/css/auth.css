@@ -322,3 +322,25 @@ body {
     max-width: 100%;
 }
 
+.edtsp-toast-region {
+    position: fixed;
+    z-index: 9999;
+    top: 16px;
+    right: 16px;
+    display: grid;
+    gap: 10px;
+    width: min(380px, calc(100vw - 32px));
+}
+
+.edtsp-toast {
+    padding: 14px 16px;
+    border-radius: 10px;
+    color: white;
+    background: #183b35;
+    box-shadow: 0 8px 24px #0003;
+    font: 500 14px/1.45 inherit;
+}
+
+.edtsp-toast[data-type="error"] {
+    background: #7b2d32;
+}
