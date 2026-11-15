@@ -166,33 +166,33 @@
                     <p class="page__deck">
                         Animal records, health status, and the daily care schedule assigned to trainees.
                     </p>
+                    <p class="state state--inline" id="cowFeedback" role="status" hidden></p>
                 </div>
-                <span class="demo-tag">Demo data</span>
             </header>
 
             <section class="ledger" aria-label="Maintenance summary">
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Total cows</span>
-                    <strong class="ledger__value">24</strong>
+                    <strong class="ledger__value" id="totalCows">0</strong>
                     <span class="ledger__note">Registered animals</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Healthy cows</span>
-                    <strong class="ledger__value">20</strong>
+                    <strong class="ledger__value" id="healthyCows">0</strong>
                     <span class="ledger__note">No active concern</span>
                 </div>
 
                 <div class="ledger__cell ledger__cell--focus">
                     <span class="ledger__label">Pending activities</span>
-                    <strong class="ledger__value">08</strong>
+                    <strong class="ledger__value" id="pendingActivities">0</strong>
                     <span class="ledger__note">Still to be completed</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Completed today</span>
-                    <strong class="ledger__value">16</strong>
+                    <strong class="ledger__value" id="completedToday">0</strong>
                     <span class="ledger__note">Care activities logged</span>
                 </div>
 
@@ -242,34 +242,13 @@
                             </tr>
                         </thead>
 
-                        <tbody id="cowTableBody">
-                            <tr data-health="Healthy">
-                                <td class="id">COW-001</td>
-                                <td class="name">Bella</td>
-                                <td>Holstein</td>
-                                <td>3 years</td>
-                                <td>Juan Dela Cruz</td>
-                                <td><span class="status-badge completed">Healthy</span></td>
-                            </tr>
-                            <tr data-health="Under Observation">
-                                <td class="id">COW-002</td>
-                                <td class="name">Daisy</td>
-                                <td>Jersey</td>
-                                <td>4 years</td>
-                                <td>Maria Santos</td>
-                                <td><span class="status-badge pending">Under Observation</span></td>
-                            </tr>
-                            <tr data-health="Under Treatment">
-                                <td class="id">COW-003</td>
-                                <td class="name">Molly</td>
-                                <td>Holstein</td>
-                                <td>2 years</td>
-                                <td>Pedro Reyes</td>
-                                <td><span class="status-badge inactive">Under Treatment</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="cowTableBody"></tbody>
                     </table>
                 </div>
+
+                <p class="state state--inline" id="cowEmpty" hidden>
+                    No cow records found. Add the first animal to begin the care schedule.
+                </p>
             </section>
 
             <section class="panel" aria-labelledby="activity-records-title">
@@ -298,6 +277,7 @@
                             <option value="Feeding">Feeding</option>
                             <option value="Medication">Medication</option>
                             <option value="Drinking">Drinking</option>
+                            <option value="General care">General care</option>
                         </select>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
@@ -326,39 +306,18 @@
                             </tr>
                         </thead>
 
-                        <tbody id="activityTableBody">
-                            <tr data-type="Feeding" data-status="Completed">
-                                <td class="name">Bella (COW-001)</td>
-                                <td>Feeding</td>
-                                <td>Fresh grass and concentrate</td>
-                                <td>7:00 AM</td>
-                                <td>Juan Dela Cruz</td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                            <tr data-type="Medication" data-status="Pending">
-                                <td class="name">Daisy (COW-002)</td>
-                                <td>Medication</td>
-                                <td>Scheduled health treatment</td>
-                                <td>9:00 AM</td>
-                                <td>Maria Santos</td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                            </tr>
-                            <tr data-type="Drinking" data-status="Completed">
-                                <td class="name">Molly (COW-003)</td>
-                                <td>Drinking</td>
-                                <td>Clean drinking water</td>
-                                <td>10:00 AM</td>
-                                <td>Pedro Reyes</td>
-                                <td><span class="status-badge completed">Completed</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="activityTableBody"></tbody>
                     </table>
                 </div>
+
+                <p class="state state--inline" id="activityEmpty" hidden>
+                    No maintenance activities scheduled yet.
+                </p>
             </section>
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Administrator Portal.</span>
-                <span>Records shown here are demo data.</span>
+                <span>Cow records and care schedules are read live from the training database.</span>
             </footer>
 
         </main>
@@ -407,7 +366,10 @@
 
                 <div class="field field--full">
                     <label for="cowTrainee">Assigned trainee</label>
-                    <input type="text" id="cowTrainee" placeholder="Enter trainee name">
+                    <select id="cowTrainee">
+                        <option value="">Unassigned</option>
+                    </select>
+                    <p class="field__hint">Loaded from registered trainee accounts.</p>
                 </div>
 
                 <div class="field">
@@ -420,6 +382,8 @@
                 </div>
 
             </div>
+
+            <p class="state state--inline" id="cowFormError" role="status" hidden></p>
 
             <div class="modal-actions">
                 <button type="button" class="btn btn--ghost" id="cancelCow">Cancel</button>
@@ -453,9 +417,6 @@
                     <label for="activityCow">Cow</label>
                     <select id="activityCow" required>
                         <option value="">Select cow</option>
-                        <option value="Bella (COW-001)">Bella (COW-001)</option>
-                        <option value="Daisy (COW-002)">Daisy (COW-002)</option>
-                        <option value="Molly (COW-003)">Molly (COW-003)</option>
                     </select>
                 </div>
 
@@ -466,6 +427,7 @@
                         <option value="Feeding">Feeding</option>
                         <option value="Medication">Medication</option>
                         <option value="Drinking">Drinking</option>
+                        <option value="General care">General care</option>
                     </select>
                 </div>
 
@@ -481,7 +443,9 @@
 
                 <div class="field">
                     <label for="activityTrainee">Assigned trainee</label>
-                    <input type="text" id="activityTrainee" required placeholder="Enter trainee name">
+                    <select id="activityTrainee" required>
+                        <option value="">Select trainee</option>
+                    </select>
                 </div>
 
                 <div class="field field--full">
@@ -491,6 +455,8 @@
                 </div>
 
             </div>
+
+            <p class="state state--inline" id="activityFormError" role="status" hidden></p>
 
             <div class="modal-actions">
                 <button type="button" class="btn btn--ghost" id="cancelActivity">Cancel</button>

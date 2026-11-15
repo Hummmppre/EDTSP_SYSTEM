@@ -246,6 +246,31 @@ body {
     font-size: 11px;
 }
 
+.form-message {
+    margin-bottom: 20px;
+    padding: 12px 14px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.form-message[hidden] {
+    display: none;
+}
+
+.form-message[data-tone="success"] {
+    background: #eaf3e6;
+    border-color: #cfe0c7;
+    color: var(--primary-dark);
+}
+
+.form-message[data-tone="error"] {
+    background: #fbeceb;
+    border-color: #eccfcd;
+    color: #7b2d32;
+}
+
 /* RESPONSIVE */
 
 @media (max-width: 850px) {

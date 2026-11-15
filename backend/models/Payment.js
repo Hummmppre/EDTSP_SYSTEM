@@ -2,16 +2,17 @@ const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
     {
-        // The approved application this payment belongs to. One approved
-        // application is one payment account (program) for a trainee.
+        // The approved application behind this account, when there is one.
+        // Payments are keyed by trainee + program, so an enrolled trainee
+        // without an approved application can still be billed.
         application: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "TrainingApplication",
-            required: true,
+            default: null,
             index: true
         },
 
-        // Copied from the application so listings need no extra populate.
+        // Copied from the account so listings need no extra populate.
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",

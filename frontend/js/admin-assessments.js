@@ -1,5 +1,11 @@
 
 document.addEventListener("DOMContentLoaded", () => {
+    const ASSESSMENT_STATUS_CLASSES = {
+        Pending: "pending",
+        Completed: "completed",
+        Graded: "completed"
+    };
+
     const modal = document.getElementById("assessmentModal");
     const createBtn = document.getElementById("createAssessmentBtn");
     const closeBtn = document.getElementById("closeAssessmentModal");
@@ -44,7 +50,8 @@ function renderAssessmentTable(assessments) {
             : "—";
 
         const status = assessment.status || "Pending";
-        const statusClass = status.toLowerCase();
+        const statusClass =
+            ASSESSMENT_STATUS_CLASSES[status] || "pending";
 
         const row = document.createElement("tr");
 
@@ -108,12 +115,17 @@ row.appendChild(actionCell);
 
 tableBody.appendChild(row);
     });
+
+    // Keep the active search/status filter applied after a re-render.
+    filterAssessments();
 }
 
 // Load assessment records and update dashboard summary
 async function loadAssessments() {
     try {
-        const token = localStorage.getItem("edtspToken");
+        const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
 
         const response = await fetch(
             "http://localhost:5000/api/assessments",
@@ -160,7 +172,9 @@ async function loadTrainees() {
     const traineeLoading = document.getElementById("traineeLoading");
 
     try {
-        const token = localStorage.getItem("edtspToken");
+        const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
 
         const response = await fetch(
             "http://localhost:5000/api/assessments/trainees",
@@ -282,7 +296,9 @@ gradeForm.addEventListener("submit", async (event) => {
     }
 
     try {
-        const token = localStorage.getItem("edtspToken");
+        const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
 
         const response = await fetch(
             `http://localhost:5000/api/assessments/${selectedAssessmentId}/grade`,
@@ -404,7 +420,9 @@ form.addEventListener("submit", async (event) => {
     };
 
     try {
-        const token = localStorage.getItem("edtspToken");
+        const token =
+            localStorage.getItem("edtspToken") ||
+            sessionStorage.getItem("edtspToken");
 
         const response = await fetch("http://localhost:5000/api/assessments", {
             method: "POST",

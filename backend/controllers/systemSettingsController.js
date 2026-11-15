@@ -53,7 +53,7 @@ const getPublicSystemSettings = async (req, res) => {
 // Update system settings
 const updateSystemSettings = async (req, res) => {
     try {
-        const { googleAuthEnabled, recaptchaEnabled } = req.body;
+        const { googleAuthEnabled, recaptchaEnabled } = req.body || {};
 
         if (
             typeof googleAuthEnabled !== "boolean" ||

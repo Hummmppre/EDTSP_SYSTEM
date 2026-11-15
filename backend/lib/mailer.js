@@ -316,8 +316,44 @@ async function sendAssessmentGraded({ to, name, assessmentTitle, subject, score,
     });
 }
 
+// Password reset request. The link is the only actionable part of the
+// message, so it gets a button instead of a fact row.
+async function sendPasswordResetEmail({ to, name, resetUrl, expiresMinutes = 60, replyTo }) {
+    const firstName = firstNameOf(name);
+    const subject = "Reset your EDTSP password";
+
+    const text = [
+        `Hello ${firstName},`,
+        "",
+        "We received a request to reset the password for your Esperon Dairy Training Student Portal account.",
+        "",
+        `Reset your password: ${resetUrl}`,
+        "",
+        `This link expires in ${expiresMinutes} minutes and can only be used once.`,
+        "If you did not request a password reset, you can ignore this email — your password stays unchanged.",
+        "",
+        "Esperon Dairy Training"
+    ].join("\n");
+
+    const html = `
+        <div style="font-family: Georgia, 'Times New Roman', serif; color: #161c14; line-height: 1.6; max-width: 560px;">
+            <p>Hello ${escapeHtml(firstName)},</p>
+            <p>We received a request to reset the password for your Esperon Dairy Training Student Portal account.</p>
+            <p style="margin: 24px 0;">
+                <a href="${escapeHtml(resetUrl)}" style="display: inline-block; padding: 12px 22px; background: #315c3b; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset password</a>
+            </p>
+            <p style="font-size: 12px; color: #69715f;">If the button does not work, copy this link into your browser:<br>${escapeHtml(resetUrl)}</p>
+            <p>This link expires in ${escapeHtml(String(expiresMinutes))} minutes and can only be used once. If you did not request a password reset, you can ignore this email — your password stays unchanged.</p>
+            <p style="margin-top: 24px;">Esperon Dairy Training</p>
+        </div>
+    `.trim();
+
+    return sendEmail({ to, subject, text, html, replyTo });
+}
+
 module.exports = {
     sendEmail,
+    sendPasswordResetEmail,
     sendApplicationDecision,
     sendApplicationReceived,
     sendWelcomeEmail,

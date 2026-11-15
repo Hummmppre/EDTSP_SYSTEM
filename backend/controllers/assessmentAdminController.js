@@ -19,7 +19,7 @@ const createAssessment = async (req, res) => {
     assessmentDate,
     dueDate,
     remarks
-} = req.body;
+} = req.body || {};
         // Validate required fields
         if (
             !Array.isArray(traineeIds) ||
@@ -208,7 +208,7 @@ const getAllTrainees = async (req, res) => {
 // ADMIN: Grade an assessment
 const gradeAssessment = async (req, res) => {
     try {
-        const { score, remarks } = req.body;
+        const { score, remarks } = req.body || {};
 
         if (
             score === undefined ||
@@ -218,6 +218,13 @@ const gradeAssessment = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Please provide a valid score."
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({
+                success: false,
+                message: "Assessment not found."
             });
         }
 

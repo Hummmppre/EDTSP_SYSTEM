@@ -4,11 +4,17 @@ const verifyGoogleToken = require("../utils/googleAuth");
 const User = require("../models/User");
 const SystemSettings = require("../models/SystemSettings");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
-const { sendWelcomeEmail } = require("../lib/mailer");
+const { sendWelcomeEmail, sendPasswordResetEmail } = require("../lib/mailer");
+
+// "Remember me" keeps the session for a month, otherwise it lasts a day.
+const SESSION_LIFETIME = { remembered: "30d", standard: "1d" };
+const RESET_TOKEN_TTL_MINUTES = 60;
+const RESET_TOKEN_TTL_MS = RESET_TOKEN_TTL_MINUTES * 60 * 1000;
 
 // Generate EDTSP JWT
-const generateToken = (user) => {
+const generateToken = (user, remember = false) => {
     if (!process.env.JWT_SECRET) {
         throw new Error("JWT_SECRET is missing from environment variables.");
     }
@@ -19,14 +25,21 @@ const generateToken = (user) => {
             role: user.role
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+        { expiresIn: remember ? SESSION_LIFETIME.remembered : SESSION_LIFETIME.standard }
     );
 };
+
+const hashResetToken = (token) =>
+    crypto.createHash("sha256").update(token).digest("hex");
+
+// The reset link has to open the static frontend, not the API.
+const frontendBaseUrl = () =>
+    (process.env.APP_URL || "http://localhost:5500").replace(/\/+$/, "");
 
 // TRAINEE SIGNUP
 const signup = async (req, res) => {
     try {
-        const { firstName, lastName, email, password, recaptchaToken } = req.body;
+        const { firstName, lastName, email, password, recaptchaToken } = req.body || {};
 
         // Verify reCAPTCHA only when the administrator has enabled it.
         const settings = await SystemSettings.findOne();
@@ -137,7 +150,7 @@ const signup = async (req, res) => {
 // USER LOGIN - AUTOMATIC ROLE DETECTION
 const login = async (req, res) => {
     try {
-        const { email, password, recaptchaToken } = req.body;
+        const { email, password, recaptchaToken, remember } = req.body || {};
 
         // Verify reCAPTCHA only when the administrator has enabled it.
         const settings = await SystemSettings.findOne();
@@ -206,7 +219,7 @@ const login = async (req, res) => {
             });
         }
 
-        const token = generateToken(user);
+        const token = generateToken(user, remember === true);
 
         return res.status(200).json({
             success: true,
@@ -235,7 +248,7 @@ const login = async (req, res) => {
 // GOOGLE SIGN-IN
 const googleLogin = async (req, res) => {
     try {
-        const { credential } = req.body;
+        const { credential } = req.body || {};
 
         if (!credential) {
             return res.status(400).json({
@@ -322,8 +335,129 @@ const googleLogin = async (req, res) => {
     }
 };
 
+// FORGOT PASSWORD - always answers the same way so the endpoint cannot be
+// used to discover which emails have accounts.
+const forgotPassword = async (req, res) => {
+    const genericMessage =
+        "If an account exists for that email, a password reset link has been sent.";
+
+    try {
+        const email = String((req.body && req.body.email) || "").trim();
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter your email address."
+            });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email address."
+            });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            return res.status(200).json({
+                success: true,
+                message: genericMessage
+            });
+        }
+
+        const rawToken = crypto.randomBytes(32).toString("hex");
+
+        user.resetPasswordToken = hashResetToken(rawToken);
+        user.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+        await user.save();
+
+        const mail = await sendPasswordResetEmail({
+            to: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            resetUrl: `${frontendBaseUrl()}/reset-password.html?token=${rawToken}`,
+            expiresMinutes: RESET_TOKEN_TTL_MINUTES
+        });
+
+        if (!mail.sent) {
+            console.error("Password reset email not sent:", mail.error);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: genericMessage
+        });
+
+    } catch (error) {
+        console.error("Forgot Password Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error while processing the password reset request."
+        });
+    }
+};
+
+// RESET PASSWORD - consumes a single-use token from the emailed link.
+const resetPassword = async (req, res) => {
+    try {
+        const body = req.body || {};
+        const token = String(body.token || "").trim();
+        const { password } = body;
+
+        if (!token || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a reset token and a new password."
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 8 characters."
+            });
+        }
+
+        const user = await User.findOne({
+            resetPasswordToken: hashResetToken(token),
+            resetPasswordExpires: { $gt: new Date() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "This reset link is invalid or has expired. Please request a new one."
+            });
+        }
+
+        user.password = await bcrypt.hash(password, 12);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Your password has been reset. You can now sign in."
+        });
+
+    } catch (error) {
+        console.error("Reset Password Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server error while resetting the password."
+        });
+    }
+};
+
 module.exports = {
     signup,
     login,
-    googleLogin
+    googleLogin,
+    forgotPassword,
+    resetPassword
 };

@@ -1,6 +1,8 @@
 
 const API_URL = "http://localhost:5000/api/auth";
 const SETTINGS_URL = "http://localhost:5000/api/system-settings/public";
+const GOOGLE_CLIENT_ID ="538122561006-f4vv20r15l70c7bieermrp76g7dq7qti.apps.googleusercontent.com";
+
 
 let authSettings = {
     googleAuthEnabled: false,
@@ -75,7 +77,7 @@ function applyAuthSettings() {
     }
 
     if (authSettings.googleAuthEnabled) {
-        loadGoogleScript();
+        setupGoogleButton();
     }
 }
 
@@ -94,43 +96,68 @@ function loadRecaptchaScript() {
     document.body.appendChild(script);
 }
 
-function loadGoogleScript() {
-    if (document.getElementById("googleIdentityScript")) return;
 
-    const script = document.createElement("script");
-    script.id = "googleIdentityScript";
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
+// =============================
+// GOOGLE SIGN-IN (IDENTITY SERVICES)
+// =============================
 
-    script.onload = () => {
-        if (window.google && google.accounts && google.accounts.id) {
-            google.accounts.id.initialize({
-                client_id: "538122561006-f4vv20r15l70c7bieermrp76g7dq7qti.apps.googleusercontent.com",
-                callback: window.handleGoogleSignIn,
-                auto_select: false
-            });
+function setupGoogleButton() {
+    const container = document.getElementById("googleSection");
 
-            const buttonContainer =
-                document.querySelector(".g_id_signin");
+    if (!container) return;
 
-            if (buttonContainer) {
-                google.accounts.id.renderButton(buttonContainer, {
-                    type: "standard",
-                    size: "large",
-                    theme: "outline",
-                    text: document.getElementById("registerForm")
-                        ? "signup_with"
-                        : "signin_with",
-                    shape: "rectangular",
-                    logo_alignment: "left",
-                    width: 320
-                });
-            }
-        }
-    };
+    // Prepare the button container.
+    container.replaceChildren();
 
-    document.head.appendChild(script);
+    // Load Google Identity Services only once.
+    let script = document.getElementById("googleIdentityScript");
+
+    if (window.google?.accounts?.id) {
+        renderGoogleButton(container);
+        return;
+    }
+
+    if (!script) {
+        script = document.createElement("script");
+        script.id = "googleIdentityScript";
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+
+        script.onload = () => renderGoogleButton(container);
+
+        script.onerror = () => {
+            showToast("Unable to load Google Sign-In. Please try again.", "error");
+        };
+
+        document.head.appendChild(script);
+    } else {
+        script.addEventListener("load", () => renderGoogleButton(container), {
+            once: true
+        });
+    }
+}
+
+function renderGoogleButton(container) {
+    if (!window.google?.accounts?.id) {
+        showToast("Google Sign-In is not available. Please refresh the page.", "error");
+        return;
+    }
+
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: window.handleGoogleSignIn,
+        ux_mode: "popup"
+    });
+
+    google.accounts.id.renderButton(container, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "rectangular",
+        width: 280
+    });
 }
 
 // =============================
@@ -165,9 +192,15 @@ function redirectByRole(role) {
 // SAVE AUTHENTICATION DATA
 // =============================
 
-function saveAuthentication(data) {
-    localStorage.setItem("edtspToken", data.token);
-    localStorage.setItem("edtspUser", JSON.stringify(data.user));
+function saveAuthentication(data, remember = false) {
+    const storage = remember ? localStorage : sessionStorage;
+    const otherStorage = remember ? sessionStorage : localStorage;
+
+    otherStorage.removeItem("edtspToken");
+    otherStorage.removeItem("edtspUser");
+
+    storage.setItem("edtspToken", data.token);
+    storage.setItem("edtspUser", JSON.stringify(data.user));
 }
 
 // =============================
@@ -208,7 +241,7 @@ window.handleGoogleSignIn = async function (response) {
     return;
 }
 
-        saveAuthentication(data);
+        saveAuthentication(data, false);
         redirectByRole(data.user.role);
 
     } catch (error) {
@@ -251,6 +284,8 @@ if (loginForm) {
 
         const email = document.getElementById("loginEmail").value.trim();
         const password = document.getElementById("loginPassword").value;
+        const rememberField = document.getElementById("loginRemember");
+        const remember = rememberField ? rememberField.checked : false;
 
         if (!email || !password) {
         showToast("Please complete all required fields.", "error");         
@@ -278,7 +313,8 @@ if (loginForm) {
                 body: JSON.stringify({
                     email,
                     password,
-                    recaptchaToken
+                    recaptchaToken,
+                    remember
                 })
             });
 
@@ -294,7 +330,7 @@ if (loginForm) {
             return;
         }
 
-            saveAuthentication(data);
+            saveAuthentication(data, remember);
             alert("Login successful! Welcome, " + data.user.firstName + ".");
             redirectByRole(data.user.role);
 
@@ -408,5 +444,5 @@ if (registerForm) {
     });
 }
 
-// Load settings before users can submit either form
+// Load authentication settings.
 loadAuthSettings();

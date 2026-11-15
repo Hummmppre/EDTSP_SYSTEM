@@ -6,14 +6,6 @@ const protect = (req, res, next) => {
         // Get the token from the request header
         const authHeader = req.headers.authorization;
 
-        console.log("Authorization header received:", !!authHeader);
-console.log(
-    "Authorization header starts correctly:",
-    authHeader ? authHeader.startsWith("Bearer ") : false
-
-
-);
-
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return res.status(401).json({
                 success: false,

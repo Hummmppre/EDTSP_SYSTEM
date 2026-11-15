@@ -172,6 +172,45 @@
                         </div>
                     </section>
 
+                    <section class="panel" id="startPanel" hidden aria-labelledby="start-title">
+                        <header class="panel__head">
+                            <h2 id="start-title" tabindex="-1">Ready to apply?</h2>
+                            <span class="panel__meta">Application</span>
+                        </header>
+
+                        <div class="start__outcome" id="startOutcome" hidden>
+                            <div class="start__outcome-head">
+                                <span class="status-badge" id="startOutcomeBadge">Rejected</span>
+                                <span class="start__outcome-date" id="startOutcomeDate"></span>
+                            </div>
+
+                            <p class="start__outcome-note" id="startOutcomeNote" hidden></p>
+                        </div>
+
+                        <div class="state">
+                            <strong>Have these ready before you begin.</strong>
+                            <ul class="start__requirements">
+                                <li>Your details and an emergency contact</li>
+                                <li>A Curriculum Vitae and a valid ID — PDF, JPG or PNG, up to 10 MB each</li>
+                                <li>About 10 minutes, in one sitting</li>
+                            </ul>
+                            <p>One application at a time. You can withdraw it while the office is reviewing.</p>
+                        </div>
+
+                        <p class="field__hint" id="startDraftHint" hidden></p>
+
+                        <div class="wizard__actions">
+                            <button class="btn btn--ghost" id="startOverBtn" type="button" hidden>Start over</button>
+                            <button class="btn btn--ghost" id="startCheckBtn" type="button" hidden>Check again</button>
+                            <div class="wizard__actions-end">
+                                <button class="btn btn--primary" id="startApplyBtn" type="button">Start application</button>
+                            </div>
+                        </div>
+
+                        <p class="field__hint" id="startReason" role="status" hidden></p>
+                        <p class="field__error" id="startError" role="alert" hidden></p>
+                    </section>
+
                     <section class="panel" id="statusPanel" hidden aria-labelledby="status-title">
                         <header class="panel__head">
                             <h2 id="status-title">Your application</h2>
@@ -206,8 +245,16 @@
                             </div>
                         </dl>
 
+                        <div class="documents" id="statusDocuments" hidden>
+                            <h3 class="documents__title">Documents</h3>
+                            <div id="statusDocumentList"></div>
+                            <p class="field__error" id="statusDocumentError" role="alert" hidden></p>
+                            <p class="field__hint">
+                                You can replace or remove a file until the training office records a decision.
+                            </p>
+                        </div>
+
                         <div class="wizard__actions">
-                            <button class="btn btn--primary" id="applyAgainBtn" type="button" hidden>Apply for training</button>
                             <button class="btn btn--ghost" id="withdrawBtn" type="button" hidden>Withdraw application</button>
                             <a class="btn btn--ghost" href="dashboard.html">Back to dashboard</a>
                         </div>
@@ -215,9 +262,14 @@
 
                     <section class="panel" id="wizardPanel" hidden aria-labelledby="wizard-title">
                         <header class="panel__head">
-                            <h2 id="wizard-title">Application form</h2>
-                            <span class="panel__meta" id="wizardMeta">Step 1 of 5</span>
+                            <h2 id="wizard-title" tabindex="-1">Application form</h2>
+                            <span class="panel__meta" id="wizardMeta">Step 1 of 6</span>
                         </header>
+
+                        <p class="draft-note" id="draftBanner" role="status" hidden>
+                            <span id="draftBannerText"></span>
+                            <button class="document-link" id="draftBannerDismiss" type="button">Dismiss</button>
+                        </p>
 
                         <ol class="process process--steps" id="wizardSteps">
                             <li data-step="1">
@@ -242,6 +294,11 @@
                             </li>
                             <li data-step="5">
                                 <span class="process__num">05</span>
+                                <strong>Documents</strong>
+                                <p>CV and valid ID</p>
+                            </li>
+                            <li data-step="6">
+                                <span class="process__num">06</span>
                                 <strong>Review</strong>
                                 <p>Check and submit</p>
                             </li>
@@ -380,6 +437,52 @@
                             </div>
 
                             <div class="wizard__step" data-step="5" hidden>
+                                <div class="form-grid">
+
+                                    <div class="field field--full" id="cvDocumentField">
+                                        <label class="field__label" for="cvFiles">
+                                            Curriculum Vitae <span class="field__hint">(required)</span>
+                                        </label>
+
+                                        <div class="document-picker">
+                                            <input class="document-picker__input" id="cvFiles" type="file"
+                                                   multiple accept=".pdf,.jpg,.jpeg,.png">
+                                            <span class="btn btn--ghost btn--sm">Choose files</span>
+                                        </div>
+
+                                        <p class="field__hint">PDF, JPG or PNG · up to 10 MB each.</p>
+
+                                        <ul class="document-list" id="cvList" aria-label="Curriculum Vitae files"></ul>
+
+                                        <p class="field__hint draft-files" id="cvDraftHint" hidden></p>
+                                    </div>
+
+                                    <div class="field field--full" id="validIdDocumentField">
+                                        <label class="field__label" for="validIdFiles">
+                                            Valid ID <span class="field__hint">(required)</span>
+                                        </label>
+
+                                        <div class="document-picker">
+                                            <input class="document-picker__input" id="validIdFiles" type="file"
+                                                   multiple accept=".pdf,.jpg,.jpeg,.png">
+                                            <span class="btn btn--ghost btn--sm">Choose files</span>
+                                        </div>
+
+                                        <p class="field__hint">PDF, JPG or PNG · up to 10 MB each.</p>
+
+                                        <ul class="document-list" id="validIdList" aria-label="Valid ID files"></ul>
+
+                                        <p class="field__hint draft-files" id="validIdDraftHint" hidden></p>
+                                    </div>
+
+                                    <p class="field__hint field--full">
+                                        Only you and the training office can open these files. They are stored
+                                        with your application and are not shared anywhere else.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="wizard__step" data-step="6" hidden>
                                 <div class="review" id="reviewSummary"></div>
                                 <p class="field__hint">
                                     Submitting sends this application for review. You cannot edit it afterwards,
@@ -390,6 +493,7 @@
                             <p class="field__error" id="submitError" role="alert" hidden></p>
 
                             <div class="wizard__actions">
+                                <button class="btn btn--ghost" id="backToOverviewBtn" type="button">Back to overview</button>
                                 <button class="btn btn--ghost" id="backBtn" type="button" hidden>Back</button>
                                 <div class="wizard__actions-end">
                                     <button class="btn btn--primary" id="nextBtn" type="button">Next</button>

@@ -5,6 +5,7 @@ const TraineeProfile = require("../models/TraineeProfile");
 const Batch = require("../models/Batch");
 const Counter = require("../models/Counter");
 const { sendApplicationDecision } = require("../lib/mailer");
+const { streamDocumentFile, MESSAGES } = require("../lib/documentUpload");
 
 const STATUSES = [
     "Submitted",
@@ -139,13 +140,15 @@ const getApplication = async (req, res) => {
             });
         }
 
-        const previousApplications = await TrainingApplication.find({
-            user: application.user._id,
-            _id: { $ne: application._id }
-        })
-            .select("status submittedAt decidedAt program")
-            .populate("program", "name")
-            .sort({ submittedAt: -1 });
+        const previousApplications = application.user
+            ? await TrainingApplication.find({
+                user: application.user._id,
+                _id: { $ne: application._id }
+            })
+                .select("status submittedAt decidedAt program")
+                .populate("program", "name")
+                .sort({ submittedAt: -1 })
+            : [];
 
         return res.status(200).json({
             success: true,
@@ -371,10 +374,66 @@ const exportApplications = async (req, res) => {
     }
 };
 
+// ADMIN: Open a document attached to any application
+const downloadApplicationDocument = async (req, res) => {
+    try {
+        if (
+            !mongoose.Types.ObjectId.isValid(req.params.id) ||
+            !mongoose.Types.ObjectId.isValid(req.params.fileId)
+        ) {
+            return res.status(404).json({
+                success: false,
+                message: "Application not found."
+            });
+        }
+
+        const application = await TrainingApplication.findById(req.params.id);
+
+        if (!application) {
+            return res.status(404).json({
+                success: false,
+                message: "Application not found."
+            });
+        }
+
+        let file = null;
+
+        (application.documents || []).forEach(entry => {
+            (entry.files || []).forEach(candidate => {
+                if (String(candidate.fileId) === String(req.params.fileId)) {
+                    file = candidate;
+                }
+            });
+        });
+
+        if (!file) {
+            return res.status(404).json({
+                success: false,
+                message: "That document was not found on this application."
+            });
+        }
+
+        return await streamDocumentFile(res, file);
+
+    } catch (error) {
+        console.error("Download application document error:", error);
+
+        if (res.headersSent) {
+            return res.end();
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: MESSAGES.unavailable
+        });
+    }
+};
+
 module.exports = {
     getAllApplications,
     getPendingCount,
     getApplication,
     decideApplication,
-    exportApplications
+    exportApplications,
+    downloadApplicationDocument
 };

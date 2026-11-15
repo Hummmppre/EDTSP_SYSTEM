@@ -5,7 +5,9 @@ const router = express.Router();
 const {
     signup,
     login,
-    googleLogin
+    googleLogin,
+    forgotPassword,
+    resetPassword
 } = require("../controllers/authController");
 
 // Trainee registration
@@ -16,5 +18,9 @@ router.post("/login", login);
 
 // Google Sign-In
 router.post("/google", googleLogin);
+
+// Password recovery
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

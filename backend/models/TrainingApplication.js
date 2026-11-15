@@ -1,5 +1,58 @@
 const mongoose = require("mongoose");
 
+// One file attached to a document: the GridFS pointer plus what the office
+// needs to list it without asking the bucket.
+const documentFileSchema = new mongoose.Schema(
+    {
+        fileId: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true
+        },
+
+        filename: {
+            type: String,
+            required: true
+        },
+
+        contentType: {
+            type: String,
+            required: true
+        },
+
+        size: {
+            type: Number,
+            required: true
+        },
+
+        uploadedAt: {
+            type: Date,
+            default: Date.now
+        },
+
+        // Set only when the file was carried over from an earlier application
+        // by the same trainee.
+        reusedFrom: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "TrainingApplication",
+            default: null
+        }
+    },
+    { _id: false }
+);
+
+const applicationDocumentSchema = new mongoose.Schema(
+    {
+        type: {
+            type: String,
+            enum: ["cv", "valid_id"],
+            required: true
+        },
+
+        files: [documentFileSchema]
+    },
+    { _id: false }
+);
+
 const applicationSchema = new mongoose.Schema(
     {
         user: {
@@ -115,6 +168,10 @@ const applicationSchema = new mongoose.Schema(
             type: Boolean,
             required: true
         },
+
+        // Curriculum Vitae + Valid ID. The blobs live in GridFS; these entries
+        // are only the pointers and the metadata the office needs to review.
+        documents: [applicationDocumentSchema],
 
         status: {
             type: String,

@@ -1,6 +1,7 @@
 
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 console.log("MONGODB_URI exists:", !!process.env.MONGODB_URI);
@@ -52,6 +53,11 @@ app.use("/api/admin/batches", batchRoutes);
 const adminTraineeRoutes = require("./routes/adminTraineeRoutes");
 app.use("/api/admin/trainees", adminTraineeRoutes);
 
+// Cow maintenance routes (admin + trainee)
+const { adminCowRoutes, traineeCowRoutes } = require("./routes/cowRoutes");
+app.use("/api/admin/cows", adminCowRoutes);
+app.use("/api/trainee/cows", traineeCowRoutes);
+
 // Test route
 app.get("/", (req, res) => {
     res.send("EDTSP Backend API is running!");
@@ -59,10 +65,12 @@ app.get("/", (req, res) => {
 
 // Health check route
 app.get("/api/health", (req, res) => {
+    const states = ["Disconnected", "Connected", "Connecting", "Disconnecting"];
+
     res.json({
         success: true,
         message: "EDTSP Backend API is running!",
-        database: "Connected"
+        database: states[mongoose.connection.readyState] || "Unknown"
     });
 });
 

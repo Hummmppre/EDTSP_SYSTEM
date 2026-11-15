@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const Payment = require("../models/Payment");
-const TrainingApplication = require("../models/TrainingApplication");
 const Counter = require("../models/Counter");
 const {
     buildPaymentAccounts,
@@ -82,20 +81,28 @@ const listPayments = async (req, res) => {
     }
 };
 
-// ADMIN: one program account with its full payment history
+function findAccount(accounts, accountId) {
+    const value = String(accountId || "");
+
+    return accounts.find(
+        item => item.id === value || (item.applicationId && item.applicationId === value)
+    ) || null;
+}
+
+function accountPaymentFilter(account) {
+    return {
+        user: new mongoose.Types.ObjectId(account.userId),
+        program: account.programId
+            ? new mongoose.Types.ObjectId(account.programId)
+            : null
+    };
+}
+
+// ADMIN: one trainee account with its full payment history
 const getPaymentAccount = async (req, res) => {
     try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.applicationId)) {
-            return res.status(404).json({
-                success: false,
-                message: "Payment account not found."
-            });
-        }
-
         const { accounts } = await buildPaymentAccounts();
-        const account = accounts.find(
-            item => item.applicationId === String(req.params.applicationId)
-        );
+        const account = findAccount(accounts, req.params.accountId);
 
         if (!account) {
             return res.status(404).json({
@@ -104,7 +111,7 @@ const getPaymentAccount = async (req, res) => {
             });
         }
 
-        const payments = await Payment.find({ application: req.params.applicationId })
+        const payments = await Payment.find(accountPaymentFilter(account))
             .populate("user", "firstName lastName")
             .populate("program", "name")
             .sort({ paymentDate: -1, createdAt: -1 })
@@ -128,10 +135,11 @@ const getPaymentAccount = async (req, res) => {
     }
 };
 
-// ADMIN: record a payment against an approved application
+// ADMIN: record a payment for an enrolled trainee account
 const recordPayment = async (req, res) => {
     try {
         const {
+            accountId,
             applicationId,
             amount,
             paymentDate,
@@ -140,22 +148,29 @@ const recordPayment = async (req, res) => {
             remarks
         } = req.body || {};
 
-        if (!isValidObjectId(applicationId)) {
+        const requestedAccount = String(accountId || applicationId || "").trim();
+
+        if (!requestedAccount) {
             return res.status(400).json({
                 success: false,
                 message: "Please choose a trainee account."
             });
         }
 
-        const application = await TrainingApplication.findOne({
-            _id: applicationId,
-            status: "Approved"
-        }).lean();
+        const { accounts } = await buildPaymentAccounts();
+        const account = findAccount(accounts, requestedAccount);
 
-        if (!application) {
+        if (!account) {
             return res.status(404).json({
                 success: false,
                 message: "Payment account not found."
+            });
+        }
+
+        if (account.needsProgram) {
+            return res.status(400).json({
+                success: false,
+                message: "Assign this trainee to a program before recording a payment."
             });
         }
 
@@ -228,9 +243,9 @@ const recordPayment = async (req, res) => {
         }
 
         const payment = await createPayment({
-            application: application._id,
-            user: application.user,
-            program: application.program,
+            application: account.applicationId || null,
+            user: account.userId,
+            program: account.programId,
             amount: parsedAmount,
             paymentDate: parsedDate,
             method,
@@ -239,17 +254,14 @@ const recordPayment = async (req, res) => {
             recordedBy: req.user && req.user.id
         });
 
-        const { accounts, summary } = await buildPaymentAccounts();
-        const account = accounts.find(
-            item => item.applicationId === String(application._id)
-        ) || null;
+        const refreshed = await buildPaymentAccounts();
 
         return res.status(201).json({
             success: true,
             message: "Payment recorded successfully.",
             payment,
-            account,
-            summary
+            account: findAccount(refreshed.accounts, requestedAccount),
+            summary: refreshed.summary
         });
 
     } catch (error) {
@@ -276,10 +288,6 @@ async function createPayment(values) {
             throw error;
         }
     }
-}
-
-function isValidObjectId(value) {
-    return Boolean(value) && mongoose.Types.ObjectId.isValid(String(value));
 }
 
 module.exports = {

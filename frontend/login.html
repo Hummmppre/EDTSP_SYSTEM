@@ -87,14 +87,13 @@
 
                     <div class="form-options">
                         <label class="remember-option">
-                            <input type="checkbox" name="remember">
+                            <input type="checkbox" id="loginRemember" name="remember">
                             Remember me
                         </label>
-                        <a href="#" class="forgot-link">Forgot Password?</a>
+                        <a href="forgot-password.html" class="forgot-link">Forgot Password?</a>
                     </div>
 
 <div class="form-group captcha-container" id="captchaSection">        
-                    <div  class="g-recaptcha" data-sitekey="6LfqhRsuAAAAAA4ms7noitso_VRPfhhDEAvhRVh2"></div>
                          
                     </div>
 
@@ -108,25 +107,8 @@
                     <span>OR</span>
                 </div>
 
-                <!-- Google Sign-In -->
-                <div id="g_id_onload"
-                    data-client_id="538122561006-f4vv20r15l70c7bieermrp76g7dq7qti.apps.googleusercontent.com"
-                    data-callback="handleGoogleSignIn"
-                    data-auto_prompt="false">
-                </div>
-
-                <div class="google-button-container" id="googleSection">
-                    <div
-                        class="g_id_signin"
-                        data-type="standard"
-                        data-size="large"
-                        data-theme="outline"
-                        data-text="signin_with"
-                        data-shape="rectangular"
-                        data-logo_alignment="left"
-                        data-width="320">
-                    </div>
-                </div>
+                <!-- Google Sign-In is rendered by auth.js (redirect flow) -->
+                <div class="google-button-container" id="googleSection"></div>
 
                 <p class="auth-switch">
                     Don't have an account?

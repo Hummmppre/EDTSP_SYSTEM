@@ -1,7 +1,11 @@
 
 document.addEventListener("DOMContentLoaded", () => {
-    const token = localStorage.getItem("edtspToken");
-    const userData = localStorage.getItem("edtspUser");
+    const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
+    const userData =
+    localStorage.getItem("edtspUser") ||
+    sessionStorage.getItem("edtspUser");
 
     // Check whether the user is logged in
     if (!token || !userData) {
@@ -16,6 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
         localStorage.removeItem("edtspToken");
         localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
         window.location.href = "../login.html";
         return;
     }
@@ -35,7 +41,8 @@ document.addEventListener("DOMContentLoaded", () => {
         logoutBtn.addEventListener("click", () => {
             localStorage.removeItem("edtspToken");
             localStorage.removeItem("edtspUser");
-
+            sessionStorage.removeItem("edtspToken");
+            sessionStorage.removeItem("edtspUser");
             window.location.href = "../login.html";
         });
     }

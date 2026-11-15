@@ -36,12 +36,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let openTrainee = null;
 
     const authHeaders = () => ({
-        Authorization: `Bearer ${localStorage.getItem("edtspToken") || ""}`
+        Authorization: `Bearer ${
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken") ||
+    ""  
+}`
     });
 
     function handleUnauthorized() {
         localStorage.removeItem("edtspToken");
         localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
         window.location.href = "../login.html";
     }
 

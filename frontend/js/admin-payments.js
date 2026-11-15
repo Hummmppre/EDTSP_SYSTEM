@@ -36,13 +36,19 @@ document.addEventListener("DOMContentLoaded", () => {
     function authHeaders(extra = {}) {
         return {
             ...extra,
-            Authorization: `Bearer ${localStorage.getItem("edtspToken") || ""}`
+            Authorization: `Bearer ${
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken") ||
+    ""
+}`
         };
     }
 
     function handleUnauthorized() {
         localStorage.removeItem("edtspToken");
         localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
         window.location.href = "../login.html";
     }
 
@@ -167,6 +173,14 @@ document.addEventListener("DOMContentLoaded", () => {
             cell.appendChild(note);
         }
 
+        if (account.notEnrolled) {
+            const note = document.createElement("small");
+
+            note.className = "field-note";
+            note.textContent = "Not currently enrolled";
+            cell.appendChild(note);
+        }
+
         return cell;
     }
 
@@ -174,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const row = document.createElement("tr");
 
         row.dataset.status = account.status;
-        row.dataset.applicationId = account.applicationId;
+        row.dataset.accountId = account.id;
 
         const cells = [
             { text: account.traineeId || "—", className: "id" },
@@ -207,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "aria-label",
             `View payments for ${account.fullName}${account.programName ? ` — ${account.programName}` : ""}`
         );
-        viewButton.addEventListener("click", () => openDetails(account.applicationId));
+        viewButton.addEventListener("click", () => openDetails(account.id));
 
         actionCell.appendChild(viewButton);
         row.appendChild(actionCell);
@@ -230,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (emptyState) {
                 emptyState.textContent =
-                    "No approved trainee accounts yet. Approve an application to start recording payments.";
+                    "No enrolled trainees yet. Enrol a trainee in a program to start recording payments.";
                 emptyState.hidden = false;
             }
 
@@ -353,14 +367,14 @@ document.addEventListener("DOMContentLoaded", () => {
         placeholder.value = "";
         placeholder.textContent = list.length
             ? "Select a trainee account"
-            : "No approved trainee accounts";
+            : "No enrolled trainee accounts";
         select.appendChild(placeholder);
 
         list.forEach(account => {
             const option = document.createElement("option");
             const idLabel = account.traineeId || "no ID";
 
-            option.value = account.applicationId;
+            option.value = account.id;
             option.textContent =
                 `${account.fullName} — ${account.programName || "Program unavailable"} ` +
                 `(${idLabel}) · ${money(account.balance)} left`;
@@ -445,7 +459,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
-                    applicationId: trainee.value,
+                    accountId: trainee.value,
                     amount,
                     paymentDate: dateInput.value,
                     method,
@@ -568,7 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    async function openDetails(applicationId) {
+    async function openDetails(accountId) {
         detailsModal.classList.add("show");
         detailsSubtitle.textContent = "Loading...";
         detailsFacts.innerHTML = "";
@@ -577,9 +591,12 @@ document.addEventListener("DOMContentLoaded", () => {
         detailsEmpty.hidden = true;
 
         try {
-            const response = await fetch(`${PAYMENTS_API_URL}/${applicationId}`, {
-                headers: authHeaders()
-            });
+            const response = await fetch(
+                `${PAYMENTS_API_URL}/${encodeURIComponent(accountId)}`,
+                {
+                    headers: authHeaders()
+                }
+            );
 
             if (response.status === 401) {
                 handleUnauthorized();

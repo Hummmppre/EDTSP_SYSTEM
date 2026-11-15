@@ -48,13 +48,14 @@ const getMyProfile = async (req, res) => {
 const updateMyProfile = async (req, res) => {
     try {
         const allowedFields = ["phone", "address"];
+        const body = req.body || {};
 
         const updates = {};
 
         // Accept only fields that trainees are allowed to update
         allowedFields.forEach((field) => {
-            if (req.body[field] !== undefined) {
-                updates[field] = req.body[field];
+            if (body[field] !== undefined) {
+                updates[field] = body[field];
             }
         });
 

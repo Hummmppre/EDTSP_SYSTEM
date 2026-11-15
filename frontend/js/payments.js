@@ -48,6 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function handleUnauthorized() {
         localStorage.removeItem("edtspToken");
         localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
         window.location.href = "../login.html";
     }
 
@@ -170,7 +172,11 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch(MY_PAYMENTS_API_URL, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("edtspToken") || ""}`
+                    Authorization: `Bearer ${
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken") ||
+    ""
+}`
                 }
             });
 

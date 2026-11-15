@@ -14,11 +14,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!tableBody) return;
 
-    const token = localStorage.getItem("edtspToken");
+   const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
 
     function redirectToLogin() {
         localStorage.removeItem("edtspToken");
         localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
         window.location.href = "../login.html";
     }
 

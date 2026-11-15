@@ -4,7 +4,9 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     const API_BASE = "http://localhost:5000/api";
-    const token = localStorage.getItem("edtspToken");
+    const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
 
     if (!token) return;
 
@@ -133,6 +135,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.status === 401) {
             localStorage.removeItem("edtspToken");
             localStorage.removeItem("edtspUser");
+            sessionStorage.removeItem("edtspToken");
+            sessionStorage.removeItem("edtspUser");
             window.location.href = "../login.html";
             throw new Error("Session expired.");
         }

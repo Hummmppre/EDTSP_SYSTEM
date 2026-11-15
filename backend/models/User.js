@@ -46,6 +46,15 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: ["active", "inactive"],
             default: "active"
+        },
+
+        // Only the SHA-256 hash of the emailed token is stored.
+        resetPasswordToken: {
+            type: String
+        },
+
+        resetPasswordExpires: {
+            type: Date
         }
     },
     {

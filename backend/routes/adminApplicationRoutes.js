@@ -6,7 +6,8 @@ const {
     getPendingCount,
     getApplication,
     decideApplication,
-    exportApplications
+    exportApplications,
+    downloadApplicationDocument
 } = require("../controllers/applicationAdminController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
@@ -16,6 +17,7 @@ router.get("/pending-count", protect, adminOnly, getPendingCount);
 router.get("/export", protect, adminOnly, exportApplications);
 
 router.get("/", protect, adminOnly, getAllApplications);
+router.get("/:id/documents/:fileId", protect, adminOnly, downloadApplicationDocument);
 router.get("/:id", protect, adminOnly, getApplication);
 router.post("/:id/decision", protect, adminOnly, decideApplication);
 

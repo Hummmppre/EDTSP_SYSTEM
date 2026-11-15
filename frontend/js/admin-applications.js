@@ -4,8 +4,9 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     const API_BASE = "http://localhost:5000/api";
-    const token = localStorage.getItem("edtspToken");
-
+const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
     if (!token) return;
 
     const STATUS_STYLES = {
@@ -14,6 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
         "Approved": { label: "Approved", className: "approved" },
         "Rejected": { label: "Rejected", className: "rejected" },
         "Withdrawn": { label: "Withdrawn", className: "withdrawn" }
+    };
+
+    const DOCUMENT_LABELS = {
+        cv: "Curriculum Vitae",
+        valid_id: "Valid ID"
     };
 
     const state = {
@@ -38,6 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
         modalTitle: document.getElementById("applicationModalTitle"),
         modalSubtitle: document.getElementById("applicationModalSubtitle"),
         detailFacts: document.getElementById("applicationDetailFacts"),
+        documentsWrap: document.getElementById("applicationDocumentsWrap"),
+        documents: document.getElementById("applicationDocuments"),
+        documentsError: document.getElementById("applicationDocumentsError"),
         priorWrap: document.getElementById("applicationPriorWrap"),
         prior: document.getElementById("applicationPrior"),
         form: document.getElementById("decisionForm"),
@@ -49,8 +58,133 @@ document.addEventListener("DOMContentLoaded", () => {
         close: document.getElementById("closeApplicationModal")
     };
 
-    function formatDate(value) {
-        if (!value) return "—";
+    function formatBytes(bytes) {
+        const value = Number(bytes) || 0;
+
+        if (value >= 1024 * 1024) {
+            return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+        }
+
+        if (value >= 1024) {
+            return `${Math.round(value / 1024)} KB`;
+        }
+
+        return `${value} B`;
+    }
+
+    async function downloadDocument(applicationId, fileId, filename, button) {
+        const label = button.textContent;
+
+        button.disabled = true;
+        button.textContent = "Preparing…";
+        elements.documentsError.hidden = true;
+
+        try {
+            const response = await fetch(
+                `${API_BASE}/admin/applications/${applicationId}/documents/${fileId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.status === 401) {
+                localStorage.removeItem("edtspToken");
+                localStorage.removeItem("edtspUser");
+                sessionStorage.removeItem("edtspToken");
+                sessionStorage.removeItem("edtspUser");
+                window.location.href = "../login.html";
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    "That file could not be opened. It may no longer be available."
+                );
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = filename || "document";
+
+            document.body.append(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            elements.documentsError.textContent =
+                error.message || "That file could not be opened.";
+            elements.documentsError.hidden = false;
+        } finally {
+            button.disabled = false;
+            button.textContent = label;
+        }
+    }
+
+    function renderDocuments(application) {
+        const entries = (application.documents || []).filter(
+            entry => (entry.files || []).length
+        );
+
+        elements.documents.innerHTML = "";
+        elements.documentsWrap.hidden = !entries.length;
+        elements.documentsError.hidden = true;
+
+        entries.forEach(entry => {
+            const block = document.createElement("div");
+            block.className = "document";
+
+            const head = document.createElement("div");
+            head.className = "document__head";
+            head.textContent = DOCUMENT_LABELS[entry.type] || entry.type;
+
+            const list = document.createElement("ul");
+            list.className = "document-list";
+
+            entry.files.forEach(file => {
+                const item = document.createElement("li");
+                item.className = "document-list__item";
+
+                const name = document.createElement("span");
+                name.className = "document-list__name";
+                name.textContent = file.filename;
+
+                const meta = document.createElement("span");
+                meta.className = "document-list__size";
+                meta.textContent = `${formatBytes(file.size)} · ${formatDate(file.uploadedAt)}`;
+
+                const download = document.createElement("button");
+                download.type = "button";
+                download.className = "document-link";
+                download.textContent = "Download";
+                download.addEventListener("click", () =>
+                    downloadDocument(
+                        application._id,
+                        file.fileId,
+                        file.filename,
+                        download
+                    )
+                );
+
+                item.append(name, meta, download);
+
+                if (file.reusedFrom) {
+                    const note = document.createElement("span");
+                    note.className = "document-list__note";
+                    note.textContent = "from a previous application";
+                    item.append(note);
+                }
+
+                list.append(item);
+            });
+
+            block.append(head, list);
+            elements.documents.append(block);
+        });
+    }
+
+    function formatDate(value) {        if (!value) return "—";
 
         const date = new Date(value);
 
@@ -81,6 +215,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.status === 401) {
             localStorage.removeItem("edtspToken");
             localStorage.removeItem("edtspUser");
+            sessionStorage.removeItem("edtspToken");
+            sessionStorage.removeItem("edtspUser");
             window.location.href = "../login.html";
             throw new Error("Session expired.");
         }
@@ -301,6 +437,8 @@ document.addEventListener("DOMContentLoaded", () => {
             addFact("Public message", application.publicNote || "None");
             addFact("Internal note", application.internalNote || "None");
 
+            renderDocuments(application);
+
             elements.prior.innerHTML = "";
             elements.priorWrap.hidden = !data.previousApplications.length;
 
@@ -421,6 +559,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.status === 401) {
                 localStorage.removeItem("edtspToken");
                 localStorage.removeItem("edtspUser");
+                sessionStorage.removeItem("edtspToken");
+                sessionStorage.removeItem("edtspUser");
                 window.location.href = "../login.html";
                 return;
             }

@@ -21,6 +21,7 @@ The API runs on `http://localhost:5000` by default.
 | `JWT_SECRET` | Secret used to sign login tokens |
 | `BREVO_API_KEY` | Brevo transactional email API key |
 | `MAIL_FROM` | Sender identity, e.g. `Esperon Dairy Training Student Portal <no-reply@example.com>` |
+| `APP_URL` | Public frontend URL used in emailed password reset links (defaults to `http://localhost:5500`) |
 
 `MAIL_FROM` may also be supplied as separate `MAIL_FROM_EMAIL` and `MAIL_FROM_NAME` values.
 

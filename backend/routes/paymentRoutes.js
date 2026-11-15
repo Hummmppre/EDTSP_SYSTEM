@@ -16,7 +16,7 @@ const adminPaymentRoutes = express.Router();
 adminPaymentRoutes.use(protect, adminOnly);
 
 adminPaymentRoutes.get("/", listPayments);
-adminPaymentRoutes.get("/:applicationId", getPaymentAccount);
+adminPaymentRoutes.get("/:accountId", getPaymentAccount);
 adminPaymentRoutes.post("/", recordPayment);
 
 // /api/trainee/payments

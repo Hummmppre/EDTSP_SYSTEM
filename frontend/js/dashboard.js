@@ -5,8 +5,19 @@
 
 const API_URL = "http://localhost:5000/api/trainee";
 
-const token = localStorage.getItem("edtspToken");
-const userData = localStorage.getItem("edtspUser");
+const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
+
+const userData =
+    localStorage.getItem("edtspUser") ||
+    sessionStorage.getItem("edtspUser");
+
+// The token decides where the session lives: "remember me" uses localStorage,
+// otherwise sessionStorage. Keep updates in the same place as the token.
+const authStorage = localStorage.getItem("edtspToken")
+    ? localStorage
+    : sessionStorage;
 
 let user = null;
 let traineeProfile = null;
@@ -24,12 +35,16 @@ if (!token || !userData) {
         if (!user || user.role !== "trainee") {
             localStorage.removeItem("edtspToken");
             localStorage.removeItem("edtspUser");
+            sessionStorage.removeItem("edtspToken");
+            sessionStorage.removeItem("edtspUser");
             window.location.href = "../login.html";
         }
 
     } catch (error) {
         localStorage.removeItem("edtspToken");
         localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
         window.location.href = "../login.html";
     }
 }
@@ -66,6 +81,8 @@ async function loadTraineeProfile() {
         if (response.status === 401) {
             localStorage.removeItem("edtspToken");
             localStorage.removeItem("edtspUser");
+            sessionStorage.removeItem("edtspToken");
+            sessionStorage.removeItem("edtspUser");
             window.location.href = "../login.html";
             return;
         }
@@ -78,7 +95,7 @@ async function loadTraineeProfile() {
         traineeProfile = data.profile;
 
         // Update saved account information
-        localStorage.setItem("edtspUser", JSON.stringify(user));
+        authStorage.setItem("edtspUser", JSON.stringify(user));
 
         displayTraineeInformation();
 
@@ -316,6 +333,8 @@ async function loadDashboardSummary() {
     if (unauthorized) {
         localStorage.removeItem("edtspToken");
         localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
         window.location.href = "../login.html";
         return;
     }
@@ -443,6 +462,8 @@ async function loadApplicationPanel() {
         if (response.status === 401) {
             localStorage.removeItem("edtspToken");
             localStorage.removeItem("edtspUser");
+            sessionStorage.removeItem("edtspToken");
+            sessionStorage.removeItem("edtspUser");
             window.location.href = "../login.html";
             return;
         }
@@ -481,6 +502,9 @@ if (logoutButton) {
         if (confirmLogout) {
             localStorage.removeItem("edtspToken");
             localStorage.removeItem("edtspUser");
+            localStorage.removeItem("edtspApplyDraft");
+            sessionStorage.removeItem("edtspToken");
+            sessionStorage.removeItem("edtspUser");
 
             window.location.href = "../login.html";
         }

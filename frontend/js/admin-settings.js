@@ -6,7 +6,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const recaptchaToggle = document.getElementById("recaptchaToggle");
     const settingsMessage = document.getElementById("settingsMessage");
 
-    const token = localStorage.getItem("edtspToken");
+    const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
+
+    // Last settings known to be stored, used to roll back a failed save.
+    let savedSettings = {
+        googleAuthEnabled: false,
+        recaptchaEnabled: false
+    };
 
     function showMessage(message, isError = false) {
         if (!settingsMessage) return;
@@ -30,8 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(data.message || "Failed to load settings.");
             }
 
-            googleAuthToggle.checked = data.settings.googleAuthEnabled;
-            recaptchaToggle.checked = data.settings.recaptchaEnabled;
+            savedSettings = {
+                googleAuthEnabled: Boolean(data.settings.googleAuthEnabled),
+                recaptchaEnabled: Boolean(data.settings.recaptchaEnabled)
+            };
+
+            googleAuthToggle.checked = savedSettings.googleAuthEnabled;
+            recaptchaToggle.checked = savedSettings.recaptchaEnabled;
 
             showMessage("Settings loaded successfully.");
         } catch (error) {
@@ -42,8 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Save updated settings to MongoDB
     async function saveSettings() {
-        const previousGoogleAuth = googleAuthToggle.checked;
-        const previousRecaptcha = recaptchaToggle.checked;
+        const nextSettings = {
+            googleAuthEnabled: googleAuthToggle.checked,
+            recaptchaEnabled: recaptchaToggle.checked
+        };
 
         try {
             googleAuthToggle.disabled = true;
@@ -58,8 +73,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    googleAuthEnabled: googleAuthToggle.checked,
-                    recaptchaEnabled: recaptchaToggle.checked
+                    googleAuthEnabled: nextSettings.googleAuthEnabled,
+                    recaptchaEnabled: nextSettings.recaptchaEnabled
                 })
             });
 
@@ -69,13 +84,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(data.message || "Failed to save settings.");
             }
 
+            savedSettings = nextSettings;
             showMessage("Settings saved successfully.");
         } catch (error) {
             console.error("Save settings error:", error);
 
-            // Restore the previous values if saving fails
-            googleAuthToggle.checked = previousGoogleAuth;
-            recaptchaToggle.checked = previousRecaptcha;
+            // Restore the values that are actually stored on the server
+            googleAuthToggle.checked = savedSettings.googleAuthEnabled;
+            recaptchaToggle.checked = savedSettings.recaptchaEnabled;
 
             showMessage(error.message, true);
         } finally {

@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="../css/portal.css">
     <script src="../js/dashboard.js" defer></script>
+    <script src="../js/cow-maintenance.js" defer></script>
     <script src="../js/portal.js" defer></script>
 </head>
 <body>
@@ -147,33 +148,33 @@
                         The animal assigned to you, and today's feeding, water,
                         medication, and general care record.
                     </p>
+                    <p class="state state--inline" id="cowFeedback" role="status" hidden></p>
                 </div>
-                <span class="demo-tag">Demo records</span>
             </header>
 
             <section class="ledger" aria-label="Animal care summary">
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Assigned cows</span>
-                    <strong class="ledger__value">01</strong>
+                    <strong class="ledger__value" id="assignedCows">0</strong>
                     <span class="ledger__note">Animals assigned to you</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Completed tasks</span>
-                    <strong class="ledger__value">02/04</strong>
+                    <strong class="ledger__value" id="completedTasks">0/0</strong>
                     <span class="ledger__note">Daily care activities</span>
                 </div>
 
                 <div class="ledger__cell ledger__cell--focus">
                     <span class="ledger__label">Pending tasks</span>
-                    <strong class="ledger__value">02</strong>
+                    <strong class="ledger__value" id="pendingTasks">0</strong>
                     <span class="ledger__note">Still to complete today</span>
                 </div>
 
                 <div class="ledger__cell">
                     <span class="ledger__label">Animal status</span>
-                    <strong class="ledger__value">Healthy</strong>
+                    <strong class="ledger__value" id="animalStatus">—</strong>
                     <span class="ledger__note">Recorded condition</span>
                 </div>
 
@@ -184,26 +185,26 @@
                 <section class="panel" aria-labelledby="animal-title">
                     <header class="panel__head">
                         <h2 id="animal-title">Assigned animal</h2>
-                        <span class="panel__meta">Active</span>
+                        <span class="panel__meta" id="animalMeta">Not assigned</span>
                     </header>
 
                     <div class="plate">
-                        <span class="plate__id">COW-001</span>
-                        <h2>Sample Cow</h2>
+                        <span class="plate__id" id="cowPlateId">—</span>
+                        <h2 id="cowPlateName">No animal assigned</h2>
                     </div>
 
                     <dl class="facts">
                         <div>
                             <dt>Animal ID</dt>
-                            <dd>COW-001</dd>
+                            <dd id="cowId">—</dd>
                         </div>
                         <div>
                             <dt>Animal type</dt>
-                            <dd>Dairy cattle</dd>
+                            <dd id="cowBreed">—</dd>
                         </div>
                         <div>
                             <dt>Care status</dt>
-                            <dd><span class="status-badge completed">Active</span></dd>
+                            <dd><span class="status-badge" id="cowCareStatus">—</span></dd>
                         </div>
                         <div>
                             <dt>Assigned to</dt>
@@ -215,73 +216,19 @@
                 <section class="panel" aria-labelledby="today-title">
                     <header class="panel__head">
                         <h2 id="today-title">Today's care</h2>
-                        <span class="panel__meta">2 of 4 done</span>
+                        <span class="panel__meta" id="todayMeta">0 of 0 done</span>
                     </header>
 
-                    <div class="care-list">
+                    <div class="care-list" id="careList"></div>
 
-                        <div class="care">
-                            <span class="care__icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M12 20V10"/>
-                                    <path d="M12 12c0-3.3 2.4-5.5 5.5-5.5 0 3.3-2.4 5.5-5.5 5.5Z"/>
-                                    <path d="M12 15c0-2.6-2-4.5-4.5-4.5 0 2.6 2 4.5 4.5 4.5Z"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <strong>Feeding</strong>
-                                <p>Morning and afternoon feeding.</p>
-                            </div>
-                            <span class="status-badge pending">Pending</span>
-                        </div>
-
-                        <div class="care">
-                            <span class="care__icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M12 3.5s6 6.2 6 10.5a6 6 0 0 1-12 0c0-4.3 6-10.5 6-10.5Z"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <strong>Drinking water</strong>
-                                <p>Water availability and intake.</p>
-                            </div>
-                            <span class="status-badge completed">Completed</span>
-                        </div>
-
-                        <div class="care">
-                            <span class="care__icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M9.5 4.5 19.5 14.5a3.5 3.5 0 0 1-5 5L4.5 9.5a3.5 3.5 0 0 1 5-5Z"/>
-                                    <path d="m7 7 10 10"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <strong>Medication</strong>
-                                <p>Prescribed medication and health care.</p>
-                            </div>
-                            <span class="status-badge pending">Pending</span>
-                        </div>
-
-                        <div class="care">
-                            <span class="care__icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24">
-                                    <rect x="4" y="4" width="16" height="16" rx="2"/>
-                                    <path d="m8 12.5 2.5 2.5L16 9"/>
-                                </svg>
-                            </span>
-                            <div>
-                                <strong>General care</strong>
-                                <p>Cleanliness and animal condition.</p>
-                            </div>
-                            <span class="status-badge completed">Completed</span>
-                        </div>
-
-                    </div>
+                    <p class="state state--inline" id="careEmpty" hidden>
+                        No care activities are scheduled for today.
+                    </p>
 
                     <div class="meter__track" style="margin-top:20px">
-                        <span class="meter__fill" style="width:50%"></span>
+                        <span class="meter__fill" id="careMeterFill" style="width:0%"></span>
                     </div>
-                    <p class="meter__note">2 out of 4 daily activities completed.</p>
+                    <p class="meter__note" id="careMeterNote">No care activities scheduled today.</p>
                 </section>
 
             </div>
@@ -318,7 +265,7 @@
 
             <footer class="page__foot">
                 <span>© 2026 Esperon Dairy Training Student Portal.</span>
-                <span>Animal records shown here are demo data.</span>
+                <span>Animal and care records are read live from the training database.</span>
             </footer>
 
         </main>

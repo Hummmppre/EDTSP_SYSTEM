@@ -9,7 +9,9 @@ const STATUS_STYLES = {
 document.addEventListener("DOMContentLoaded", loadAssessments);
 
 async function loadAssessments() {
-    const token = localStorage.getItem("edtspToken");
+    const token =
+    localStorage.getItem("edtspToken") ||
+    sessionStorage.getItem("edtspToken");
 
     if (!token) {
         window.location.href = "../login.html";
