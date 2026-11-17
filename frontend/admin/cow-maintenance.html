@@ -198,6 +198,19 @@
 
             </section>
 
+            <section class="panel" aria-labelledby="calendar-title">
+                <header class="panel__head">
+                    <h2 id="calendar-title">Google Calendar</h2>
+                    <button class="btn btn--primary btn--sm" id="calendarConnectBtn" type="button" hidden>
+                        Connect Google Calendar
+                    </button>
+                </header>
+
+                <p class="state state--inline" id="calendarStatus" role="status">
+                    Checking Google Calendar connection…
+                </p>
+            </section>
+
             <section class="panel" aria-labelledby="cow-records-title">
                 <header class="panel__head">
                     <h2 id="cow-records-title">Cow records</h2>
@@ -303,6 +316,7 @@
                                 <th scope="col">Schedule</th>
                                 <th scope="col">Assigned trainee</th>
                                 <th scope="col">Status</th>
+                                <th scope="col">Calendar</th>
                             </tr>
                         </thead>
 

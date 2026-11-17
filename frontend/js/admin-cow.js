@@ -1,5 +1,6 @@
 const COWS_API_URL = "http://localhost:5000/api/admin/cows";
 const COW_TRAINEES_API_URL = "http://localhost:5000/api/admin/trainees";
+const CALENDAR_API_URL = "http://localhost:5000/api/integrations/google-calendar";
 
 const HEALTH_BADGES = {
     Healthy: "completed",
@@ -40,6 +41,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const cowEmpty = document.getElementById("cowEmpty");
     const activityEmpty = document.getElementById("activityEmpty");
     const feedback = document.getElementById("cowFeedback");
+    const calendarStatus = document.getElementById("calendarStatus");
+    const calendarConnectBtn = document.getElementById("calendarConnectBtn");
+
+    const calendarResult = new URLSearchParams(window.location.search).get(
+        "calendar"
+    );
+    const calendarReason = new URLSearchParams(window.location.search).get(
+        "calendarReason"
+    );
 
     let cows = [];
     let trainees = [];
@@ -305,6 +315,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         statusCell.appendChild(badge);
         row.appendChild(statusCell);
+
+        const calendarCell = document.createElement("td");
+
+        if (activity.googleCalendarEventLink) {
+            const link = document.createElement("a");
+
+            link.href = activity.googleCalendarEventLink;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = "Open event";
+
+            calendarCell.appendChild(link);
+        } else {
+            calendarCell.textContent = "—";
+        }
+
+        row.appendChild(calendarCell);
 
         return row;
     }
@@ -612,7 +639,16 @@ document.addEventListener("DOMContentLoaded", () => {
             activityForm.reset();
             closeModal(activityModal);
             await loadActivities();
-            setFeedback(data.message || "Maintenance activity saved.");
+
+            if (data.calendarWarning) {
+                setFeedback(data.calendarWarning, true);
+            } else if (data.calendarSynced) {
+                setFeedback(
+                    "Maintenance activity saved and added to Google Calendar."
+                );
+            } else {
+                setFeedback(data.message || "Maintenance activity saved.");
+            }
 
         } catch (error) {
             console.error("Save maintenance activity error:", error);
@@ -629,7 +665,110 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // ---------- Google Calendar ----------
+
+    async function loadCalendarStatus() {
+        if (!calendarStatus) return;
+
+        calendarStatus.classList.remove("is-error");
+        calendarStatus.textContent = "Checking Google Calendar connection…";
+
+        if (calendarConnectBtn) calendarConnectBtn.hidden = true;
+
+        try {
+            const data = await fetchJson(`${CALENDAR_API_URL}/status`);
+
+            if (!data.configured) {
+                calendarStatus.textContent =
+                    "Google Calendar is not configured on the server.";
+                calendarStatus.classList.add("is-error");
+                return;
+            }
+
+            if (data.connected) {
+                calendarStatus.textContent = data.accountEmail
+                    ? `Connected as ${data.accountEmail}. New maintenance activities are added automatically.`
+                    : "Connected. New maintenance activities are added automatically.";
+            } else {
+                calendarStatus.textContent =
+                    "Not connected. Connect a Google account to add maintenance activities to its calendar.";
+            }
+
+            if (calendarConnectBtn) {
+                calendarConnectBtn.hidden = false;
+                calendarConnectBtn.textContent = data.connected
+                    ? "Reconnect Google Calendar"
+                    : "Connect Google Calendar";
+            }
+        } catch (error) {
+            if (error.unauthorized) {
+                handleUnauthorized();
+                return;
+            }
+
+            console.error("Google Calendar status error:", error);
+            calendarStatus.textContent =
+                "Google Calendar status is unavailable right now.";
+            calendarStatus.classList.add("is-error");
+        }
+    }
+
+    if (calendarConnectBtn) {
+        calendarConnectBtn.addEventListener("click", async () => {
+            const originalLabel = calendarConnectBtn.textContent;
+
+            calendarConnectBtn.disabled = true;
+            calendarConnectBtn.textContent = "Opening Google…";
+
+            try {
+                const returnTo = window.location.href.split("#")[0];
+                const data = await fetchJson(
+                    `${CALENDAR_API_URL}/connect?returnTo=${encodeURIComponent(returnTo)}`
+                );
+
+                if (!data.authUrl) {
+                    throw new Error(
+                        "Google Calendar authorization could not be started."
+                    );
+                }
+
+                window.location.href = data.authUrl;
+            } catch (error) {
+                if (error.unauthorized) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                console.error("Google Calendar connect error:", error);
+                setFeedback(
+                    error.message ||
+                        "Unable to start the Google Calendar connection.",
+                    true
+                );
+                calendarConnectBtn.disabled = false;
+                calendarConnectBtn.textContent = originalLabel;
+            }
+        });
+    }
+
     // ---------- Boot ----------
 
-    loadMaintenance();
+    loadCalendarStatus();
+
+    loadMaintenance().finally(() => {
+        if (calendarResult === "connected") {
+            setFeedback(
+                "Google Calendar connected. New maintenance activities will be added automatically."
+            );
+        } else if (calendarResult === "error") {
+            setFeedback(
+                calendarReason || "Google Calendar could not be connected.",
+                true
+            );
+        }
+
+        if (calendarResult) {
+            window.history.replaceState({}, "", window.location.pathname);
+        }
+    });
 });

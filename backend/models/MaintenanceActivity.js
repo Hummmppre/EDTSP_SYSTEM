@@ -57,6 +57,21 @@ const maintenanceActivitySchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             default: null
+        },
+
+        googleCalendarEventId: {
+            type: String,
+            default: null
+        },
+
+        googleCalendarEventLink: {
+            type: String,
+            default: null
+        },
+
+        calendarSyncedAt: {
+            type: Date,
+            default: null
         }
     },
     { timestamps: true }

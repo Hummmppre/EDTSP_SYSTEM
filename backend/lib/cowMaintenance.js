@@ -58,7 +58,9 @@ function activityRow(activity) {
             : null,
         assignedTraineeName: fullName(activity.assignedTrainee),
         status: activity.status,
-        completedAt: activity.completedAt || null
+        completedAt: activity.completedAt || null,
+        googleCalendarEventLink: activity.googleCalendarEventLink || null,
+        calendarSyncedAt: activity.calendarSyncedAt || null
     };
 }
 

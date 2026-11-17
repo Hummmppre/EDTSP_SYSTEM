@@ -53,15 +53,16 @@ const getPublicSystemSettings = async (req, res) => {
 // Update system settings
 const updateSystemSettings = async (req, res) => {
     try {
-        const { googleAuthEnabled, recaptchaEnabled } = req.body || {};
+        const { googleAuthEnabled, recaptchaEnabled, emailEnabled } = req.body || {};
 
         if (
             typeof googleAuthEnabled !== "boolean" ||
-            typeof recaptchaEnabled !== "boolean"
+            typeof recaptchaEnabled !== "boolean" ||
+            typeof emailEnabled !== "boolean"
         ) {
             return res.status(400).json({
                 success: false,
-                message: "Both settings must be true or false."
+                message: "All settings must be true or false."
             });
         }
 
@@ -73,6 +74,7 @@ const updateSystemSettings = async (req, res) => {
 
         settings.googleAuthEnabled = googleAuthEnabled;
         settings.recaptchaEnabled = recaptchaEnabled;
+        settings.emailEnabled = emailEnabled;
 
         await settings.save();
 

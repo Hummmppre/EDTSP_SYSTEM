@@ -4,6 +4,7 @@ const Cow = require("../models/Cow");
 const MaintenanceActivity = require("../models/MaintenanceActivity");
 const User = require("../models/User");
 const { todayRange, cowRow, activityRow } = require("../lib/cowMaintenance");
+const { createEventForActivity } = require("../lib/googleCalendar");
 
 const HEALTH_STATUSES = ["Healthy", "Under Observation", "Under Treatment"];
 const CARE_STATUSES = ["Active", "Inactive"];
@@ -289,9 +290,35 @@ const createActivity = async (req, res) => {
         await activity.populate("cow", "cowId name");
         await activity.populate("assignedTrainee", "firstName lastName");
 
+        let calendarSynced = false;
+        let calendarWarning = "";
+
+        try {
+            const event = await createEventForActivity({ activity, cow });
+
+            activity.googleCalendarEventId = event.id;
+            activity.googleCalendarEventLink = event.htmlLink;
+            activity.calendarSyncedAt = new Date();
+
+            await activity.save();
+            calendarSynced = true;
+        } catch (error) {
+            // The activity is useful without calendar sync, so never roll it back.
+            if (
+                error.code !== "not_configured" &&
+                error.code !== "not_connected"
+            ) {
+                console.error("Google Calendar sync error:", error);
+                calendarWarning =
+                    "The activity was saved, but Google Calendar could not be updated.";
+            }
+        }
+
         return res.status(201).json({
             success: true,
             message: "Maintenance activity saved.",
+            calendarSynced,
+            calendarWarning,
             activity: activityRow(activity)
         });
 

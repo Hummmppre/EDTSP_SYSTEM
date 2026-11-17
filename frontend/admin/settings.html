@@ -172,7 +172,7 @@
                 <div>
                     <h1>System settings</h1>
                     <p class="page__deck">
-                        Manage authentication and security features for EDTSP.
+                        Manage authentication, email, and security features for EDTSP.
                     </p>
                 </div>
             </header>
@@ -193,6 +193,27 @@
 
                     <label class="settings-switch">
                         <input type="checkbox" id="googleAuthToggle">
+                        <span class="settings-slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <section class="panel">
+                <header class="panel__head">
+                    <div>
+                        <h2>Email settings</h2>
+                        <p>Manage outgoing email notifications sent through Brevo.</p>
+                    </div>
+                </header>
+
+                <div class="settings-option">
+                    <div>
+                        <strong>Brevo Email Notifications</strong>
+                        <p>Send welcome, application, and assessment emails to trainees.</p>
+                    </div>
+
+                    <label class="settings-switch">
+                        <input type="checkbox" id="emailToggle">
                         <span class="settings-slider"></span>
                     </label>
                 </div>

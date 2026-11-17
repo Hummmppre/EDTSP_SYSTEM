@@ -1,3 +1,5 @@
+const SystemSettings = require("../models/SystemSettings");
+
 const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const REQUEST_TIMEOUT_MS = 8000;
 
@@ -43,6 +45,19 @@ function escapeHtml(value) {
 }
 
 async function sendEmail({ to, subject, text, html, replyTo }) {
+    // Administrators can stop all outgoing mail from System Settings.
+    try {
+        const settings = await SystemSettings.findOne();
+
+        if (settings && settings.emailEnabled === false) {
+            console.warn(`[mailer] Email notifications are disabled — skipped "${subject}" to ${to}.`);
+            return { sent: false, error: "Email notifications are disabled." };
+        }
+    } catch (error) {
+        // A settings lookup failure must not silently drop mail.
+        console.error(`[mailer] Could not read the email setting: ${error.message}`);
+    }
+
     if (!to) {
         console.warn(`[mailer] No recipient for "${subject}" — skipped.`);
         return { sent: false, error: "Missing recipient." };

@@ -58,6 +58,10 @@ const { adminCowRoutes, traineeCowRoutes } = require("./routes/cowRoutes");
 app.use("/api/admin/cows", adminCowRoutes);
 app.use("/api/trainee/cows", traineeCowRoutes);
 
+// Google Calendar integration (admin connection + OAuth callback)
+const googleCalendarRoutes = require("./routes/googleCalendarRoutes");
+app.use("/api/integrations/google-calendar", googleCalendarRoutes);
+
 // Test route
 app.get("/", (req, res) => {
     res.send("EDTSP Backend API is running!");

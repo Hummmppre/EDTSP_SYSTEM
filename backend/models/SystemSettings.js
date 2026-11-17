@@ -10,6 +10,10 @@ const systemSettingsSchema = new mongoose.Schema(
         recaptchaEnabled: {
             type: Boolean,
             default: false
+        },
+        emailEnabled: {
+            type: Boolean,
+            default: true
         }
     },
     {

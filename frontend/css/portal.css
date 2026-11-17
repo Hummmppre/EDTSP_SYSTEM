@@ -13,14 +13,6 @@
     font-display: swap;
 }
 
-@font-face {
-    font-family: "Fraunces";
-    src: url("../assets/fonts/fraunces-latin-var.woff2") format("woff2");
-    font-weight: 400 700;
-    font-style: normal;
-    font-display: swap;
-}
-
 /* ---------- Tokens ---------- */
 
 :root {
@@ -53,7 +45,7 @@
     --side-muted: #a3b096;
 
     --font-ui: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-display: var(--font-ui);
     --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, monospace;
 
     --sidebar-w: 272px;
@@ -164,7 +156,7 @@ svg {
     display: flex;
     flex-direction: column;
     width: var(--sidebar-w);
-    padding: 24px 20px 20px;
+    padding: 2px 16px 16px;
     color: var(--side-ink);
     background: var(--field-2);
     border-inline-end: 1px solid rgba(241, 235, 220, 0.08);
