@@ -86,6 +86,34 @@ node scripts/seedPrograms.js
 All of them return `{ sent, error }` and never throw, so an email failure never
 fails the request that triggered it.
 
+## Google Calendar (cow maintenance)
+
+Maintenance activities are added to a Google Calendar automatically once an
+administrator connects an account from **Cow maintenance → Google Calendar**.
+Activities scheduled before connecting, or while a token was revoked, are
+backfilled with **Sync existing activities**.
+
+Add these values to `backend/.env` (OAuth client of type *Web application*):
+
+| Variable | Purpose |
+| --- | --- |
+| `GOOGLE_CALENDAR_CLIENT_ID` | OAuth client ID |
+| `GOOGLE_CALENDAR_CLIENT_SECRET` | OAuth client secret |
+| `GOOGLE_CALENDAR_REDIRECT_URI` | Must match the API callback, e.g. `http://localhost:5000/api/integrations/google-calendar/callback` |
+| `GOOGLE_CALENDAR_ID` | Target calendar (defaults to `primary`) |
+| `GOOGLE_CALENDAR_TIMEZONE` | IANA zone for event times (defaults to `Asia/Manila`) |
+
+Register the same redirect URI under **Authorized redirect URIs** in the Google
+Cloud console, otherwise Google rejects the connect request with
+`redirect_uri_mismatch`.
+
+The refresh token is stored in MongoDB (`googlecalendarcredentials`); a token
+supplied through `GOOGLE_CALENDAR_REFRESH_TOKEN` takes precedence.
+`GET /api/integrations/google-calendar/status` verifies the stored token, so a
+revoked connection is reported as disconnected with `needsReconnect: true`.
+`POST /api/integrations/google-calendar/sync` (admin) backfills up to 100 pending
+activities that have no calendar event.
+
 ## Frontend
 
 `frontend/` is plain HTML/CSS/JS and can be served by any static file server

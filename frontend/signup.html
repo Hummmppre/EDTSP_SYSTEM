@@ -65,6 +65,7 @@
                                 autocomplete="given-name"
                                 required
                             >
+                            <p class="form-error" id="firstNameError" role="alert" hidden></p>
                         </div>
 
                         <div class="form-group">
@@ -77,6 +78,7 @@
                                 autocomplete="family-name"
                                 required
                             >
+                            <p class="form-error" id="lastNameError" role="alert" hidden></p>
                         </div>
                     </div>
 
@@ -90,19 +92,7 @@
                             autocomplete="email"
                             required
                         >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="registerRole">Account Role</label>
-                        <select id="registerRole" name="role" required>
-                            <option value="trainee" selected>Trainee</option>
-                            <option value="admin" disabled>
-                                Administrator (Invitation Required)
-                            </option>
-                        </select>
-                        <small class="field-note">
-                            Administrator accounts require authorization.
-                        </small>
+                        <p class="form-error" id="registerEmailError" role="alert" hidden></p>
                     </div>
 
                     <div class="form-group">
@@ -124,6 +114,7 @@
                                 Show
                             </button>
                         </div>
+                        <p class="form-error" id="registerPasswordError" role="alert" hidden></p>
                     </div>
 
                     <div class="form-group">
@@ -144,12 +135,15 @@
                                 Show
                             </button>
                         </div>
+                        <p class="form-error" id="confirmPasswordError" role="alert" hidden></p>
                     </div>
 
                     <div class="form-group captcha-container" id="captchaSection">
                 <div  class="g-recaptcha" data-sitekey="6LfqhRsuAAAAAA4ms7noitso_VRPfhhDEAvhRVh2"></div>
 
                     </div>
+
+                    <p class="form-error" id="registerError" role="alert" hidden></p>
 
                     <button type="submit" class="auth-button">
                         Create Account

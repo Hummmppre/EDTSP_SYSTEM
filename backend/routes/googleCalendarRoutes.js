@@ -3,7 +3,9 @@ const express = require("express");
 const {
     getStatus,
     getConnectUrl,
-    handleCallback
+    handleCallback,
+    disconnectCalendar,
+    syncActivities
 } = require("../controllers/googleCalendarController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
@@ -16,5 +18,7 @@ router.get("/callback", handleCallback);
 
 router.get("/status", protect, adminOnly, getStatus);
 router.get("/connect", protect, adminOnly, getConnectUrl);
+router.post("/disconnect", protect, adminOnly, disconnectCalendar);
+router.post("/sync", protect, adminOnly, syncActivities);
 
 module.exports = router;

@@ -232,6 +232,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         formError.textContent = "";
         formError.hidden = true;
+        clearFieldErrors(form);
 
         modal.classList.add("show");
     }
@@ -285,18 +286,27 @@ document.addEventListener("DOMContentLoaded", () => {
             formError.hidden = false;
         };
 
+        [traineeIdInput, phoneInput, addressInput]
+            .forEach(field => setFieldError(field, ""));
+
         if (traineeId && !/^[A-Z0-9-]{3,30}$/.test(traineeId)) {
-            showError("Trainee ID must be 3–30 characters using letters, numbers, or hyphens.");
+            setFieldError(
+                traineeIdInput,
+                "Trainee ID must be 3–30 characters using letters, numbers, or hyphens."
+            );
+            traineeIdInput.focus();
             return;
         }
 
         if (phone.length > 30) {
-            showError("Phone number must be 30 characters or fewer.");
+            setFieldError(phoneInput, "Phone number must be 30 characters or fewer.");
+            phoneInput.focus();
             return;
         }
 
         if (address.length > 300) {
-            showError("Address must be 300 characters or fewer.");
+            setFieldError(addressInput, "Address must be 300 characters or fewer.");
+            addressInput.focus();
             return;
         }
 

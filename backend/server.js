@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -22,7 +21,6 @@ app.use("/api/auth", authRoutes);
 const traineeRoutes = require("./routes/traineeRoutes");
 app.use("/api/trainee", traineeRoutes);
 
-
 // Assessment Routes
 const assessmentRoutes = require("./routes/assessmentRoutes");
 app.use("/api/assessments", assessmentRoutes);
@@ -40,7 +38,10 @@ const systemSettingsRoutes = require("./routes/systemSettingsRoutes");
 app.use("/api/system-settings", systemSettingsRoutes);
 
 // Payment routes (admin + trainee)
-const { adminPaymentRoutes, traineePaymentRoutes } = require("./routes/paymentRoutes");
+const {
+  adminPaymentRoutes,
+  traineePaymentRoutes,
+} = require("./routes/paymentRoutes");
 app.use("/api/admin/payments", adminPaymentRoutes);
 app.use("/api/trainee/payments", traineePaymentRoutes);
 
@@ -61,21 +62,23 @@ app.use("/api/trainee/cows", traineeCowRoutes);
 // Google Calendar integration (admin connection + OAuth callback)
 const googleCalendarRoutes = require("./routes/googleCalendarRoutes");
 app.use("/api/integrations/google-calendar", googleCalendarRoutes);
+const adminExportRoutes = require("./routes/adminExportRoutes");
+app.use("/api/admin/exports", adminExportRoutes);
 
 // Test route
 app.get("/", (req, res) => {
-    res.send("EDTSP Backend API is running!");
+  res.send("EDTSP Backend API is running!");
 });
 
 // Health check route
 app.get("/api/health", (req, res) => {
-    const states = ["Disconnected", "Connected", "Connecting", "Disconnecting"];
+  const states = ["Disconnected", "Connected", "Connecting", "Disconnecting"];
 
-    res.json({
-        success: true,
-        message: "EDTSP Backend API is running!",
-        database: states[mongoose.connection.readyState] || "Unknown"
-    });
+  res.json({
+    success: true,
+    message: "EDTSP Backend API is running!",
+    database: states[mongoose.connection.readyState] || "Unknown",
+  });
 });
 
 // Server port
@@ -83,17 +86,16 @@ const PORT = process.env.PORT || 5000;
 
 // Connect database before starting server
 const startServer = async () => {
-    try {
-        await connectDB();
+  try {
+    await connectDB();
 
-        app.listen(PORT, () => {
-            console.log(`EDTSP Server running on port ${PORT}`);
-        });
-
-    } catch (error) {
-        console.error("Server startup failed:", error.message);
-        process.exit(1);
-    }
+    app.listen(PORT, () => {
+      console.log(`EDTSP Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Server startup failed:", error.message);
+    process.exit(1);
+  }
 };
 
 startServer();

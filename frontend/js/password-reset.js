@@ -17,6 +17,24 @@ function setFormMessage(element, text, tone) {
     }
 }
 
+function setFieldError(input, message) {
+    if (!input) return;
+
+    const group = input.closest(".form-group");
+    const errorEl = group ? group.querySelector(".form-error") : null;
+
+    if (!errorEl) return;
+
+    errorEl.textContent = message || "";
+    errorEl.hidden = !message;
+
+    if (message) {
+        input.setAttribute("aria-invalid", "true");
+    } else {
+        input.removeAttribute("aria-invalid");
+    }
+}
+
 function serverErrorMessage(response, data, fallback) {
     if (response.status >= 500) {
         return "We couldn't reach the server right now. Please try again shortly.";
@@ -49,17 +67,21 @@ const forgotForm = document.getElementById("forgotPasswordForm");
 
 if (forgotForm) {
     const status = document.getElementById("forgotStatus");
+    const emailInput = document.getElementById("forgotEmail");
     const submitButton = forgotForm.querySelector('button[type="submit"]');
+
+    emailInput.addEventListener("input", () => setFieldError(emailInput, ""));
 
     forgotForm.addEventListener("submit", async event => {
         event.preventDefault();
 
         setFormMessage(status, "", null);
+        setFieldError(emailInput, "");
 
-        const email = document.getElementById("forgotEmail").value.trim();
+        const email = emailInput.value.trim();
 
         if (!email) {
-            setFormMessage(status, "Please enter your email address.", "error");
+            setFieldError(emailInput, "Please enter your email address.");
             return;
         }
 
@@ -116,8 +138,17 @@ const resetForm = document.getElementById("resetPasswordForm");
 
 if (resetForm) {
     const status = document.getElementById("resetStatus");
+    const passwordInput = document.getElementById("resetPassword");
+    const confirmInput = document.getElementById("resetConfirmPassword");
     const submitButton = resetForm.querySelector('button[type="submit"]');
     const token = new URLSearchParams(window.location.search).get("token") || "";
+
+    passwordInput.addEventListener("input", () => {
+        setFieldError(passwordInput, "");
+        setFieldError(confirmInput, "");
+    });
+
+    confirmInput.addEventListener("input", () => setFieldError(confirmInput, ""));
 
     if (!token) {
         setFormMessage(
@@ -132,17 +163,19 @@ if (resetForm) {
         event.preventDefault();
 
         setFormMessage(status, "", null);
+        setFieldError(passwordInput, "");
+        setFieldError(confirmInput, "");
 
-        const password = document.getElementById("resetPassword").value;
-        const confirmPassword = document.getElementById("resetConfirmPassword").value;
+        const password = passwordInput.value;
+        const confirmPassword = confirmInput.value;
 
         if (password.length < 8) {
-            setFormMessage(status, "Password must contain at least 8 characters.", "error");
+            setFieldError(passwordInput, "Password must contain at least 8 characters.");
             return;
         }
 
         if (password !== confirmPassword) {
-            setFormMessage(status, "Passwords do not match.", "error");
+            setFieldError(confirmInput, "Passwords do not match.");
             return;
         }
 

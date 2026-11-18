@@ -3,6 +3,8 @@ const {
     getCalendarStatus,
     buildAuthUrl,
     exchangeCode,
+    syncPendingActivities,
+    disconnect,
     signState,
     verifyState
 } = require("../lib/googleCalendar");
@@ -92,7 +94,7 @@ function finishAuthorization(res, returnTo, connected, message) {
 
 const getStatus = async (req, res) => {
     try {
-        const status = await getCalendarStatus();
+        const status = await getCalendarStatus({ verify: true });
 
         return res.status(200).json({ success: true, ...status });
     } catch (error) {
@@ -190,8 +192,73 @@ const handleCallback = async (req, res) => {
     }
 };
 
+const disconnectCalendar = async (req, res) => {
+    try {
+        const result = await disconnect();
+
+        return res.status(200).json({
+            success: true,
+            message: result.disconnected
+                ? result.accountEmail
+                    ? `Google Calendar disconnected from ${result.accountEmail}.`
+                    : "Google Calendar disconnected."
+                : "Google Calendar was not connected.",
+            ...result
+        });
+    } catch (error) {
+        if (error.code === "env_locked") {
+            return res.status(409).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        console.error("Google Calendar disconnect error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to disconnect Google Calendar."
+        });
+    }
+};
+
+const syncActivities = async (req, res) => {
+    try {
+        const result = await syncPendingActivities();
+
+        return res.status(200).json({
+            success: true,
+            message:
+                result.total === 0
+                    ? "Every pending activity already has a Google Calendar event."
+                    : `${result.synced} of ${result.total} pending activities were added to Google Calendar.`,
+            ...result
+        });
+    } catch (error) {
+        if (
+            error.code === "disabled" ||
+            error.code === "not_configured" ||
+            error.code === "not_connected"
+        ) {
+            return res.status(409).json({
+                success: false,
+                message: error.message
+            });
+        }
+
+        console.error("Google Calendar sync error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to sync maintenance activities to Google Calendar."
+        });
+    }
+};
+
 module.exports = {
     getStatus,
     getConnectUrl,
-    handleCallback
+    handleCallback,
+    disconnectCalendar,
+    syncActivities
 };

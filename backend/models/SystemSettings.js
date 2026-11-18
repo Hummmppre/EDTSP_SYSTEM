@@ -14,6 +14,14 @@ const systemSettingsSchema = new mongoose.Schema(
         emailEnabled: {
             type: Boolean,
             default: true
+        },
+        googleCalendarEnabled: {
+            type: Boolean,
+            default: true
+        },
+        googleSheetsEnabled: {
+            type: Boolean,
+            default: true
         }
     },
     {

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/portal.css" />
     <script src="../js/admin.js" defer></script>
     <script src="../js/admin-payments.js" defer></script>
+    <script src="../js/admin-payments.js" defer></script>
     <script src="../js/portal.js" defer></script>
   </head>
   <body>
@@ -133,6 +134,14 @@
             </svg>
             <span>Log out</span>
           </button>
+          <a class="nav__link" href="profile.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.2" />
+              <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3" />
+            </svg>
+            <span>Profile</span>
+          </a>
+
           <a class="nav__link" href="settings.html">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="3" />
@@ -213,7 +222,7 @@
               <span class="ledger__note">Recorded payments</span>
             </div>
 
-            <div class="ledger__cell ledger__cell--focus">
+            <div class="ledger__cell">
               <span class="ledger__label">Outstanding balance</span>
               <strong class="ledger__value" id="outstandingBalance">₱0</strong>
               <span class="ledger__note">Still to collect</span>
@@ -271,7 +280,21 @@
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </div>
+              <button
+                class="btn btn--ghost"
+                type="button"
+                data-google-sheets-export="payments"
+              >
+                Export to Google Sheets
+              </button>
             </div>
+            <p
+              class="state state--inline"
+              id="googleSheetsExportStatus"
+              role="status"
+              aria-live="polite"
+              hidden
+            ></p>
 
             <div
               class="table-wrap"
@@ -368,7 +391,7 @@
           </button>
         </div>
 
-        <form class="modal-form" id="paymentForm">
+        <form class="modal-form" id="paymentForm" novalidate>
           <div class="form-grid">
             <div class="field field--full">
               <label for="paymentTrainee">Trainee</label>
@@ -504,6 +527,43 @@
             id="closePaymentDetailsBtn"
           >
             Close
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="admin-modal"
+      id="adminLogoutModal"
+      data-portal-modal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adminLogoutTitle"
+    >
+      <div class="admin-modal-content">
+        <div class="modal-heading">
+          <div>
+            <h2 id="adminLogoutTitle">Log out?</h2>
+            <p>Are you sure you want to log out of the admin portal?</p>
+          </div>
+          <button
+            class="modal-close"
+            id="closeAdminLogoutModal"
+            type="button"
+            aria-label="Cancel logout"
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn--ghost" id="cancelAdminLogout" type="button">
+            Stay logged in
+          </button>
+          <button
+            class="btn btn--primary"
+            id="confirmAdminLogout"
+            type="button"
+          >
+            Log out
           </button>
         </div>
       </div>

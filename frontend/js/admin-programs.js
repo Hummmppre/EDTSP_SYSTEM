@@ -342,6 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ---------- Program modal ----------
 
     function openProgramModal() {
+        clearFieldErrors(elements.programForm);
         elements.programModal.classList.add("show");
         document.body.classList.add("modal-open");
         elements.programError.hidden = true;
@@ -397,31 +398,61 @@ document.addEventListener("DOMContentLoaded", () => {
             elements.programError.hidden = false;
         };
 
-        if (!name || !description) {
-            showError("Provide a program name and description.");
+        [
+            elements.programName,
+            elements.programDescription,
+            elements.programFee,
+            elements.firstBatchLabel,
+            elements.firstBatchCapacity,
+            elements.firstBatchIntake
+        ].forEach(field => setFieldError(field, ""));
+
+        if (!name) {
+            setFieldError(elements.programName, "Provide a program name.");
+            elements.programName.focus();
             return;
         }
 
-        if (!Number.isFinite(fee) || fee < 0) {
-            showError("Provide a valid training fee.");
+        if (!description) {
+            setFieldError(
+                elements.programDescription,
+                "Provide a program description."
+            );
+            elements.programDescription.focus();
+            return;
+        }
+
+        if (
+            !elements.programFee.value.trim() ||
+            !Number.isFinite(fee) ||
+            fee < 0
+        ) {
+            setFieldError(elements.programFee, "Provide a valid training fee.");
+            elements.programFee.focus();
             return;
         }
 
         if (isCreate) {
             if (!firstLabel) {
-                showError("Provide a batch label.");
+                setFieldError(elements.firstBatchLabel, "Provide a batch label.");
                 elements.firstBatchLabel.focus();
                 return;
             }
 
             if (!Number.isInteger(firstCapacity) || firstCapacity < 1) {
-                showError("Slot capacity must be a whole number of at least 1.");
+                setFieldError(
+                    elements.firstBatchCapacity,
+                    "Slot capacity must be a whole number of at least 1."
+                );
                 elements.firstBatchCapacity.focus();
                 return;
             }
 
             if (firstIntake && firstIntake < todayKey()) {
-                showError("Intake date cannot be in the past.");
+                setFieldError(
+                    elements.firstBatchIntake,
+                    "Intake date cannot be in the past."
+                );
                 elements.firstBatchIntake.focus();
                 return;
             }
@@ -471,6 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ---------- Batch modal ----------
 
     function openBatchModal() {
+        clearFieldErrors(elements.batchForm);
         elements.batchModal.classList.add("show");
         document.body.classList.add("modal-open");
         elements.batchError.hidden = true;
@@ -523,23 +555,35 @@ document.addEventListener("DOMContentLoaded", () => {
         const label = elements.batchLabel.value.trim();
         const capacity = Number(elements.batchCapacity.value);
 
+        [
+            elements.batchLabel,
+            elements.batchCapacity,
+            elements.batchIntake
+        ].forEach(field => setFieldError(field, ""));
+
         if (!label) {
-            elements.batchError.textContent = "Provide a batch label.";
-            elements.batchError.hidden = false;
+            setFieldError(elements.batchLabel, "Provide a batch label.");
+            elements.batchLabel.focus();
             return;
         }
 
         if (!Number.isInteger(capacity) || capacity < 1) {
-            elements.batchError.textContent = "Slot capacity must be a whole number of at least 1.";
-            elements.batchError.hidden = false;
+            setFieldError(
+                elements.batchCapacity,
+                "Slot capacity must be a whole number of at least 1."
+            );
+            elements.batchCapacity.focus();
             return;
         }
 
         const intake = elements.batchIntake.value;
 
         if (intake && intake < todayKey() && intake !== state.editingBatchIntake) {
-            elements.batchError.textContent = "Intake date cannot be in the past.";
-            elements.batchError.hidden = false;
+            setFieldError(
+                elements.batchIntake,
+                "Intake date cannot be in the past."
+            );
+            elements.batchIntake.focus();
             return;
         }
 

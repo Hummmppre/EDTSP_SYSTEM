@@ -304,10 +304,16 @@ const createActivity = async (req, res) => {
             calendarSynced = true;
         } catch (error) {
             // The activity is useful without calendar sync, so never roll it back.
-            if (
-                error.code !== "not_configured" &&
-                error.code !== "not_connected"
-            ) {
+            if (error.code === "disabled") {
+                calendarWarning =
+                    "The activity was saved, but Google Calendar is turned off in system settings.";
+            } else if (error.code === "not_configured") {
+                calendarWarning =
+                    "The activity was saved, but Google Calendar is not configured on the server.";
+            } else if (error.code === "not_connected") {
+                calendarWarning =
+                    "The activity was saved, but Google Calendar is not connected, so no event was created.";
+            } else {
                 console.error("Google Calendar sync error:", error);
                 calendarWarning =
                     "The activity was saved, but Google Calendar could not be updated.";

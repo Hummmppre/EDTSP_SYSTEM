@@ -371,6 +371,7 @@ const token =
         elements.publicNote.value = "";
         elements.internalNote.value = "";
         elements.error.hidden = true;
+        clearFieldErrors(elements.form);
 
         const decidable = ["Submitted", "Under review"].includes(status);
 
@@ -491,9 +492,13 @@ const token =
         const decision = currentDecision();
         const publicNote = elements.publicNote.value.trim();
 
+        setFieldError(elements.publicNote, "");
+
         if (decision === "Rejected" && !publicNote) {
-            elements.error.textContent = "Add a public message so the applicant knows why.";
-            elements.error.hidden = false;
+            setFieldError(
+                elements.publicNote,
+                "Add a public message so the applicant knows why."
+            );
             elements.publicNote.focus();
             return;
         }

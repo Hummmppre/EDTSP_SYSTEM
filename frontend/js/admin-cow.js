@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const feedback = document.getElementById("cowFeedback");
     const calendarStatus = document.getElementById("calendarStatus");
     const calendarConnectBtn = document.getElementById("calendarConnectBtn");
+    const calendarSyncBtn = document.getElementById("calendarSyncBtn");
 
     const calendarResult = new URLSearchParams(window.location.search).get(
         "calendar"
@@ -487,12 +488,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     addCowBtn.addEventListener("click", () => {
+        clearFieldErrors(cowForm);
         setFormError(cowFormError, "");
         populateTraineeOptions();
         openModal(cowModal);
     });
 
     addActivityBtn.addEventListener("click", () => {
+        clearFieldErrors(activityForm);
         setFormError(activityFormError, "");
         populateCowOptions();
         populateTraineeOptions();
@@ -527,6 +530,46 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
         setFormError(cowFormError, "");
 
+        const cowIdInput = document.getElementById("cowId");
+        const cowNameInput = document.getElementById("cowName");
+        const cowBreedInput = document.getElementById("cowBreed");
+        const cowAgeInput = document.getElementById("cowAge");
+
+        [cowIdInput, cowNameInput, cowBreedInput, cowAgeInput]
+            .forEach(field => setFieldError(field, ""));
+
+        if (!cowIdInput.value.trim()) {
+            setFieldError(cowIdInput, "Enter a cow ID.");
+            cowIdInput.focus();
+            return;
+        }
+
+        if (!cowNameInput.value.trim()) {
+            setFieldError(cowNameInput, "Enter a cow name.");
+            cowNameInput.focus();
+            return;
+        }
+
+        if (!cowBreedInput.value.trim()) {
+            setFieldError(cowBreedInput, "Enter a breed.");
+            cowBreedInput.focus();
+            return;
+        }
+
+        if (!cowAgeInput.value.trim()) {
+            setFieldError(cowAgeInput, "Enter the cow's age.");
+            cowAgeInput.focus();
+            return;
+        }
+
+        const ageYears = Number(cowAgeInput.value);
+
+        if (!Number.isFinite(ageYears) || ageYears < 0) {
+            setFieldError(cowAgeInput, "Age must be zero or more.");
+            cowAgeInput.focus();
+            return;
+        }
+
         const submitButton = cowForm.querySelector('button[type="submit"]');
         const originalLabel = submitButton ? submitButton.textContent : "";
 
@@ -540,10 +583,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
-                    cowId: document.getElementById("cowId").value.trim(),
-                    name: document.getElementById("cowName").value.trim(),
-                    breed: document.getElementById("cowBreed").value.trim(),
-                    ageYears: Number(document.getElementById("cowAge").value),
+                    cowId: cowIdInput.value.trim(),
+                    name: cowNameInput.value.trim(),
+                    breed: cowBreedInput.value.trim(),
+                    ageYears,
                     assignedTrainee:
                         document.getElementById("cowTrainee").value || null,
                     healthStatus: document.getElementById("cowHealth").value
@@ -588,15 +631,63 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
         setFormError(activityFormError, "");
 
-        const date = document.getElementById("activityDate").value;
-        const time = document.getElementById("activityTime").value;
-        const scheduledFor = new Date(`${date}T${time}`);
+        const cowSelect = document.getElementById("activityCow");
+        const typeSelect = document.getElementById("activityType");
+        const dateInput = document.getElementById("activityDate");
+        const timeInput = document.getElementById("activityTime");
+        const traineeSelect = document.getElementById("activityTrainee");
+        const descriptionInput = document.getElementById("activityDescription");
+
+        [
+            cowSelect,
+            typeSelect,
+            dateInput,
+            timeInput,
+            traineeSelect,
+            descriptionInput
+        ].forEach(field => setFieldError(field, ""));
+
+        if (!cowSelect.value) {
+            setFieldError(cowSelect, "Select a cow.");
+            cowSelect.focus();
+            return;
+        }
+
+        if (!typeSelect.value) {
+            setFieldError(typeSelect, "Choose an activity type.");
+            typeSelect.focus();
+            return;
+        }
+
+        if (!dateInput.value) {
+            setFieldError(dateInput, "Choose a schedule date.");
+            dateInput.focus();
+            return;
+        }
+
+        if (!timeInput.value) {
+            setFieldError(timeInput, "Choose a schedule time.");
+            timeInput.focus();
+            return;
+        }
+
+        const scheduledFor = new Date(`${dateInput.value}T${timeInput.value}`);
 
         if (Number.isNaN(scheduledFor.getTime())) {
-            setFormError(
-                activityFormError,
-                "Enter a valid schedule date and time."
-            );
+            setFieldError(dateInput, "Enter a valid schedule date and time.");
+            dateInput.focus();
+            return;
+        }
+
+        if (!traineeSelect.value) {
+            setFieldError(traineeSelect, "Assign a trainee.");
+            traineeSelect.focus();
+            return;
+        }
+
+        if (!descriptionInput.value.trim()) {
+            setFieldError(descriptionInput, "Describe the activity.");
+            descriptionInput.focus();
             return;
         }
 
@@ -613,13 +704,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: authHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
-                    cowId: document.getElementById("activityCow").value,
-                    type: document.getElementById("activityType").value,
-                    description: document
-                        .getElementById("activityDescription").value.trim(),
+                    cowId: cowSelect.value,
+                    type: typeSelect.value,
+                    description: descriptionInput.value.trim(),
                     scheduledFor: scheduledFor.toISOString(),
-                    assignedTrainee:
-                        document.getElementById("activityTrainee").value || null
+                    assignedTrainee: traineeSelect.value || null
                 })
             });
 
@@ -685,7 +774,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            if (data.connected) {
+            if (data.enabled === false) {
+                calendarStatus.textContent =
+                    "Google Calendar is turned off in System settings. Turn it on to add maintenance activities.";
+                return;
+            }
+
+            if (data.needsReconnect) {
+                calendarStatus.textContent =
+                    "The saved Google Calendar connection is no longer valid. Reconnect to resume adding maintenance activities.";
+                calendarStatus.classList.add("is-error");
+            } else if (data.connected) {
                 calendarStatus.textContent = data.accountEmail
                     ? `Connected as ${data.accountEmail}. New maintenance activities are added automatically.`
                     : "Connected. New maintenance activities are added automatically.";
@@ -699,6 +798,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 calendarConnectBtn.textContent = data.connected
                     ? "Reconnect Google Calendar"
                     : "Connect Google Calendar";
+            }
+
+            if (calendarSyncBtn) {
+                calendarSyncBtn.hidden = !data.connected;
             }
         } catch (error) {
             if (error.unauthorized) {
@@ -747,6 +850,51 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
                 calendarConnectBtn.disabled = false;
                 calendarConnectBtn.textContent = originalLabel;
+            }
+        });
+    }
+
+    if (calendarSyncBtn) {
+        calendarSyncBtn.addEventListener("click", async () => {
+            const originalLabel = calendarSyncBtn.textContent;
+
+            calendarSyncBtn.disabled = true;
+            calendarSyncBtn.textContent = "Syncing…";
+
+            try {
+                const response = await fetch(`${CALENDAR_API_URL}/sync`, {
+                    method: "POST",
+                    headers: authHeaders()
+                });
+
+                if (response.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.message ||
+                            "Unable to sync activities to Google Calendar."
+                    );
+                }
+
+                await loadActivities();
+                setFeedback(
+                    data.message || "Activities synced to Google Calendar."
+                );
+            } catch (error) {
+                console.error("Google Calendar sync error:", error);
+                setFeedback(
+                    error.message ||
+                        "Unable to sync activities to Google Calendar.",
+                    true
+                );
+            } finally {
+                calendarSyncBtn.disabled = false;
+                calendarSyncBtn.textContent = originalLabel;
             }
         });
     }

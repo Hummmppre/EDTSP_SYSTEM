@@ -4,6 +4,71 @@
 // =============================
 
 (() => {
+    // Inline field errors shared by portal forms. The error paragraph is created
+    // on first use inside the field and toggled with [hidden].
+    function fieldErrorFor(target) {
+        const field = target.closest(".field");
+
+        if (!field) return null;
+
+        let error = field.querySelector(".field__error--inline");
+
+        if (!error) {
+            error = document.createElement("p");
+            error.className = "field__error field__error--inline";
+            error.setAttribute("role", "alert");
+            error.hidden = true;
+            field.appendChild(error);
+        }
+
+        return error;
+    }
+
+    window.setFieldError = function (target, message) {
+        if (!target) return;
+
+        const error = fieldErrorFor(target);
+
+        if (!error) return;
+
+        error.textContent = message || "";
+        error.hidden = !message;
+
+        if (target.matches("input, select, textarea")) {
+            if (message) {
+                target.setAttribute("aria-invalid", "true");
+            } else {
+                target.removeAttribute("aria-invalid");
+            }
+        }
+    };
+
+    window.clearFieldErrors = function (root) {
+        if (!root) return;
+
+        root.querySelectorAll(".field__error--inline").forEach(error => {
+            error.textContent = "";
+            error.hidden = true;
+        });
+
+        root.querySelectorAll('[aria-invalid="true"]').forEach(control => {
+            control.removeAttribute("aria-invalid");
+        });
+    };
+
+    document.addEventListener("input", event => {
+        const control = event.target.closest(
+            ".modal-form input, .modal-form select, .modal-form textarea"
+        );
+
+        if (!control) return;
+
+        const field = control.closest(".field");
+        const error = field ? field.querySelector(".field__error--inline") : null;
+
+        if (error && !error.hidden) window.setFieldError(control, "");
+    });
+
     const shell = document.getElementById("shell");
     const sidebar = document.getElementById("sidebar");
     const scrim = document.querySelector(".scrim");

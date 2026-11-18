@@ -540,7 +540,7 @@ svg {
 
 .page {
   width: 100%;
-  max-width: 1320px;
+  max-width: 1320x;
   padding: clamp(26px, 3.2vw, 44px) clamp(20px, 3vw, 40px) 36px;
   margin-inline: auto;
 }
@@ -549,9 +549,9 @@ svg {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 28px;
-  padding-bottom: 22px;
-  margin-bottom: 26px;
+  gap: 6px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
   border-bottom: 1px solid var(--line);
   animation: rise 0.46s var(--ease-out) both;
 }
@@ -2553,4 +2553,68 @@ a.ledger__cell--focus:focus-visible {
 .draft-files {
   margin-top: 6px;
   overflow-wrap: anywhere;
+}
+
+/* Polished modal styling */
+.admin-modal {
+  background: rgba(18, 24, 18, 0.58);
+  backdrop-filter: blur(4px);
+}
+
+.admin-modal-content {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(15, 20, 14, 0.24);
+}
+
+.modal-heading {
+  padding: 24px 26px;
+}
+
+.modal-heading h2 {
+  font-size: clamp(1.35rem, 2vw, 1.6rem);
+  letter-spacing: -0.03em;
+}
+
+.modal-heading p {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.modal-close {
+  border-radius: 50%;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.modal-actions .btn {
+  min-height: 42px;
+  padding-inline: 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.modal-actions .btn:hover {
+  transform: translateY(-1px);
+}
+
+.modal-actions .btn:focus-visible,
+.modal-close:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .modal-heading {
+    padding: 18px 20px;
+  }
+
+  .modal-actions .btn {
+    min-height: 44px;
+  }
 }

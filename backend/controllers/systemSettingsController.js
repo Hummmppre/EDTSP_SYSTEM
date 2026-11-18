@@ -53,12 +53,20 @@ const getPublicSystemSettings = async (req, res) => {
 // Update system settings
 const updateSystemSettings = async (req, res) => {
     try {
-        const { googleAuthEnabled, recaptchaEnabled, emailEnabled } = req.body || {};
+        const {
+            googleAuthEnabled,
+            recaptchaEnabled,
+            emailEnabled,
+            googleCalendarEnabled,
+            googleSheetsEnabled
+        } = req.body || {};
 
         if (
             typeof googleAuthEnabled !== "boolean" ||
             typeof recaptchaEnabled !== "boolean" ||
-            typeof emailEnabled !== "boolean"
+            typeof emailEnabled !== "boolean" ||
+            typeof googleCalendarEnabled !== "boolean" ||
+            typeof googleSheetsEnabled !== "boolean"
         ) {
             return res.status(400).json({
                 success: false,
@@ -75,6 +83,8 @@ const updateSystemSettings = async (req, res) => {
         settings.googleAuthEnabled = googleAuthEnabled;
         settings.recaptchaEnabled = recaptchaEnabled;
         settings.emailEnabled = emailEnabled;
+        settings.googleCalendarEnabled = googleCalendarEnabled;
+        settings.googleSheetsEnabled = googleSheetsEnabled;
 
         await settings.save();
 

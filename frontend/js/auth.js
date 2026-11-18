@@ -1,32 +1,31 @@
-
 const API_URL = "http://localhost:5000/api/auth";
 const SETTINGS_URL = "http://localhost:5000/api/system-settings/public";
-const GOOGLE_CLIENT_ID ="538122561006-f4vv20r15l70c7bieermrp76g7dq7qti.apps.googleusercontent.com";
-
+const GOOGLE_CLIENT_ID =
+  "538122561006-f4vv20r15l70c7bieermrp76g7dq7qti.apps.googleusercontent.com";
 
 let authSettings = {
-    googleAuthEnabled: false,
-    recaptchaEnabled: false
+  googleAuthEnabled: false,
+  recaptchaEnabled: false,
 };
 
 function showToast(message, type = "info") {
-    let region = document.querySelector(".edtsp-toast-region");
+  let region = document.querySelector(".edtsp-toast-region");
 
-    if (!region) {
-        region = document.createElement("div");
-        region.className = "edtsp-toast-region";
-        region.setAttribute("aria-live", "polite");
-        document.body.appendChild(region);
-    }
+  if (!region) {
+    region = document.createElement("div");
+    region.className = "edtsp-toast-region";
+    region.setAttribute("aria-live", "polite");
+    document.body.appendChild(region);
+  }
 
-    const toast = document.createElement("div");
-    toast.className = "edtsp-toast";
-    toast.dataset.type = type;
-    toast.setAttribute("role", type === "error" ? "alert" : "status");
-    toast.textContent = message;
-    region.appendChild(toast);
+  const toast = document.createElement("div");
+  toast.className = "edtsp-toast";
+  toast.dataset.type = type;
+  toast.setAttribute("role", type === "error" ? "alert" : "status");
+  toast.textContent = message;
+  region.appendChild(toast);
 
-    setTimeout(() => toast.remove(), 4500);
+  setTimeout(() => toast.remove(), 4500);
 }
 
 // =============================
@@ -34,51 +33,47 @@ function showToast(message, type = "info") {
 // =============================
 
 async function loadAuthSettings() {
-    try {
-        const response = await fetch(SETTINGS_URL);
-        const data = await response.json();
+  try {
+    const response = await fetch(SETTINGS_URL);
+    const data = await response.json();
 
-        if (!response.ok || !data.success) {
-            throw new Error("Unable to load authentication settings.");
-        }
-
-        authSettings = data.settings;
-
-    } catch (error) {
-        console.error("Settings Error:", error);
-        // Fail closed: optional authentication features remain disabled.
+    if (!response.ok || !data.success) {
+      throw new Error("Unable to load authentication settings.");
     }
 
-    applyAuthSettings();
+    authSettings = data.settings;
+  } catch (error) {
+    console.error("Settings Error:", error);
+    // Fail closed: optional authentication features remain disabled.
+  }
+
+  applyAuthSettings();
 }
 
 function applyAuthSettings() {
-    const captchaSection = document.getElementById("captchaSection");
-    const googleDivider = document.getElementById("googleDivider");
-    const googleSection = document.getElementById("googleSection");
+  const captchaSection = document.getElementById("captchaSection");
+  const googleDivider = document.getElementById("googleDivider");
+  const googleSection = document.getElementById("googleSection");
 
-    if (captchaSection) {
-        captchaSection.style.display =
-            authSettings.recaptchaEnabled ? "" : "none";
-    }
+  if (captchaSection) {
+    captchaSection.style.display = authSettings.recaptchaEnabled ? "" : "none";
+  }
 
-    if (googleDivider) {
-        googleDivider.style.display =
-            authSettings.googleAuthEnabled ? "" : "none";
-    }
+  if (googleDivider) {
+    googleDivider.style.display = authSettings.googleAuthEnabled ? "" : "none";
+  }
 
-    if (googleSection) {
-        googleSection.style.display =
-            authSettings.googleAuthEnabled ? "" : "none";
-    }
+  if (googleSection) {
+    googleSection.style.display = authSettings.googleAuthEnabled ? "" : "none";
+  }
 
-    if (authSettings.recaptchaEnabled) {
-        loadRecaptchaScript();
-    }
+  if (authSettings.recaptchaEnabled) {
+    loadRecaptchaScript();
+  }
 
-    if (authSettings.googleAuthEnabled) {
-        setupGoogleButton();
-    }
+  if (authSettings.googleAuthEnabled) {
+    setupGoogleButton();
+  }
 }
 
 // =============================
@@ -86,94 +81,96 @@ function applyAuthSettings() {
 // =============================
 
 function loadRecaptchaScript() {
-    if (document.getElementById("recaptchaScript")) return;
+  if (document.getElementById("recaptchaScript")) return;
 
-    const script = document.createElement("script");
-    script.id = "recaptchaScript";
-    script.src = "https://www.google.com/recaptcha/api.js";
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
+  const script = document.createElement("script");
+  script.id = "recaptchaScript";
+  script.src = "https://www.google.com/recaptcha/api.js";
+  script.async = true;
+  script.defer = true;
+  document.body.appendChild(script);
 }
-
 
 // =============================
 // GOOGLE SIGN-IN (IDENTITY SERVICES)
 // =============================
 
 function setupGoogleButton() {
-    const container = document.getElementById("googleSection");
+  const container = document.getElementById("googleSection");
 
-    if (!container) return;
+  if (!container) return;
 
-    // Prepare the button container.
-    container.replaceChildren();
+  // Prepare the button container.
+  container.replaceChildren();
 
-    // Load Google Identity Services only once.
-    let script = document.getElementById("googleIdentityScript");
+  // Load Google Identity Services only once.
+  let script = document.getElementById("googleIdentityScript");
 
-    if (window.google?.accounts?.id) {
-        renderGoogleButton(container);
-        return;
-    }
+  if (window.google?.accounts?.id) {
+    renderGoogleButton(container);
+    return;
+  }
 
-    if (!script) {
-        script = document.createElement("script");
-        script.id = "googleIdentityScript";
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
+  if (!script) {
+    script = document.createElement("script");
+    script.id = "googleIdentityScript";
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
 
-        script.onload = () => renderGoogleButton(container);
+    script.onload = () => renderGoogleButton(container);
 
-        script.onerror = () => {
-            showToast("Unable to load Google Sign-In. Please try again.", "error");
-        };
+    script.onerror = () => {
+      showToast("Unable to load Google Sign-In. Please try again.", "error");
+    };
 
-        document.head.appendChild(script);
-    } else {
-        script.addEventListener("load", () => renderGoogleButton(container), {
-            once: true
-        });
-    }
+    document.head.appendChild(script);
+  } else {
+    script.addEventListener("load", () => renderGoogleButton(container), {
+      once: true,
+    });
+  }
 }
 
 function renderGoogleButton(container) {
-    if (!window.google?.accounts?.id) {
-        showToast("Google Sign-In is not available. Please refresh the page.", "error");
-        return;
-    }
+  if (!window.google?.accounts?.id) {
+    showToast(
+      "Google Sign-In is not available. Please refresh the page.",
+      "error",
+    );
+    return;
+  }
 
-    google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: window.handleGoogleSignIn,
-        ux_mode: "popup"
-    });
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: window.handleGoogleSignIn,
+    ux_mode: "popup",
+  });
 
-    google.accounts.id.renderButton(container, {
-        type: "standard",
-        theme: "outline",
-        size: "large",
-        text: "continue_with",
-        shape: "rectangular",
-        width: 280
-    });
+  google.accounts.id.renderButton(container, {
+    type: "standard",
+    theme: "outline",
+    size: "large",
+    text: "continue_with",
+    shape: "rectangular",
+    width: 280,
+  });
 }
 
 // =============================
 // SHOW / HIDE PASSWORD
 // =============================
 
-document.querySelectorAll(".toggle-password").forEach(button => {
-    button.addEventListener("click", () => {
-        const target = document.getElementById(button.dataset.target);
+document.querySelectorAll(".toggle-password").forEach((button) => {
+  button.addEventListener("click", () => {
+    const target = document.getElementById(button.dataset.target);
 
-        if (!target) return;
+    if (!target) return;
 
-        const isPassword = target.type === "password";
-        target.type = isPassword ? "text" : "password";
-        button.textContent = isPassword ? "Hide" : "Show";
-    });
+    const isPassword = target.type === "password";
+    target.type = isPassword ? "text" : "password";
+    button.textContent = isPassword ? "Hide" : "Show";
+  });
 });
 
 // =============================
@@ -181,11 +178,11 @@ document.querySelectorAll(".toggle-password").forEach(button => {
 // =============================
 
 function redirectByRole(role) {
-    if (role === "admin") {
-        window.location.href = "admin/dashboard.html";
-    } else {
-        window.location.href = "trainee/dashboard.html";
-    }
+  if (role === "admin") {
+    window.location.href = "admin/dashboard.html";
+  } else {
+    window.location.href = "trainee/dashboard.html";
+  }
 }
 
 // =============================
@@ -193,14 +190,14 @@ function redirectByRole(role) {
 // =============================
 
 function saveAuthentication(data, remember = false) {
-    const storage = remember ? localStorage : sessionStorage;
-    const otherStorage = remember ? sessionStorage : localStorage;
+  const storage = remember ? localStorage : sessionStorage;
+  const otherStorage = remember ? sessionStorage : localStorage;
 
-    otherStorage.removeItem("edtspToken");
-    otherStorage.removeItem("edtspUser");
+  otherStorage.removeItem("edtspToken");
+  otherStorage.removeItem("edtspUser");
 
-    storage.setItem("edtspToken", data.token);
-    storage.setItem("edtspUser", JSON.stringify(data.user));
+  storage.setItem("edtspToken", data.token);
+  storage.setItem("edtspUser", JSON.stringify(data.user));
 }
 
 // =============================
@@ -208,46 +205,51 @@ function saveAuthentication(data, remember = false) {
 // =============================
 
 window.handleGoogleSignIn = async function (response) {
-    if (!authSettings.googleAuthEnabled) {
-        showToast("Google Authentication is currently disabled.", "error");
-        return;
-    }
-
-    if (!response || !response.credential) {    
-        showToast("Google authentication did not return a valid credential.", "error");
-        return;
-    }
-
-    try {
-        const result = await fetch(`${API_URL}/google`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                credential: response.credential
-            })
-        });
-
-        const data = await result.json();
-
-       if (!result.ok) {
-    if (result.status >= 500) {
-        console.error("Google sign-in server error:", data);
-        showToast("Google sign-in is temporarily unavailable. Please try again shortly.", "error");
-    } else {
-        showToast(data.message || "Google Sign-In failed.", "error");
-    }
+  if (!authSettings.googleAuthEnabled) {
+    showToast("Google Authentication is currently disabled.", "error");
     return;
-}
+  }
 
-        saveAuthentication(data, false);
-        redirectByRole(data.user.role);
+  if (!response || !response.credential) {
+    showToast(
+      "Google authentication did not return a valid credential.",
+      "error",
+    );
+    return;
+  }
 
-    } catch (error) {
-        console.error("Google Sign-In Error:", error);
-        showToast("Unable to connect to the server. Please try again.", "error");
+  try {
+    const result = await fetch(`${API_URL}/google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        credential: response.credential,
+      }),
+    });
+
+    const data = await result.json();
+
+    if (!result.ok) {
+      if (result.status >= 500) {
+        console.error("Google sign-in server error:", data);
+        showToast(
+          "Google sign-in is temporarily unavailable. Please try again shortly.",
+          "error",
+        );
+      } else {
+        showToast(data.message || "Google Sign-In failed.", "error");
+      }
+      return;
     }
+
+    saveAuthentication(data, false);
+    redirectByRole(data.user.role);
+  } catch (error) {
+    console.error("Google Sign-In Error:", error);
+    showToast("Unable to connect to the server. Please try again.", "error");
+  }
 };
 
 // =============================
@@ -255,21 +257,21 @@ window.handleGoogleSignIn = async function (response) {
 // =============================
 
 function getRecaptchaToken() {
-    if (!authSettings.recaptchaEnabled) {
-        return "";
-    }
+  if (!authSettings.recaptchaEnabled) {
+    return "";
+  }
 
-    if (typeof grecaptcha === "undefined") {
-        throw new Error("reCAPTCHA is not loaded. Please refresh the page.");
-    }
+  if (typeof grecaptcha === "undefined") {
+    throw new Error("reCAPTCHA is not loaded. Please refresh the page.");
+  }
 
-    const token = grecaptcha.getResponse();
+  const token = grecaptcha.getResponse();
 
-    if (!token) {
-        throw new Error("Please verify that you are not a robot.");
-    }
+  if (!token) {
+    throw new Error("Please verify that you are not a robot.");
+  }
 
-    return token;
+  return token;
 }
 
 // =============================
@@ -278,75 +280,103 @@ function getRecaptchaToken() {
 
 const loginForm = document.getElementById("loginForm");
 
-if (loginForm) {
-    loginForm.addEventListener("submit", async event => {
-        event.preventDefault();
+function setLoginError(message) {
+  const errorEl = document.getElementById("loginError");
+  const inputs = [
+    document.getElementById("loginEmail"),
+    document.getElementById("loginPassword"),
+  ].filter(Boolean);
 
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value;
-        const rememberField = document.getElementById("loginRemember");
-        const remember = rememberField ? rememberField.checked : false;
+  if (!errorEl) return;
 
-        if (!email || !password) {
-        showToast("Please complete all required fields.", "error");         
-        return;
-        }
-
-        let recaptchaToken;
-
-        try {
-            recaptchaToken = getRecaptchaToken();
-        } catch (error) {
-         showToast(error.message, "error");
-         return;
+  if (message) {
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+    inputs.forEach((input) => input.setAttribute("aria-invalid", "true"));
+  } else {
+    errorEl.textContent = "";
+    errorEl.hidden = true;
+    inputs.forEach((input) => input.removeAttribute("aria-invalid"));
+  }
 }
-        const submitButton = loginForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = "Signing In...";
 
-        try {
-            const response = await fetch(`${API_URL}/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email,
-                    password,
-                    recaptchaToken,
-                    remember
-                })
-            });
+if (loginForm) {
+  ["loginEmail", "loginPassword"].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.addEventListener("input", () => setLoginError(""));
+  });
 
-            const data = await response.json();
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-                    if (!response.ok) {
-            if (response.status >= 500) {
-                console.error("Login server error:", data);
-                showToast("We couldn’t sign you in right now. Please try again shortly.", "error");
-            } else {
-                showToast(data.message || "Login failed.", "error");
-            }
-            return;
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const rememberField = document.getElementById("loginRemember");
+    const remember = rememberField ? rememberField.checked : false;
+
+    if (!email || !password) {
+      setLoginError("Please complete all required fields.");
+      return;
+    }
+
+    let recaptchaToken;
+
+    try {
+      recaptchaToken = getRecaptchaToken();
+    } catch (error) {
+      setLoginError(error.message);
+      return;
+    }
+    const submitButton = loginForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = "Signing In...";
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          recaptchaToken,
+          remember,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status >= 500) {
+          console.error("Login server error:", data);
+          showToast(
+            "We couldn’t sign you in right now. Please try again shortly.",
+            "error",
+          );
+        } else {
+          setLoginError(data.message || "Invalid email or password.");
         }
+        return;
+      }
 
-            saveAuthentication(data, remember);
-            alert("Login successful! Welcome, " + data.user.firstName + ".");
-            redirectByRole(data.user.role);
+      saveAuthentication(data, remember);
+      redirectByRole(data.user.role);
+    } catch (error) {
+      console.error("Login Error:", error);
+      showToast(
+        "Unable to connect to the server. Please check your connection.",
+        "error",
+      );
+    } finally {
+      if (authSettings.recaptchaEnabled && typeof grecaptcha !== "undefined") {
+        grecaptcha.reset();
+      }
 
-        } catch (error) {
-            console.error("Login Error:", error);
-            showToast("Unable to connect to the server. Please check your connection.", "error");
-        } finally {
-            if (authSettings.recaptchaEnabled &&
-                typeof grecaptcha !== "undefined") {
-                grecaptcha.reset();
-            }
-
-            submitButton.disabled = false;
-            submitButton.textContent = "Sign In";
-        }
-    });
+      submitButton.disabled = false;
+      submitButton.textContent = "Sign In";
+    }
+  });
 }
 
 // =============================
@@ -355,93 +385,175 @@ if (loginForm) {
 
 const registerForm = document.getElementById("registerForm");
 
-if (registerForm) {
-    registerForm.addEventListener("submit", async event => {
-        event.preventDefault();
+const REGISTER_FIELD_IDS = [
+  "firstName",
+  "lastName",
+  "registerEmail",
+  "registerPassword",
+  "confirmPassword",
+];
 
-        const firstName = document.getElementById("firstName").value.trim();
-        const lastName = document.getElementById("lastName").value.trim();
-        const email = document.getElementById("registerEmail").value.trim();
-        const password = document.getElementById("registerPassword").value;
-        const confirmPassword = document.getElementById("confirmPassword").value;
+function setRegisterFieldError(inputId, message) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
 
-        if (!firstName || !lastName || !email || !password || !confirmPassword) {
-        showToast("Please complete all required fields.", "error");
-            return;
-        }
+  const errorEl = input.closest(".form-group")?.querySelector(".form-error");
+  if (!errorEl) return;
 
-        if (password.length < 8) {
-        showToast("Password must contain at least 8 characters.", "error");
-            return;
-        }
+  errorEl.textContent = message || "";
+  errorEl.hidden = !message;
 
-        if (password !== confirmPassword) {
-            showToast("Passwords do not match.", "error");
-            return;
-        }
-
-        let recaptchaToken;
-
-        try {
-            recaptchaToken = getRecaptchaToken();
-        } catch (error) {
-            showToast(error.message, "error");
-            return;
-        }
-
-        const submitButton = registerForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = "Creating Account...";
-
-        try {
-            const response = await fetch(`${API_URL}/signup`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    recaptchaToken
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-    if (response.status >= 500) {
-        console.error("Registration server error:", data);
-        showToast("We couldn’t create your account right now. Please try again shortly.", "error");
-    } else {
-        showToast(data.message || "Registration failed.", "error");
-    }
-    return;
+  if (message) {
+    input.setAttribute("aria-invalid", "true");
+  } else {
+    input.removeAttribute("aria-invalid");
+  }
 }
-                saveAuthentication(data);
-                showToast(
-                    `Welcome, ${data.user.firstName}! Your account was created successfully.`,
-                    "success"
-                );
 
-        setTimeout(() => {
-            window.location.href = "trainee/dashboard.html";
-        }, 2000);
-        } catch (error) {
-            console.error("Registration Error:", error);
-            showToast("Unable to connect to the server. Please check your connection.", "error");
+function setRegisterFormError(message) {
+  const errorEl = document.getElementById("registerError");
+  if (!errorEl) return;
 
-        } finally {
-            if (authSettings.recaptchaEnabled &&
-                typeof grecaptcha !== "undefined") {
-                grecaptcha.reset();
-            }
+  errorEl.textContent = message || "";
+  errorEl.hidden = !message;
+}
 
-            submitButton.disabled = false;
-            submitButton.textContent = "Create Account";
-        }
+function clearRegisterErrors() {
+  REGISTER_FIELD_IDS.forEach((id) => setRegisterFieldError(id, ""));
+  setRegisterFormError("");
+}
+
+if (registerForm) {
+  REGISTER_FIELD_IDS.forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    input.addEventListener("input", () => {
+      setRegisterFieldError(id, "");
+      setRegisterFormError("");
     });
+  });
+
+  registerForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+
+    clearRegisterErrors();
+
+    const requiredFields = [
+      ["firstName", firstName],
+      ["lastName", lastName],
+      ["registerEmail", email],
+      ["registerPassword", password],
+      ["confirmPassword", confirmPassword],
+    ];
+
+    const missingFields = requiredFields.filter(([, value]) => !value);
+
+    if (missingFields.length) {
+      missingFields.forEach(([id]) => {
+        setRegisterFieldError(id, "This field is required.");
+      });
+      return;
+    }
+
+    if (password.length < 8) {
+      setRegisterFieldError(
+        "registerPassword",
+        "Password must contain at least 8 characters.",
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setRegisterFieldError("confirmPassword", "Passwords do not match.");
+      return;
+    }
+
+    let recaptchaToken;
+
+    try {
+      recaptchaToken = getRecaptchaToken();
+    } catch (error) {
+      setRegisterFormError(error.message);
+      return;
+    }
+
+    const submitButton = registerForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = "Creating Account...";
+
+    try {
+      const response = await fetch(`${API_URL}/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password,
+          recaptchaToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status >= 500) {
+          console.error("Registration server error:", data);
+          showToast(
+            "We couldn’t create your account right now. Please try again shortly.",
+            "error",
+          );
+        } else if (
+          response.status === 409 ||
+          /email/i.test(data.message || "")
+        ) {
+          setRegisterFieldError(
+            "registerEmail",
+            data.message || "This email is already registered.",
+          );
+        } else if (/password/i.test(data.message || "")) {
+          setRegisterFieldError(
+            "registerPassword",
+            data.message || "Registration failed.",
+          );
+        } else {
+          setRegisterFormError(data.message || "Registration failed.");
+        }
+        return;
+      }
+      saveAuthentication(data);
+      showToast(
+        `Welcome, ${data.user.firstName}! Your account was created successfully.`,
+        "success",
+      );
+
+      setTimeout(() => {
+        window.location.href = "trainee/dashboard.html";
+      }, 2000);
+    } catch (error) {
+      console.error("Registration Error:", error);
+      showToast(
+        "Unable to connect to the server. Please check your connection.",
+        "error",
+      );
+    } finally {
+      if (authSettings.recaptchaEnabled && typeof grecaptcha !== "undefined") {
+        grecaptcha.reset();
+      }
+
+      submitButton.disabled = false;
+      submitButton.textContent = "Create Account";
+    }
+  });
 }
 
 // Load authentication settings.

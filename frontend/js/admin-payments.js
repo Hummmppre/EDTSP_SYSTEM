@@ -383,6 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function openPaymentModal() {
+        clearFieldErrors(form);
         setFormError("");
 
         const dateInput = document.getElementById("paymentDate");
@@ -422,28 +423,45 @@ document.addEventListener("DOMContentLoaded", () => {
         const method = methodInput.value;
         const reference = referenceInput.value.trim();
 
+        [trainee, amountInput, dateInput, methodInput, referenceInput]
+            .forEach(field => setFieldError(field, ""));
+
         if (!trainee.value) {
-            setFormError("Please choose a trainee account.");
+            setFieldError(trainee, "Choose a trainee account.");
+            trainee.focus();
             return;
         }
 
         if (!Number.isFinite(amount) || amount <= 0) {
-            setFormError("Enter a valid payment amount.");
+            setFieldError(amountInput, "Enter a valid payment amount.");
+            amountInput.focus();
             return;
         }
 
         if (!dateInput.value) {
-            setFormError("Enter a valid payment date.");
+            setFieldError(dateInput, "Enter a valid payment date.");
+            dateInput.focus();
+            return;
+        }
+
+        if (dateInput.max && dateInput.value > dateInput.max) {
+            setFieldError(dateInput, "Payment date cannot be in the future.");
+            dateInput.focus();
             return;
         }
 
         if (!method) {
-            setFormError("Choose a valid payment method.");
+            setFieldError(methodInput, "Choose a valid payment method.");
+            methodInput.focus();
             return;
         }
 
         if (PAYMENT_METHODS_REQUIRING_REFERENCE.includes(method) && !reference) {
-            setFormError("A reference number is required for GCash and bank transfers.");
+            setFieldError(
+                referenceInput,
+                "A reference number is required for GCash and bank transfers."
+            );
+            referenceInput.focus();
             return;
         }
 
