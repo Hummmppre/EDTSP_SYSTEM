@@ -1,5 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const {
+  loginLimiter,
+  signupLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
+  googleLoginLimiter,
+} = require("../middleware/rateLimiters");
 
 const {
   getAdminProfile,
@@ -18,17 +25,17 @@ const {
 } = require("../controllers/authController");
 
 // Trainee registration
-router.post("/signup", signup);
+router.post("/signup", signupLimiter, signup);
 
 // Trainee and administrator login
-router.post("/login", login);
+router.post("/login", loginLimiter, login);
 
 // Google Sign-In
-router.post("/google", googleLogin);
+router.post("/google", googleLoginLimiter, googleLogin);
 
 // Password recovery
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
+router.post("/reset-password", resetPasswordLimiter, resetPassword);
 
 // Signed-in administrator's own profile
 router.get("/profile", protect, adminOnly, getAdminProfile);
