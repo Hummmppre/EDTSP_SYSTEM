@@ -31,3 +31,5 @@ backend/.env
 
 # Browser review data and screenshots
 .review/
+
+.tmp/mongo/
