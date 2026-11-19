@@ -20,7 +20,7 @@ const {
 } = require("../lib/documentUpload");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^[0-9+()\-\s]{7,20}$/;
+const PHONE_REGEX = /^(?=.*\d)[0-9+()\-\s]{7,20}$/;
 
 const OPEN_STATUSES = ["Submitted", "Under review"];
 
@@ -315,7 +315,7 @@ const submitApplication = async (req, res) => {
         if (!PHONE_REGEX.test(phone)) {
             return res.status(400).json({
                 success: false,
-                message: "Please enter a valid phone number."
+                message: "Please enter a valid phone number with at least one digit, e.g. 0917 123 4567. Use 7-20 characters; spaces, +, -, and parentheses are allowed."
             });
         }
 
@@ -324,7 +324,7 @@ const submitApplication = async (req, res) => {
         if (!PHONE_REGEX.test(emergencyPhone)) {
             return res.status(400).json({
                 success: false,
-                message: "Please enter a valid emergency contact number."
+                message: "Please enter a valid emergency contact phone number with at least one digit, e.g. 0917 123 4567. Use 7-20 characters; spaces, +, -, and parentheses are allowed."
             });
         }
 

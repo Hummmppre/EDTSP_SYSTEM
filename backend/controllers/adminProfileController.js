@@ -1,5 +1,11 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const {
+  validateAvatar,
+  storeAvatar,
+  deleteAvatarFile,
+  streamAvatar,
+} = require("../lib/avatarUpload");
 
 function publicProfile(user) {
   return {
@@ -141,8 +147,103 @@ async function changeAdminPassword(req, res) {
   }
 }
 
+async function getAdminAvatar(req, res) {
+  try {
+    const user = await User.findOne({
+      _id: req.user.id,
+      role: "admin",
+    }).select("avatar");
+
+    if (!user || !user.avatar || !user.avatar.fileId) {
+      return res.status(404).json({
+        success: false,
+        message: "No profile picture is set.",
+      });
+    }
+
+    return await streamAvatar(res, user.avatar);
+  } catch (error) {
+    console.error("Load admin avatar error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to load your profile picture.",
+    });
+  }
+}
+
+async function uploadAdminAvatar(req, res) {
+  let storedFileId = null;
+
+  try {
+    const validation = validateAvatar(req.file);
+
+    if (validation.error) {
+      return res.status(400).json({
+        success: false,
+        message: validation.error,
+      });
+    }
+
+    const accepted = validation.file;
+
+    const user = await User.findOne({
+      _id: req.user.id,
+      role: "admin",
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin account not found.",
+      });
+    }
+
+    const previousFileId = user.avatar && user.avatar.fileId;
+
+    storedFileId = await storeAvatar({
+      buffer: accepted.buffer,
+      contentType: accepted.contentType,
+      userId: req.user.id,
+      kind: "admin-avatar",
+    });
+
+    user.avatar = {
+      fileId: storedFileId,
+      contentType: accepted.contentType,
+      size: accepted.size,
+      updatedAt: new Date(),
+    };
+
+    await user.save();
+
+    // The new picture is safely recorded before the old blob is dropped.
+    if (previousFileId && String(previousFileId) !== String(storedFileId)) {
+      await deleteAvatarFile(previousFileId);
+    }
+
+    return res.json({
+      success: true,
+      message: "Profile picture updated.",
+      avatar: user.avatar,
+    });
+  } catch (error) {
+    if (storedFileId) {
+      await deleteAvatarFile(storedFileId);
+    }
+
+    console.error("Upload admin avatar error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to save your profile picture. Please try again.",
+    });
+  }
+}
+
 module.exports = {
   getAdminProfile,
   updateAdminProfile,
   changeAdminPassword,
+  getAdminAvatar,
+  uploadAdminAvatar,
 };

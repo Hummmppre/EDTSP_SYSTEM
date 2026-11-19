@@ -8,6 +8,7 @@ const {
     signState,
     verifyState
 } = require("../lib/googleCalendar");
+const { getSheetsStatus } = require("../lib/googleSheets");
 
 function escapeHtml(value) {
     return String(value === undefined || value === null ? "" : value).replace(
@@ -70,9 +71,11 @@ function finishAuthorization(res, returnTo, connected, message) {
     if (returnTo) {
         const url = new URL(returnTo);
 
+        url.searchParams.set("google", connected ? "connected" : "error");
         url.searchParams.set("calendar", connected ? "connected" : "error");
 
         if (!connected) {
+            url.searchParams.set("googleReason", message);
             url.searchParams.set("calendarReason", message);
         }
 
@@ -83,7 +86,7 @@ function finishAuthorization(res, returnTo, connected, message) {
         .status(connected ? 200 : 400)
         .send(
             resultPage(
-                connected ? "Google Calendar connected" : "Google Calendar not connected",
+                connected ? "Google connected" : "Google not connected",
                 connected
                     ? "You can close this tab and return to the administrator portal."
                     : message,
@@ -94,15 +97,35 @@ function finishAuthorization(res, returnTo, connected, message) {
 
 const getStatus = async (req, res) => {
     try {
-        const status = await getCalendarStatus({ verify: true });
+        // One verified read refreshes the shared connection, then both service
+        // statuses are reported together.
+        const calendar = await getCalendarStatus({ verify: true });
+        const sheets = await getSheetsStatus({ verify: false });
 
-        return res.status(200).json({ success: true, ...status });
+        // A revoked token belongs to the shared account, so Sheets must show
+        // the same reconnect guidance even though only Calendar verified it.
+        if (calendar.needsReconnect) {
+            sheets.needsReconnect = true;
+            sheets.reconnectReason = calendar.reconnectReason;
+            sheets.connected = false;
+            sheets.accountEmail = "";
+            sheets.accountConnected = false;
+        } else if (!sheets.accountEmail && calendar.accountEmail) {
+            sheets.accountEmail = calendar.accountEmail;
+        }
+
+        return res.status(200).json({
+            success: true,
+            ...calendar,
+            calendar,
+            sheets
+        });
     } catch (error) {
-        console.error("Google Calendar status error:", error);
+        console.error("Google integration status error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Unable to read the Google Calendar connection status."
+            message: "Unable to read the Google integration status."
         });
     }
 };
@@ -113,7 +136,7 @@ const getConnectUrl = async (req, res) => {
             return res.status(503).json({
                 success: false,
                 message:
-                    "Google Calendar credentials are not configured on the server."
+                    "Google integration credentials are not configured on the server."
             });
         }
 
@@ -128,11 +151,11 @@ const getConnectUrl = async (req, res) => {
             authUrl: buildAuthUrl(state)
         });
     } catch (error) {
-        console.error("Google Calendar connect error:", error);
+        console.error("Google connect error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Unable to start the Google Calendar connection."
+            message: "Unable to start the Google connection."
         });
     }
 };
@@ -147,8 +170,8 @@ const handleCallback = async (req, res) => {
     } catch (verificationError) {
         return res.status(400).send(
             resultPage(
-                "Google Calendar not connected",
-                "The authorization request expired or was invalid. Return to Cow maintenance and try again.",
+                "Google not connected",
+                "The authorization request expired or was invalid. Return to the administrator portal and try again.",
                 true
             )
         );
@@ -162,8 +185,8 @@ const handleCallback = async (req, res) => {
             returnTo,
             false,
             error === "access_denied"
-                ? "Google Calendar access was cancelled."
-                : "Google Calendar authorization failed."
+                ? "Google access was cancelled."
+                : "Google authorization failed."
         );
     }
 
@@ -181,13 +204,13 @@ const handleCallback = async (req, res) => {
 
         return finishAuthorization(res, returnTo, true, "");
     } catch (exchangeError) {
-        console.error("Google Calendar callback error:", exchangeError);
+        console.error("Google callback error:", exchangeError);
 
         return finishAuthorization(
             res,
             returnTo,
             false,
-            "Google Calendar could not be connected. Please try again."
+            "Google could not be connected. Please try again."
         );
     }
 };
@@ -200,9 +223,9 @@ const disconnectCalendar = async (req, res) => {
             success: true,
             message: result.disconnected
                 ? result.accountEmail
-                    ? `Google Calendar disconnected from ${result.accountEmail}.`
-                    : "Google Calendar disconnected."
-                : "Google Calendar was not connected.",
+                    ? `Google account disconnected from ${result.accountEmail}. Calendar and Sheets will stop using it.`
+                    : "Google account disconnected. Calendar and Sheets will stop using it."
+                : "A Google account was not connected.",
             ...result
         });
     } catch (error) {
@@ -213,11 +236,11 @@ const disconnectCalendar = async (req, res) => {
             });
         }
 
-        console.error("Google Calendar disconnect error:", error);
+        console.error("Google disconnect error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Unable to disconnect Google Calendar."
+            message: "Unable to disconnect the Google account."
         });
     }
 };
@@ -238,7 +261,9 @@ const syncActivities = async (req, res) => {
         if (
             error.code === "disabled" ||
             error.code === "not_configured" ||
-            error.code === "not_connected"
+            error.code === "not_connected" ||
+            error.code === "needs_reconnect" ||
+            error.code === "missing_scope"
         ) {
             return res.status(409).json({
                 success: false,

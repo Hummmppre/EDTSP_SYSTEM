@@ -313,6 +313,12 @@ const createActivity = async (req, res) => {
             } else if (error.code === "not_connected") {
                 calendarWarning =
                     "The activity was saved, but Google Calendar is not connected, so no event was created.";
+            } else if (
+                error.code === "needs_reconnect" ||
+                error.code === "missing_scope"
+            ) {
+                calendarWarning =
+                    "The activity was saved, but the Google connection needs to be reauthorized in System settings.";
             } else {
                 console.error("Google Calendar sync error:", error);
                 calendarWarning =

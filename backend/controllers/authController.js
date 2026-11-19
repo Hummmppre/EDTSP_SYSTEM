@@ -7,6 +7,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../lib/mailer");
+const { assignTraineeId } = require("../lib/traineeId");
 
 // "Remember me" keeps the session for a month, otherwise it lasts a day.
 const SESSION_LIFETIME = { remembered: "30d", standard: "1d" };
@@ -111,6 +112,13 @@ const signup = async (req, res) => {
             role: "trainee"
         });
 
+        // Every trainee gets an ID at signup. A backfill retries this if the
+        // assignment fails, so registration itself is never lost.
+        const traineeProfile = await assignTraineeId(newUser._id).catch(error => {
+            console.error("Trainee ID assignment error:", error.message);
+            return null;
+        });
+
         let mail = null;
 
         try {
@@ -132,7 +140,8 @@ const signup = async (req, res) => {
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 email: newUser.email,
-                role: newUser.role
+                role: newUser.role,
+                traineeId: (traineeProfile && traineeProfile.traineeId) || null
             }
         });
 
@@ -312,6 +321,13 @@ const googleLogin = async (req, res) => {
 
         const token = generateToken(user);
 
+        const profile = user.role === "trainee"
+            ? await assignTraineeId(user._id).catch(error => {
+                console.error("Trainee ID assignment error:", error.message);
+                return null;
+            })
+            : null;
+
         return res.status(200).json({
             success: true,
             message: "Google Sign-In successful!",
@@ -321,7 +337,8 @@ const googleLogin = async (req, res) => {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                traineeId: (profile && profile.traineeId) || null
             }
         });
 

@@ -39,6 +39,24 @@ const traineeProfileSchema = new mongoose.Schema(
         address: {
             type: String,
             trim: true
+        },
+
+        // The image itself lives in GridFS; only its identity is kept here.
+        avatar: {
+            fileId: {
+                type: mongoose.Schema.Types.ObjectId
+            },
+            contentType: {
+                type: String,
+                trim: true
+            },
+            size: {
+                type: Number,
+                min: 0
+            },
+            updatedAt: {
+                type: Date
+            }
         }
     },
     { timestamps: true }

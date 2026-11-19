@@ -48,6 +48,24 @@ const userSchema = new mongoose.Schema(
             default: "active"
         },
 
+        // The image itself lives in GridFS; only its identity is kept here.
+        avatar: {
+            fileId: {
+                type: mongoose.Schema.Types.ObjectId
+            },
+            contentType: {
+                type: String,
+                trim: true
+            },
+            size: {
+                type: Number,
+                min: 0
+            },
+            updatedAt: {
+                type: Date
+            }
+        },
+
         // Only the SHA-256 hash of the emailed token is stored.
         resetPasswordToken: {
             type: String

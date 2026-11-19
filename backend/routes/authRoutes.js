@@ -12,7 +12,11 @@ const {
   getAdminProfile,
   updateAdminProfile,
   changeAdminPassword,
+  getAdminAvatar,
+  uploadAdminAvatar,
 } = require("../controllers/adminProfileController");
+
+const { receiveAvatar } = require("../lib/avatarUpload");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
@@ -41,5 +45,13 @@ router.post("/reset-password", resetPasswordLimiter, resetPassword);
 router.get("/profile", protect, adminOnly, getAdminProfile);
 router.patch("/profile", protect, adminOnly, updateAdminProfile);
 router.patch("/profile/password", protect, adminOnly, changeAdminPassword);
+router.get("/profile/avatar", protect, adminOnly, getAdminAvatar);
+router.post(
+  "/profile/avatar",
+  protect,
+  adminOnly,
+  receiveAvatar,
+  uploadAdminAvatar,
+);
 
 module.exports = router;

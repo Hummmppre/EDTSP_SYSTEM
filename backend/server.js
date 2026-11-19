@@ -6,6 +6,7 @@ require("dotenv").config();
 console.log("MONGODB_URI exists:", !!process.env.MONGODB_URI);
 
 const connectDB = require("./config/db");
+const { backfillTraineeIds } = require("./lib/traineeId");
 
 const app = express();
 
@@ -88,6 +89,20 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Give existing trainee accounts an ID if they predate automatic issuance.
+    try {
+      const backfill = await backfillTraineeIds();
+
+      if (backfill.assigned || backfill.failed) {
+        console.log(
+          `Trainee ID backfill: ${backfill.assigned} assigned, ` +
+            `${backfill.preserved} already present, ${backfill.failed} failed.`
+        );
+      }
+    } catch (error) {
+      console.error("Trainee ID backfill skipped:", error.message);
+    }
 
     app.listen(PORT, () => {
       console.log(`EDTSP Server running on port ${PORT}`);

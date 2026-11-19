@@ -142,7 +142,8 @@ function renderGoogleButton(container) {
   }
 
   google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
+    client_id:
+      "538122561006-f4vv20r15l70c7bieermrp76g7dq7qti.apps.googleusercontent.com",
     callback: window.handleGoogleSignIn,
     ux_mode: "popup",
   });
@@ -265,13 +266,35 @@ function getRecaptchaToken() {
     throw new Error("reCAPTCHA is not loaded. Please refresh the page.");
   }
 
-  const token = grecaptcha.getResponse();
+  let token = "";
+
+  try {
+    token = grecaptcha.getResponse();
+  } catch (error) {
+    console.error("reCAPTCHA widget error:", error);
+    throw new Error(
+      "The reCAPTCHA challenge could not load. Please refresh the page and try again.",
+    );
+  }
 
   if (!token) {
     throw new Error("Please verify that you are not a robot.");
   }
 
   return token;
+}
+
+function resetRecaptcha() {
+  if (!authSettings.recaptchaEnabled || typeof grecaptcha === "undefined") {
+    return;
+  }
+
+  try {
+    grecaptcha.reset();
+  } catch (error) {
+    // The widget never rendered; there is nothing to reset.
+    console.error("reCAPTCHA reset error:", error);
+  }
 }
 
 // =============================
@@ -369,10 +392,7 @@ if (loginForm) {
         "error",
       );
     } finally {
-      if (authSettings.recaptchaEnabled && typeof grecaptcha !== "undefined") {
-        grecaptcha.reset();
-      }
-
+      resetRecaptcha();
       submitButton.disabled = false;
       submitButton.textContent = "Sign In";
     }
@@ -546,10 +566,7 @@ if (registerForm) {
         "error",
       );
     } finally {
-      if (authSettings.recaptchaEnabled && typeof grecaptcha !== "undefined") {
-        grecaptcha.reset();
-      }
-
+      resetRecaptcha();
       submitButton.disabled = false;
       submitButton.textContent = "Create Account";
     }

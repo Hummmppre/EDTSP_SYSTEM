@@ -178,6 +178,122 @@
         restoreDesktopState();
     });
 
+    // ---------- Account menu ----------
+
+    const userMenus = Array.from(
+        document.querySelectorAll("[data-user-menu]")
+    );
+
+    function closeUserMenu(root, restoreFocus = false) {
+        const trigger = root.querySelector("[data-user-menu-trigger]");
+        const panel = root.querySelector("[data-user-menu-panel]");
+
+        if (!trigger || !panel || panel.hidden) return;
+
+        panel.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+
+        if (restoreFocus) trigger.focus();
+    }
+
+    function openUserMenu(root, focusLast = false) {
+        userMenus.forEach(other => {
+            if (other !== root) closeUserMenu(other);
+        });
+
+        const trigger = root.querySelector("[data-user-menu-trigger]");
+        const panel = root.querySelector("[data-user-menu-panel]");
+
+        if (!trigger || !panel) return;
+
+        panel.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
+
+        const items = menuItemsOf(panel);
+
+        if (items.length) {
+            items[focusLast ? items.length - 1 : 0].focus();
+        }
+    }
+
+    function menuItemsOf(panel) {
+        return Array.from(
+            panel.querySelectorAll('[role="menuitem"]')
+        ).filter(item => !item.disabled);
+    }
+
+    userMenus.forEach(root => {
+        const trigger = root.querySelector("[data-user-menu-trigger]");
+        const panel = root.querySelector("[data-user-menu-panel]");
+
+        if (!trigger || !panel) return;
+
+        trigger.addEventListener("click", () => {
+            if (panel.hidden) {
+                openUserMenu(root);
+            } else {
+                closeUserMenu(root);
+            }
+        });
+
+        trigger.addEventListener("keydown", event => {
+            if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                openUserMenu(root, event.key === "ArrowUp");
+                return;
+            }
+
+            if (event.key === "Escape" && !panel.hidden) {
+                event.preventDefault();
+                event.stopPropagation();
+                closeUserMenu(root, true);
+            }
+        });
+
+        panel.addEventListener("keydown", event => {
+            const items = menuItemsOf(panel);
+
+            if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                closeUserMenu(root, true);
+                return;
+            }
+
+            if (event.key === "Home" || event.key === "End") {
+                if (!items.length) return;
+
+                event.preventDefault();
+                items[event.key === "Home" ? 0 : items.length - 1].focus();
+                return;
+            }
+
+            if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+
+            if (!items.length) return;
+
+            event.preventDefault();
+
+            const current = items.indexOf(document.activeElement);
+            const step = event.key === "ArrowDown" ? 1 : -1;
+            const next = (current + step + items.length) % items.length;
+
+            items[next].focus();
+        });
+
+        panel.addEventListener("click", event => {
+            if (event.target.closest(".user-menu__item")) closeUserMenu(root);
+        });
+
+        root.addEventListener("focusout", event => {
+            if (!root.contains(event.relatedTarget)) closeUserMenu(root);
+        });
+
+        document.addEventListener("click", event => {
+            if (!root.contains(event.target)) closeUserMenu(root);
+        });
+    });
+
     // ---------- Dialogs ----------
 
     const dialogs = Array.from(
@@ -203,7 +319,15 @@
             const isOpen = dialog.classList.contains("show");
 
             if (isOpen) {
-                lastFocused = document.activeElement;
+                const active = document.activeElement;
+
+                lastFocused =
+                    active &&
+                    active !== document.body &&
+                    active.offsetParent !== null
+                        ? active
+                        : document.getElementById("userMenuButton") || active;
+
                 document.body.classList.add("modal-open");
 
                 window.requestAnimationFrame(() => {
@@ -218,8 +342,17 @@
                 return;
             }
 
-            if (lastFocused && document.contains(lastFocused)) {
+            const canRestoreFocus =
+                lastFocused &&
+                document.contains(lastFocused) &&
+                lastFocused.offsetParent !== null;
+
+            if (canRestoreFocus) {
                 lastFocused.focus();
+            } else if (lastFocused && lastFocused.closest("[data-user-menu]")) {
+                const trigger = document.getElementById("userMenuButton");
+
+                if (trigger) trigger.focus();
             }
 
             if (!document.querySelector(".admin-modal.show")) {

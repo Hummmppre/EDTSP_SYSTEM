@@ -35,7 +35,22 @@
   }
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const PHONE_REGEX = /^[0-9+()\-\s]{7,20}$/;
+  const PHONE_REGEX = /^(?=.*\d)[0-9+()\-\s]{7,20}$/;
+  const PSGC_API = "https://psgc.gitlab.io/api";
+  const MANUAL_LOCATION = "__manual";
+  const METRO_MANILA = { code: "130000000", name: "Metro Manila" };
+  const DEFAULT_LOCATION_HINT =
+    'Choose from the list, or select "Not listed" to type a location.';
+  const locationCache = new Map();
+  const ADDRESS_LOCATION_IDS = new Set([
+    "addressProvince",
+    "addressCity",
+    "addressBarangay",
+    "addressProvinceManual",
+    "addressCityManual",
+    "addressBarangayManual",
+  ]);
+  let provincesPromise = null;
 
   const MAX_FILE_BYTES = 10 * 1024 * 1024;
   const MAX_APPLICATION_BYTES = 30 * 1024 * 1024;
@@ -63,6 +78,11 @@
 
   const DRAFT_KEY = "edtspApplyDraft";
   const DRAFT_VERSION = 1;
+  const DRAFT_SAVE_LABELS = {
+    saving: "Saving",
+    saved: "Saved",
+    failed: "Save failed",
+  };
 
   // Program and batch are restored on their own so they line up with the
   // options rendered from the latest availability.
@@ -71,6 +91,13 @@
     "lastName",
     "email",
     "phone",
+    "streetAddress",
+    "addressProvince",
+    "addressCity",
+    "addressBarangay",
+    "addressProvinceManual",
+    "addressCityManual",
+    "addressBarangayManual",
     "address",
     "dateOfBirth",
     "sex",
@@ -100,6 +127,9 @@
     submitting: false,
     draft: null,
     deepLink: false,
+    locationCityRequest: 0,
+    locationBarangayRequest: 0,
+    addressRevision: 0,
   };
 
   const elements = {
@@ -109,6 +139,7 @@
     noticeText: document.getElementById("noticeText"),
     noticeRetry: document.getElementById("noticeRetry"),
     status: document.getElementById("statusPanel"),
+    statusTitle: document.getElementById("status-title"),
     statusBadge: document.getElementById("statusBadge"),
     statusMessage: document.getElementById("statusMessage"),
     statusMessageTitle: document.getElementById("statusMessageTitle"),
@@ -141,12 +172,21 @@
     startReason: document.getElementById("startReason"),
     startError: document.getElementById("startError"),
     startDraftHint: document.getElementById("startDraftHint"),
+    startOverHint: document.getElementById("startOverHint"),
     wizard: document.getElementById("wizardPanel"),
     wizardTitle: document.getElementById("wizard-title"),
     wizardMeta: document.getElementById("wizardMeta"),
+    wizardStepAnnouncement: document.getElementById("wizardStepAnnouncement"),
+    wizardProgressCurrent: document.getElementById("wizardProgressCurrent"),
+    wizardProgressCounts: document.getElementById("wizardProgressCounts"),
+    wizardProgressTrack: document.getElementById("wizardProgressBar"),
+    wizardProgressFill: document.getElementById("wizardProgressFill"),
     draftBanner: document.getElementById("draftBanner"),
     draftBannerText: document.getElementById("draftBannerText"),
     draftBannerDismiss: document.getElementById("draftBannerDismiss"),
+    draftSaveStatus: document.getElementById("draftSaveStatus"),
+    draftSaveStatusText: document.getElementById("draftSaveStatusText"),
+    draftSaveRetry: document.getElementById("draftSaveRetry"),
     backToOverviewBtn: document.getElementById("backToOverviewBtn"),
     wizardSteps: Array.from(document.querySelectorAll("#wizardSteps li")),
     form: document.getElementById("applicationForm"),
@@ -155,6 +195,21 @@
     nextBtn: document.getElementById("nextBtn"),
     submitBtn: document.getElementById("submitBtn"),
     submitError: document.getElementById("submitError"),
+    uploadProgress: document.getElementById("uploadProgress"),
+    uploadProgressValue: document.getElementById("uploadProgressValue"),
+    uploadProgressBar: document.getElementById("uploadProgressBar"),
+    uploadProgressFill: document.getElementById("uploadProgressFill"),
+    dateOfBirth: document.getElementById("dateOfBirth"),
+    streetAddress: document.getElementById("streetAddress"),
+    addressProvince: document.getElementById("addressProvince"),
+    addressCity: document.getElementById("addressCity"),
+    addressBarangay: document.getElementById("addressBarangay"),
+    addressProvinceManual: document.getElementById("addressProvinceManual"),
+    addressCityManual: document.getElementById("addressCityManual"),
+    addressBarangayManual: document.getElementById("addressBarangayManual"),
+    address: document.getElementById("address"),
+    addressPreview: document.getElementById("addressPreview"),
+    addressLocationHint: document.getElementById("addressLocationHint"),
     program: document.getElementById("program"),
     batch: document.getElementById("batch"),
     programHint: document.getElementById("programHint"),
@@ -169,6 +224,10 @@
       cv: document.getElementById("cvList"),
       valid_id: document.getElementById("validIdList"),
     },
+    documentSummaries: {
+      cv: document.getElementById("cvListSummary"),
+      valid_id: document.getElementById("validIdListSummary"),
+    },
     draftHints: {
       cv: document.getElementById("cvDraftHint"),
       valid_id: document.getElementById("validIdDraftHint"),
@@ -177,6 +236,8 @@
     statusDocumentList: document.getElementById("statusDocumentList"),
     statusDocumentError: document.getElementById("statusDocumentError"),
   };
+
+  setDateOfBirthMax();
 
   function formatDate(value) {
     if (!value) return "—";
@@ -191,6 +252,59 @@
       day: "numeric",
     });
   }
+  function localDateValue(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function setDateOfBirthMax() {
+    if (!elements.dateOfBirth) return;
+
+    // Use the local calendar date so the picker cannot offer tomorrow.
+    elements.dateOfBirth.max = localDateValue();
+  }
+
+  function normalizePhoneNumber(value) {
+    return String(value)
+      .normalize("NFKC")
+      .replace(/[./]/g, " ")
+      .replace(/[\u2010-\u2015\u2212]/g, "-")
+      .replace(/[^\d+()\-\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function normalizePhoneField(input) {
+    const normalized = normalizePhoneNumber(input.value);
+
+    if (normalized === input.value) return;
+
+    input.value = normalized;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function handlePhonePaste(event) {
+    const input = event.currentTarget;
+    const pasted = event.clipboardData?.getData("text");
+
+    if (!pasted) return;
+
+    const normalized = normalizePhoneNumber(pasted);
+
+    if (normalized === pasted) return;
+
+    event.preventDefault();
+
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+
+    input.setRangeText(normalized, start, end, "end");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
   function formatBytes(bytes) {
     const value = Number(bytes) || 0;
 
@@ -263,13 +377,39 @@
     return draft;
   }
 
+  function resetDraftSaveStatus() {
+    elements.draftSaveStatus.hidden = true;
+    elements.draftSaveStatus.removeAttribute("data-state");
+    elements.draftSaveStatusText.textContent = "";
+    elements.draftSaveRetry.hidden = true;
+  }
+
+  function setDraftSaveState(status) {
+    const label = DRAFT_SAVE_LABELS[status];
+
+    if (!label) return;
+
+    elements.draftSaveStatus.hidden = false;
+    elements.draftSaveStatus.dataset.state = status;
+    elements.draftSaveStatusText.textContent = label;
+    elements.draftSaveRetry.hidden = status !== "failed";
+  }
+
   function saveDraft() {
-    if (!state.formOpen || state.submitting) return;
+    if (!state.formOpen || state.submitting) return false;
+
+    window.clearTimeout(draftSaveTimer);
+    draftSaveTimer = null;
 
     const store = draftStore();
     const userId = currentUserId();
 
-    if (!store || !userId) return;
+    if (!store || !userId) {
+      setDraftSaveState("failed");
+      return false;
+    }
+
+    setDraftSaveState("saving");
 
     const values = {};
 
@@ -306,15 +446,22 @@
     try {
       store.setItem(DRAFT_KEY, JSON.stringify(draft));
       state.draft = draft;
+      setDraftSaveState("saved");
+      return true;
     } catch (error) {
       console.error("[apply] could not save the draft", error);
+      setDraftSaveState("failed");
+      return false;
     }
   }
 
   let draftSaveTimer = null;
 
   function queueDraftSave() {
+    if (!state.formOpen || state.submitting) return;
+
     window.clearTimeout(draftSaveTimer);
+    setDraftSaveState("saving");
     draftSaveTimer = window.setTimeout(saveDraft, 400);
   }
 
@@ -322,6 +469,7 @@
     window.clearTimeout(draftSaveTimer);
     draftSaveTimer = null;
     state.draft = null;
+    resetDraftSaveStatus();
 
     const store = draftStore();
 
@@ -371,35 +519,49 @@
   }
 
   function setDocumentError(type, message) {
-    const field = document.getElementById(
-      type === "cv" ? "cvDocumentField" : "validIdDocumentField",
-    );
     const input = elements.documentInputs[type];
 
-    if (input) input.setAttribute("aria-invalid", "true");
+    if (input) setFieldError(input, message);
+  }
 
-    if (!field) return;
+  function clearDocumentError(type) {
+    const input = elements.documentInputs[type];
 
-    let error = field.querySelector(".field__error");
+    if (input) clearFieldError(input);
+  }
 
-    if (!error) {
-      error = document.createElement("p");
-      error.className = "field__error";
-      field.append(error);
+  function focusDocumentInput(type) {
+    const input = elements.documentInputs[type];
+
+    if (!input) return;
+
+    try {
+      input.focus({ preventScroll: true });
+    } catch (error) {
+      input.focus();
     }
 
-    error.textContent = message;
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   function renderDocumentLists() {
     DOCUMENT_TYPES.forEach((docType) => {
       const list = elements.documentLists[docType.type];
+      const summary = elements.documentSummaries[docType.type];
 
       if (!list) return;
 
+      const entries = documentEntries(docType.type);
+
       list.innerHTML = "";
 
-      documentEntries(docType.type).forEach((entry) => {
+      if (summary) {
+        summary.textContent = entries.length
+          ? `${entries.length} file${entries.length === 1 ? "" : "s"} selected:`
+          : "No files selected yet.";
+      }
+
+      entries.forEach((entry) => {
         const item = document.createElement("li");
         item.className = "document-list__item";
 
@@ -410,6 +572,40 @@
         const size = document.createElement("span");
         size.className = "document-list__size";
         size.textContent = formatBytes(entry.size);
+
+        const actions = document.createElement("span");
+        actions.className = "document__actions";
+
+        const replace = document.createElement("button");
+        replace.type = "button";
+        replace.className = "document-link";
+        replace.textContent = "Replace";
+        replace.setAttribute(
+          "aria-label",
+          `Replace ${entry.name} in ${docType.label}`,
+        );
+        replace.addEventListener("click", () => {
+          const picker = document.createElement("input");
+          picker.type = "file";
+          picker.accept = ".pdf,.jpg,.jpeg,.png";
+          picker.className = "sr-only";
+          picker.tabIndex = -1;
+          picker.setAttribute(
+            "aria-label",
+            `Choose a replacement for ${entry.name}`,
+          );
+
+          const removePicker = () => picker.remove();
+
+          picker.addEventListener("change", () => {
+            replaceDocumentFile(docType.type, entry, picker.files);
+            removePicker();
+          });
+          picker.addEventListener("cancel", removePicker);
+
+          document.body.append(picker);
+          picker.click();
+        });
 
         const remove = document.createElement("button");
         remove.type = "button";
@@ -424,10 +620,12 @@
             (candidate) => candidate !== entry,
           );
 
+          clearDocumentError(docType.type);
           renderDocumentLists();
         });
 
-        item.append(name, size, remove);
+        actions.append(replace, remove);
+        item.append(name, size, actions);
 
         if (entry.kind === "inherited") {
           const note = document.createElement("span");
@@ -456,41 +654,79 @@
     renderDocumentLists();
   }
 
-  function addDocumentFiles(type, fileList) {
-    const files = Array.from(fileList || []);
-
-    if (!files.length) return;
-
+  function documentFilesError(type, files, replacing = null) {
     let error = null;
     let total = totalNewBytes();
+    let count = documentEntries(type).length + files.length;
+
+    if (replacing) {
+      if (replacing.kind === "new") total -= replacing.size;
+      count -= 1;
+    }
 
     for (const file of files) {
       if (error) break;
 
       if (!/\.(pdf|jpe?g|png)$/i.test(file.name)) {
-        error =
-          "That file is not a PDF, JPG or PNG. Please check the file and try again.";
+        error = "That file is not a PDF, JPG or PNG. Choose a supported file.";
       } else if (!file.size) {
-        error = "That file is empty. Please choose another.";
+        error = "That file is empty. Choose another file.";
       } else if (file.size > MAX_FILE_BYTES) {
         error = "Each file must be 10 MB or smaller.";
       } else if (total + file.size > MAX_APPLICATION_BYTES) {
         error =
-          "These documents are too large together. Keep the total under 30 MB.";
+          "The documents would be too large together. Keep the total under 30 MB.";
       } else {
         total += file.size;
       }
     }
 
-    if (
-      !error &&
-      documentEntries(type).length + files.length > MAX_FILES_PER_DOCUMENT
-    ) {
-      error = "You can attach up to 10 files per document.";
+    if (!error && count > MAX_FILES_PER_DOCUMENT) {
+      error = `You can attach up to ${MAX_FILES_PER_DOCUMENT} files per document.`;
     }
+
+    return error;
+  }
+
+  function replaceDocumentFile(type, entry, fileList) {
+    const file = Array.from(fileList || [])[0];
+
+    if (!file) return;
+
+    const error = documentFilesError(type, [file], entry);
 
     if (error) {
       setDocumentError(type, error);
+      focusDocumentInput(type);
+      return;
+    }
+
+    const entries = documentEntries(type);
+    const index = entries.indexOf(entry);
+
+    if (index === -1) return;
+
+    state.documents[type][index] = {
+      kind: "new",
+      name: file.name,
+      size: file.size,
+      file,
+    };
+
+    clearDocumentError(type);
+    renderDocumentLists();
+  }
+
+  function addDocumentFiles(type, fileList) {
+    const files = Array.from(fileList || []);
+
+    if (!files.length) return;
+
+    const error = documentFilesError(type, files);
+
+    if (error) {
+      setDocumentError(type, error);
+      focusDocumentInput(type);
       return;
     }
 
@@ -503,6 +739,7 @@
       });
     });
 
+    clearDocumentError(type);
     renderDocumentLists();
   }
 
@@ -535,6 +772,29 @@
     return inherited;
   }
 
+  function setUploadProgress(percent) {
+    const value = Math.round(
+      Math.min(100, Math.max(0, Number(percent) || 0)),
+    );
+
+    elements.uploadProgress.hidden = false;
+    elements.uploadProgressValue.textContent = `${value}%`;
+    elements.uploadProgressFill.style.width = `${value}%`;
+    elements.uploadProgressBar.setAttribute("aria-valuenow", String(value));
+    elements.uploadProgressBar.setAttribute(
+      "aria-valuetext",
+      `${value}% uploaded`,
+    );
+  }
+
+  function hideUploadProgress() {
+    elements.uploadProgress.hidden = true;
+    elements.uploadProgressValue.textContent = "0%";
+    elements.uploadProgressFill.style.width = "0%";
+    elements.uploadProgressBar.setAttribute("aria-valuenow", "0");
+    elements.uploadProgressBar.removeAttribute("aria-valuetext");
+  }
+
   function submitWithProgress(form) {
     return new Promise((resolve, reject) => {
       const request = new XMLHttpRequest();
@@ -548,6 +808,7 @@
         const percent = Math.round((event.loaded / event.total) * 100);
 
         elements.submitBtn.textContent = `Uploading documents… ${percent}%`;
+        setUploadProgress(percent);
       });
 
       request.addEventListener("load", () => {
@@ -996,11 +1257,675 @@
     setIfEmpty("phone", profile ? profile.phone : "");
 
     if (profile && profile.address) {
-      const address = document.getElementById("address");
+      prefillAddress(profile.address);
+    }
+  }
 
-      if (address && !address.value) {
-        address.value = profile.address;
+  // ---------- Address ----------
+
+  function setLocationHint(message) {
+    if (elements.addressLocationHint) {
+      elements.addressLocationHint.textContent = message;
+    }
+  }
+
+  function locationOption(value, label, disabled = false) {
+    const option = document.createElement("option");
+
+    option.value = value;
+    option.textContent = label;
+    option.disabled = disabled;
+    return option;
+  }
+
+  function resetLocationSelect(select, placeholder) {
+    if (!select) return;
+
+    select.innerHTML = "";
+    select.append(locationOption("", placeholder, true));
+    select.append(locationOption(MANUAL_LOCATION, "Not listed — enter manually"));
+    select.value = "";
+  }
+
+  function fillLocationSelect(select, placeholder, items, preferred = "") {
+    if (!select) return;
+
+    select.innerHTML = "";
+    select.append(locationOption("", placeholder, true));
+
+    items.forEach((item) => {
+      select.append(locationOption(item.code, item.name));
+    });
+
+    select.append(locationOption(MANUAL_LOCATION, "Not listed — enter manually"));
+
+    if (preferred && optionExists(select, preferred)) {
+      select.value = preferred;
+    } else {
+      select.value = "";
+    }
+  }
+
+  async function fetchLocationList(path) {
+    if (locationCache.has(path)) return locationCache.get(path);
+
+    const request = (async () => {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const response = await fetch(`${PSGC_API}${path}`, {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Location list request failed (${response.status}).`);
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("Unexpected location list response.");
+        }
+
+        return data
+          .map((item) => ({
+            code: String(item.code || ""),
+            name: String(item.name || "").trim(),
+          }))
+          .filter((item) => item.code && item.name)
+          .sort((a, b) => a.name.localeCompare(b.name));
+      } finally {
+        window.clearTimeout(timeout);
       }
+    })();
+
+    locationCache.set(path, request);
+    request.catch(() => locationCache.delete(path));
+    return request;
+  }
+
+  function ensureProvinces() {
+    if (provincesPromise) return provincesPromise;
+
+    setLocationHint(
+      'Loading provinces… You can still select "Not listed" to type your address.',
+    );
+
+    provincesPromise = fetchLocationList("/provinces/")
+      .then((provinces) => {
+        fillLocationSelect(
+          elements.addressProvince,
+          "Select province",
+          [METRO_MANILA, ...provinces].sort((a, b) =>
+            a.name.localeCompare(b.name),
+          ),
+          elements.addressProvince.value,
+        );
+        setLocationHint(DEFAULT_LOCATION_HINT);
+        return provinces;
+      })
+      .catch((error) => {
+        console.error("[apply] could not load provinces", error);
+        fillLocationSelect(
+          elements.addressProvince,
+          "Could not load provinces",
+          [],
+          elements.addressProvince.value,
+        );
+        setLocationHint(
+          'The province list could not be loaded. Select "Not listed" to type your address.',
+        );
+        return [];
+      });
+
+    return provincesPromise;
+  }
+
+  async function loadCities(provinceCode) {
+    const requestId = ++state.locationCityRequest;
+    const path =
+      provinceCode === METRO_MANILA.code
+        ? `/regions/${provinceCode}/cities-municipalities/`
+        : `/provinces/${provinceCode}/cities-municipalities/`;
+
+    setLocationHint("Loading cities and municipalities…");
+    fillLocationSelect(
+      elements.addressCity,
+      "Loading cities and municipalities…",
+      [],
+      elements.addressCity.value === MANUAL_LOCATION ? MANUAL_LOCATION : "",
+    );
+    elements.addressCity.disabled = false;
+
+    try {
+      const cities = await fetchLocationList(path);
+
+      if (
+        requestId !== state.locationCityRequest ||
+        elements.addressProvince.value !== provinceCode
+      ) {
+        return cities;
+      }
+
+      fillLocationSelect(
+        elements.addressCity,
+        "Select city / municipality",
+        cities,
+        elements.addressCity.value,
+      );
+      elements.addressCity.disabled = false;
+      syncManualInput(elements.addressCity, elements.addressCityManual);
+      setLocationHint(DEFAULT_LOCATION_HINT);
+      updateAddressField();
+      return cities;
+    } catch (error) {
+      if (requestId !== state.locationCityRequest) return [];
+
+      console.error("[apply] could not load cities", error);
+      fillLocationSelect(
+        elements.addressCity,
+        "Could not load cities",
+        [],
+        MANUAL_LOCATION,
+      );
+      elements.addressCity.disabled = false;
+      syncManualInput(elements.addressCity, elements.addressCityManual);
+      elements.addressBarangay.disabled = false;
+      resetLocationSelect(elements.addressBarangay, "Select barangay");
+      elements.addressBarangay.value = MANUAL_LOCATION;
+      syncManualInput(
+        elements.addressBarangay,
+        elements.addressBarangayManual,
+      );
+      setLocationHint(
+        'The city or municipality list could not be loaded. Select "Not listed" to type it.',
+      );
+      updateAddressField();
+      return [];
+    }
+  }
+
+  async function loadBarangays(cityCode) {
+    const requestId = ++state.locationBarangayRequest;
+
+    setLocationHint("Loading barangays…");
+    fillLocationSelect(
+      elements.addressBarangay,
+      "Loading barangays…",
+      [],
+      elements.addressBarangay.value === MANUAL_LOCATION
+        ? MANUAL_LOCATION
+        : "",
+    );
+    elements.addressBarangay.disabled = false;
+
+    try {
+      const barangays = await fetchLocationList(
+        `/cities-municipalities/${cityCode}/barangays/`,
+      );
+
+      if (
+        requestId !== state.locationBarangayRequest ||
+        elements.addressCity.value !== cityCode
+      ) {
+        return barangays;
+      }
+
+      fillLocationSelect(
+        elements.addressBarangay,
+        "Select barangay",
+        barangays,
+        elements.addressBarangay.value,
+      );
+      elements.addressBarangay.disabled = false;
+      syncManualInput(
+        elements.addressBarangay,
+        elements.addressBarangayManual,
+      );
+      setLocationHint(DEFAULT_LOCATION_HINT);
+      updateAddressField();
+      return barangays;
+    } catch (error) {
+      if (requestId !== state.locationBarangayRequest) return [];
+
+      console.error("[apply] could not load barangays", error);
+      fillLocationSelect(
+        elements.addressBarangay,
+        "Could not load barangays",
+        [],
+        MANUAL_LOCATION,
+      );
+      elements.addressBarangay.disabled = false;
+      syncManualInput(
+        elements.addressBarangay,
+        elements.addressBarangayManual,
+      );
+      setLocationHint(
+        'The barangay list could not be loaded. Select "Not listed" to type it.',
+      );
+      updateAddressField();
+      return [];
+    }
+  }
+
+  function syncManualInput(select, manual, focus = false) {
+    if (!select || !manual) return;
+
+    const isManual = select.value === MANUAL_LOCATION;
+
+    manual.hidden = !isManual;
+
+    if (!isManual) {
+      clearFieldError(manual);
+      return;
+    }
+
+    clearFieldError(select);
+
+    if (focus) {
+      try {
+        manual.focus({ preventScroll: true });
+      } catch (error) {
+        manual.focus();
+      }
+    }
+  }
+
+  function locationValue(select, manual) {
+    if (!select) return "";
+
+    if (select.value === MANUAL_LOCATION) {
+      return manual ? manual.value.trim() : "";
+    }
+
+    if (!select.value || select.selectedIndex < 0) return "";
+
+    return (select.options[select.selectedIndex].textContent || "").trim();
+  }
+
+  function updateAddressField() {
+    const address = [
+      elements.streetAddress ? elements.streetAddress.value.trim() : "",
+      locationValue(elements.addressBarangay, elements.addressBarangayManual),
+      locationValue(elements.addressCity, elements.addressCityManual),
+      locationValue(elements.addressProvince, elements.addressProvinceManual),
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    if (elements.address) elements.address.value = address;
+
+    if (elements.addressPreview) {
+      elements.addressPreview.textContent = address
+        ? `Complete address: ${address}`
+        : "";
+      elements.addressPreview.hidden = !address;
+    }
+  }
+
+  function resetLocationFields() {
+    if (!elements.addressProvince) return;
+
+    state.addressRevision += 1;
+    state.locationCityRequest += 1;
+    state.locationBarangayRequest += 1;
+
+    elements.addressProvince.selectedIndex = 0;
+    resetLocationSelect(elements.addressCity, "Select province first");
+    elements.addressCity.disabled = true;
+    resetLocationSelect(
+      elements.addressBarangay,
+      "Select city / municipality first",
+    );
+    elements.addressBarangay.disabled = true;
+
+    [
+      elements.addressProvinceManual,
+      elements.addressCityManual,
+      elements.addressBarangayManual,
+    ].forEach((input) => {
+      if (!input) return;
+
+      input.value = "";
+      input.hidden = true;
+      clearFieldError(input);
+    });
+
+    clearFieldError(elements.addressProvince);
+    clearFieldError(elements.addressCity);
+    clearFieldError(elements.addressBarangay);
+    syncManualInput(
+      elements.addressProvince,
+      elements.addressProvinceManual,
+    );
+    syncManualInput(elements.addressCity, elements.addressCityManual);
+    syncManualInput(elements.addressBarangay, elements.addressBarangayManual);
+    setLocationHint(DEFAULT_LOCATION_HINT);
+    updateAddressField();
+  }
+
+  function handleProvinceChange({ focus = false } = {}) {
+    const province = elements.addressProvince.value;
+
+    state.addressRevision += 1;
+    state.locationCityRequest += 1;
+    state.locationBarangayRequest += 1;
+    syncManualInput(
+      elements.addressProvince,
+      elements.addressProvinceManual,
+      focus,
+    );
+
+    resetLocationSelect(elements.addressCity, "Select city / municipality");
+    elements.addressCity.value = "";
+    elements.addressCity.disabled = true;
+    elements.addressCityManual.value = "";
+    elements.addressCityManual.hidden = true;
+    clearFieldError(elements.addressCity);
+    clearFieldError(elements.addressCityManual);
+
+    resetLocationSelect(elements.addressBarangay, "Select barangay");
+    elements.addressBarangay.value = "";
+    elements.addressBarangay.disabled = true;
+    elements.addressBarangayManual.value = "";
+    elements.addressBarangayManual.hidden = true;
+    clearFieldError(elements.addressBarangay);
+    clearFieldError(elements.addressBarangayManual);
+
+    if (province === MANUAL_LOCATION) {
+      elements.addressCity.disabled = false;
+      elements.addressCity.value = MANUAL_LOCATION;
+      elements.addressBarangay.disabled = false;
+      elements.addressBarangay.value = MANUAL_LOCATION;
+      syncManualInput(elements.addressCity, elements.addressCityManual);
+      syncManualInput(
+        elements.addressBarangay,
+        elements.addressBarangayManual,
+      );
+      setLocationHint(DEFAULT_LOCATION_HINT);
+      updateAddressField();
+      return;
+    }
+
+    if (!province) {
+      updateAddressField();
+      return;
+    }
+
+    updateAddressField();
+    void loadCities(province);
+  }
+
+  function handleCityChange({ focus = false } = {}) {
+    const city = elements.addressCity.value;
+
+    state.addressRevision += 1;
+    state.locationBarangayRequest += 1;
+    syncManualInput(elements.addressCity, elements.addressCityManual, focus);
+
+    resetLocationSelect(elements.addressBarangay, "Select barangay");
+    elements.addressBarangay.value = "";
+    elements.addressBarangay.disabled = true;
+    elements.addressBarangayManual.value = "";
+    elements.addressBarangayManual.hidden = true;
+    clearFieldError(elements.addressBarangay);
+    clearFieldError(elements.addressBarangayManual);
+
+    if (city === MANUAL_LOCATION) {
+      elements.addressBarangay.disabled = false;
+      elements.addressBarangay.value = MANUAL_LOCATION;
+      syncManualInput(
+        elements.addressBarangay,
+        elements.addressBarangayManual,
+      );
+      setLocationHint(DEFAULT_LOCATION_HINT);
+      updateAddressField();
+      return;
+    }
+
+    updateAddressField();
+
+    if (city) void loadBarangays(city);
+  }
+
+  function handleBarangayChange({ focus = false } = {}) {
+    state.addressRevision += 1;
+    syncManualInput(
+      elements.addressBarangay,
+      elements.addressBarangayManual,
+      focus,
+    );
+    updateAddressField();
+  }
+
+  function parseAddressString(value) {
+    const parts = String(value || "")
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (parts.length >= 4) {
+      return {
+        street: parts.slice(0, -3).join(", "),
+        barangay: parts[parts.length - 3],
+        city: parts[parts.length - 2],
+        province: parts[parts.length - 1],
+      };
+    }
+
+    if (parts.length === 3) {
+      return {
+        street: parts[0],
+        barangay: "",
+        city: parts[1],
+        province: parts[2],
+      };
+    }
+
+    return {
+      street: parts.join(", "),
+      barangay: "",
+      city: "",
+      province: "",
+    };
+  }
+
+  function setManualAddressValues({ province = "", city = "", barangay = "" }) {
+    elements.addressProvince.value = MANUAL_LOCATION;
+    elements.addressProvinceManual.value = province;
+
+    elements.addressCity.disabled = false;
+    resetLocationSelect(elements.addressCity, "Select city / municipality");
+    elements.addressCity.value = MANUAL_LOCATION;
+    elements.addressCityManual.value = city;
+
+    elements.addressBarangay.disabled = false;
+    resetLocationSelect(elements.addressBarangay, "Select barangay");
+    elements.addressBarangay.value = MANUAL_LOCATION;
+    elements.addressBarangayManual.value = barangay;
+
+    syncManualInput(
+      elements.addressProvince,
+      elements.addressProvinceManual,
+    );
+    syncManualInput(elements.addressCity, elements.addressCityManual);
+    syncManualInput(elements.addressBarangay, elements.addressBarangayManual);
+    setLocationHint(DEFAULT_LOCATION_HINT);
+    updateAddressField();
+  }
+
+  function prefillAddress(value) {
+    if (!value || !elements.streetAddress || elements.streetAddress.value) {
+      return;
+    }
+
+    const parsed = parseAddressString(value);
+
+    elements.streetAddress.value = parsed.street;
+
+    if (!parsed.province) {
+      updateAddressField();
+      return;
+    }
+
+    setManualAddressValues(parsed);
+  }
+
+  async function restoreAddressSelections(values) {
+    if (!values || !elements.addressProvince) return;
+
+    const revision = state.addressRevision;
+    const parsed = parseAddressString(values.address);
+    const provinceCode = values.addressProvince || "";
+    const cityCode = values.addressCity || "";
+    const barangayCode = values.addressBarangay || "";
+
+    if (provinceCode === MANUAL_LOCATION) {
+      setManualAddressValues({
+        province:
+          values.addressProvinceManual ||
+          elements.addressProvinceManual.value ||
+          parsed.province,
+        city:
+          values.addressCityManual ||
+          elements.addressCityManual.value ||
+          parsed.city,
+        barangay:
+          values.addressBarangayManual ||
+          elements.addressBarangayManual.value ||
+          parsed.barangay,
+      });
+      return;
+    }
+
+    if (!provinceCode) {
+      if (values.address) {
+        elements.streetAddress.value =
+          parsed.street || elements.streetAddress.value;
+
+        if (parsed.province) {
+          setManualAddressValues(parsed);
+        } else {
+          updateAddressField();
+        }
+      } else {
+        updateAddressField();
+      }
+
+      return;
+    }
+
+    await ensureProvinces();
+
+    if (revision !== state.addressRevision) return;
+
+    if (!optionExists(elements.addressProvince, provinceCode)) {
+      setManualAddressValues({
+        province:
+          values.addressProvinceManual ||
+          elements.addressProvinceManual.value ||
+          parsed.province,
+        city:
+          values.addressCityManual ||
+          elements.addressCityManual.value ||
+          parsed.city,
+        barangay:
+          values.addressBarangayManual ||
+          elements.addressBarangayManual.value ||
+          parsed.barangay,
+      });
+      return;
+    }
+
+    elements.addressProvince.value = provinceCode;
+    syncManualInput(
+      elements.addressProvince,
+      elements.addressProvinceManual,
+    );
+
+    await loadCities(provinceCode);
+
+    if (revision !== state.addressRevision) return;
+
+    if (cityCode === MANUAL_LOCATION) {
+      elements.addressCity.value = MANUAL_LOCATION;
+      elements.addressCityManual.value =
+        values.addressCityManual ||
+        elements.addressCityManual.value ||
+        parsed.city;
+      syncManualInput(elements.addressCity, elements.addressCityManual);
+      elements.addressBarangay.disabled = false;
+      resetLocationSelect(elements.addressBarangay, "Select barangay");
+      elements.addressBarangay.value = MANUAL_LOCATION;
+      elements.addressBarangayManual.value =
+        values.addressBarangayManual ||
+        elements.addressBarangayManual.value ||
+        parsed.barangay;
+      syncManualInput(
+        elements.addressBarangay,
+        elements.addressBarangayManual,
+      );
+    } else if (cityCode && optionExists(elements.addressCity, cityCode)) {
+      elements.addressCity.value = cityCode;
+      syncManualInput(elements.addressCity, elements.addressCityManual);
+
+      await loadBarangays(cityCode);
+
+      if (revision !== state.addressRevision) return;
+
+      if (
+        barangayCode === MANUAL_LOCATION ||
+        (barangayCode &&
+          !optionExists(elements.addressBarangay, barangayCode))
+      ) {
+        elements.addressBarangay.disabled = false;
+        elements.addressBarangay.value = MANUAL_LOCATION;
+        elements.addressBarangayManual.value =
+          values.addressBarangayManual ||
+          elements.addressBarangayManual.value ||
+          parsed.barangay;
+        syncManualInput(
+          elements.addressBarangay,
+          elements.addressBarangayManual,
+        );
+      } else if (barangayCode) {
+        elements.addressBarangay.value = barangayCode;
+        syncManualInput(
+          elements.addressBarangay,
+          elements.addressBarangayManual,
+        );
+      }
+    } else if (cityCode) {
+      elements.addressCity.value = MANUAL_LOCATION;
+      elements.addressCityManual.value =
+        values.addressCityManual ||
+        elements.addressCityManual.value ||
+        parsed.city;
+      syncManualInput(elements.addressCity, elements.addressCityManual);
+      elements.addressBarangay.disabled = false;
+      resetLocationSelect(elements.addressBarangay, "Select barangay");
+      elements.addressBarangay.value = MANUAL_LOCATION;
+      elements.addressBarangayManual.value =
+        values.addressBarangayManual ||
+        elements.addressBarangayManual.value ||
+        parsed.barangay;
+      syncManualInput(
+        elements.addressBarangay,
+        elements.addressBarangayManual,
+      );
+    } else {
+      elements.addressCity.value = "";
+      syncManualInput(elements.addressCity, elements.addressCityManual);
+      resetLocationSelect(elements.addressBarangay, "Select barangay");
+      elements.addressBarangay.disabled = true;
+    }
+
+    updateAddressField();
+
+    if (revision === state.addressRevision) {
+      saveDraft();
     }
   }
 
@@ -1097,19 +2022,86 @@
     }
   }
 
+  function stepHeading(step) {
+    const panel = elements.steps.find(
+      (candidate) => Number(candidate.dataset.step) === Number(step),
+    );
+
+    return panel ? panel.querySelector("[data-step-heading]") : null;
+  }
+
+  function focusStepHeading(step, { smooth = true } = {}) {
+    const heading = stepHeading(step);
+
+    if (!heading) return;
+
+    try {
+      heading.focus({ preventScroll: true });
+    } catch (error) {
+      heading.focus();
+    }
+
+    heading.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      block: "start",
+    });
+  }
+
+  function announceStep(step) {
+    const total = elements.wizardSteps.length || 6;
+    const completed = Math.max(0, step - 1);
+    const remaining = Math.max(0, total - step);
+
+    elements.wizardStepAnnouncement.textContent = `${savedStepLabel(step)}. ${completed} completed, ${remaining} remaining.`;
+  }
+
   function updateWizardChrome() {
+    const total = elements.wizardSteps.length || 6;
+    const completed = Math.max(0, state.step - 1);
+    const remaining = Math.max(0, total - state.step);
+
     elements.wizardSteps.forEach((item, index) => {
       const step = index + 1;
+      const isCurrent = step === state.step;
+      const isDone = step < state.step;
 
-      item.classList.toggle("is-current", step === state.step);
-      item.classList.toggle("is-done", step < state.step);
+      item.classList.toggle("is-current", isCurrent);
+      item.classList.toggle("is-done", isDone);
+      item.classList.toggle("is-remaining", step > state.step);
+
+      if (isCurrent) {
+        item.setAttribute("aria-current", "step");
+      } else {
+        item.removeAttribute("aria-current");
+      }
+
+      const stateText = item.querySelector(".process__state");
+
+      if (stateText) {
+        let label = "Remaining";
+
+        if (isCurrent) label = "Current step";
+        else if (isDone) label = "Completed";
+
+        stateText.textContent = label;
+      }
     });
+
+    elements.wizardProgressCurrent.textContent = savedStepLabel(state.step);
+    elements.wizardProgressCounts.textContent = `${completed} completed · ${remaining} remaining`;
+    elements.wizardProgressFill.style.width = `${(state.step / total) * 100}%`;
+    elements.wizardProgressTrack.setAttribute("aria-valuenow", String(state.step));
+    elements.wizardProgressTrack.setAttribute("aria-valuemax", String(total));
+    elements.wizardProgressTrack.setAttribute(
+      "aria-valuetext",
+      `${savedStepLabel(state.step)}. ${completed} completed, ${remaining} remaining.`,
+    );
 
     elements.steps.forEach((panel) => {
       panel.hidden = Number(panel.dataset.step) !== state.step;
     });
 
-    elements.wizardMeta.textContent = `Step ${state.step} of 6`;
+    elements.wizardMeta.textContent = `Step ${state.step} of ${total}`;
     elements.backBtn.hidden = state.step === 1;
     elements.nextBtn.hidden = state.step === 6;
     elements.submitBtn.hidden = state.step !== 6;
@@ -1117,13 +2109,18 @@
     document
       .querySelectorAll(".wizard__step [aria-invalid]")
       .forEach((field) => {
-        field.removeAttribute("aria-invalid");
+        const wrap = fieldWrap(field);
+
+        // Keep the invalid marker while its visible error is still in place.
+        if (!wrap || !wrap.querySelector(".field__error")) {
+          field.removeAttribute("aria-invalid");
+        }
       });
   }
 
   async function goToStep(
     step,
-    { skipAvailability = false, smooth = true } = {},
+    { skipAvailability = false, smooth = true, focusHeading = true } = {},
   ) {
     const target = Math.min(Math.max(step, 1), 6);
 
@@ -1142,8 +2139,16 @@
     const panelTop =
       elements.wizard.getBoundingClientRect().top + window.scrollY;
 
-    window.scrollTo({ top: panelTop, behavior: smooth ? "smooth" : "auto" });
+    if (focusHeading) {
+      focusStepHeading(state.step, { smooth });
+    } else {
+      window.scrollTo({
+        top: panelTop,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    }
 
+    announceStep(state.step);
     saveDraft();
   }
 
@@ -1205,6 +2210,49 @@
     return input.closest(".field");
   }
 
+  function errorMessageId(input) {
+    return `${input.id || "field"}-error`;
+  }
+
+  function linkErrorMessage(input, error) {
+    if (!error.id) error.id = errorMessageId(input);
+
+    const ids = new Set(
+      (input.getAttribute("aria-describedby") || "")
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+
+    ids.add(error.id);
+    input.setAttribute("aria-describedby", Array.from(ids).join(" "));
+  }
+
+  function unlinkErrorMessage(input, id) {
+    if (!id) return;
+
+    const ids = (input.getAttribute("aria-describedby") || "")
+      .split(/\s+/)
+      .filter((item) => item && item !== id);
+
+    if (ids.length) {
+      input.setAttribute("aria-describedby", ids.join(" "));
+    } else {
+      input.removeAttribute("aria-describedby");
+    }
+  }
+
+  function clearFieldError(input) {
+    input.removeAttribute("aria-invalid");
+
+    const wrap = fieldWrap(input);
+    const error = wrap ? wrap.querySelector(".field__error") : null;
+
+    if (!error) return;
+
+    unlinkErrorMessage(input, error.id);
+    error.remove();
+  }
+
   function setFieldError(input, message) {
     const wrap = fieldWrap(input);
 
@@ -1217,18 +2265,37 @@
     if (!error) {
       error = document.createElement("p");
       error.className = "field__error";
-      wrap.append(error);
+
+      // Keep a document error above the selected-file list, where it stays
+      // visible even when several files are attached.
+      const documentList = wrap.querySelector(".document-list");
+
+      if (documentList) {
+        wrap.insertBefore(error, documentList);
+      } else {
+        wrap.append(error);
+      }
     }
 
     error.textContent = message;
+    linkErrorMessage(input, error);
   }
 
   function clearFieldErrors() {
-    document
-      .querySelectorAll(".wizard__step .field__error")
-      .forEach((error) => {
-        error.remove();
-      });
+    const errors = Array.from(
+      document.querySelectorAll(".wizard__step .field__error"),
+    );
+    const errorIds = new Set(errors.map((error) => error.id).filter(Boolean));
+
+    if (errorIds.size) {
+      document
+        .querySelectorAll(".wizard__step [aria-describedby]")
+        .forEach((field) => {
+          errorIds.forEach((id) => unlinkErrorMessage(field, id));
+        });
+    }
+
+    errors.forEach((error) => error.remove());
 
     document
       .querySelectorAll(".wizard__step [aria-invalid]")
@@ -1237,7 +2304,93 @@
       });
   }
 
-  function validateStep(step) {
+  function firstInvalidField(step) {
+    const panel = elements.steps.find(
+      (candidate) => Number(candidate.dataset.step) === Number(step),
+    );
+
+    return panel ? panel.querySelector("[aria-invalid='true']") : null;
+  }
+
+  function focusFirstInvalid(step) {
+    const field = firstInvalidField(step);
+
+    if (!field) return;
+
+    try {
+      field.focus({ preventScroll: true });
+    } catch (error) {
+      field.focus();
+    }
+
+    field.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function phoneValidationMessage(input, { contact = false } = {}) {
+    if (!input.value.trim()) {
+      return contact
+        ? "Enter the emergency contact's phone number."
+        : "Enter your phone number.";
+    }
+
+    return contact
+      ? "Enter a valid contact phone number with at least one digit, e.g. 0917 123 4567. Use 7–20 characters; spaces, +, -, and parentheses are allowed."
+      : "Enter a valid phone number with at least one digit, e.g. 0917 123 4567. Use 7–20 characters; spaces, +, -, and parentheses are allowed.";
+  }
+
+  function validateAddress() {
+    let valid = true;
+
+    if (!elements.streetAddress.value.trim()) {
+      setFieldError(
+        elements.streetAddress,
+        "Enter your house or street address.",
+      );
+      valid = false;
+    }
+
+    const locations = [
+      {
+        select: elements.addressProvince,
+        manual: elements.addressProvinceManual,
+        label: "province",
+      },
+      {
+        select: elements.addressCity,
+        manual: elements.addressCityManual,
+        label: "city or municipality",
+      },
+      {
+        select: elements.addressBarangay,
+        manual: elements.addressBarangayManual,
+        label: "barangay",
+      },
+    ];
+
+    locations.forEach(({ select, manual, label }) => {
+      if (select.value === MANUAL_LOCATION) {
+        if (!manual.value.trim()) {
+          setFieldError(manual, `Enter your ${label}.`);
+          valid = false;
+        }
+
+        return;
+      }
+
+      if (!select.value) {
+        setFieldError(
+          select,
+          `Choose your ${label}, or select "Not listed" to type it.`,
+        );
+        valid = false;
+      }
+    });
+
+    updateAddressField();
+    return valid;
+  }
+
+  function validateStep(step, { focus = true } = {}) {
     clearFieldErrors();
 
     let valid = true;
@@ -1263,35 +2416,35 @@
       }
 
       const phone = document.getElementById("phone");
+      normalizePhoneField(phone);
 
-      if (!PHONE_REGEX.test(phone.value.trim())) {
-        setFieldError(phone, "Enter a valid phone number.");
+      if (!PHONE_REGEX.test(phone.value)) {
+        setFieldError(phone, phoneValidationMessage(phone));
         valid = false;
       }
 
-      requireText("address", "Enter your address.");
+      if (!validateAddress()) valid = false;
     }
 
     if (step === 2) {
       const dateOfBirth = document.getElementById("dateOfBirth");
-      const parsed = new Date(dateOfBirth.value);
+      const value = dateOfBirth.value;
+      const [year, month, day] = value.split("-").map(Number);
+      const parsed = new Date(year, month - 1, day);
 
       if (
-        !dateOfBirth.value ||
+        !value ||
         Number.isNaN(parsed.getTime()) ||
-        parsed.getTime() > Date.now()
+        value > localDateValue()
       ) {
         setFieldError(dateOfBirth, "Enter a valid date of birth.");
         valid = false;
       } else {
         const now = new Date();
-        let age = now.getFullYear() - parsed.getFullYear();
-        const monthDiff = now.getMonth() - parsed.getMonth();
+        let age = now.getFullYear() - year;
+        const monthDiff = now.getMonth() - (month - 1);
 
-        if (
-          monthDiff < 0 ||
-          (monthDiff === 0 && now.getDate() < parsed.getDate())
-        ) {
+        if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < day)) {
           age -= 1;
         }
 
@@ -1318,9 +2471,13 @@
       requireText("emergencyContactRelationship", "Enter the relationship.");
 
       const emergencyPhone = document.getElementById("emergencyContactPhone");
+      normalizePhoneField(emergencyPhone);
 
-      if (!PHONE_REGEX.test(emergencyPhone.value.trim())) {
-        setFieldError(emergencyPhone, "Enter a valid contact number.");
+      if (!PHONE_REGEX.test(emergencyPhone.value)) {
+        setFieldError(
+          emergencyPhone,
+          phoneValidationMessage(emergencyPhone, { contact: true }),
+        );
         valid = false;
       }
     }
@@ -1380,6 +2537,8 @@
       });
     }
 
+    if (!valid && focus) focusFirstInvalid(step);
+
     return valid;
   }
 
@@ -1411,6 +2570,7 @@
     edit.type = "button";
     edit.className = "text-link";
     edit.textContent = "Edit";
+    edit.setAttribute("aria-label", `Edit ${title} section`);
     edit.addEventListener("click", () => goToStep(step));
 
     head.append(heading, edit);
@@ -1432,7 +2592,7 @@
   function buildReview() {
     elements.review.innerHTML = "";
 
-    addReviewGroup("Applicant details", 1, [
+    addReviewGroup("Applicant", 1, [
       {
         label: "Name",
         value: `${valueOf("firstName")} ${valueOf("lastName")}`.trim(),
@@ -1466,6 +2626,13 @@
     addReviewGroup("Training choice", 4, [
       { label: "Program", value: program ? program.name : "" },
       { label: "Batch", value: batch ? batch.label : "" },
+      { label: "Motivation", value: valueOf("motivation") },
+      {
+        label: "Information confirmed",
+        value: document.getElementById("acknowledgedTruthful").checked
+          ? "Yes"
+          : "No",
+      },
     ]);
 
     addReviewGroup(
@@ -1474,16 +2641,10 @@
       DOCUMENT_TYPES.map((docType) => ({
         label: docType.label,
         value: documentEntries(docType.type)
-          .map((entry) => `${entry.name} · ${formatBytes(entry.size)}`)
-          .join(", "),
+          .map((entry) => entry.name)
+          .join("\n"),
       })),
     );
-
-    if (valueOf("motivation")) {
-      addReviewGroup("Motivation", 4, [
-        { label: "Statement", value: valueOf("motivation") },
-      ]);
-    }
   }
 
   // ---------- Status rendering ----------
@@ -1558,9 +2719,9 @@
       );
     } else if (application && application.status === "Submitted") {
       setStatusMessage(
-        "Application received",
+        state.justSubmitted ? "Application submitted" : "Application received",
         state.justSubmitted
-          ? `Your application is under review. We'll email you at ${messageEmail}.`
+          ? `Your application was sent to the training office for review. We'll email you at ${messageEmail} once a decision is made.`
           : `Your application is under review. We'll email you at ${messageEmail} once a decision is made.`,
       );
     } else if (application && application.status === "Under review") {
@@ -1647,6 +2808,15 @@
     elements.startOutcomeNote.hidden = !note;
   }
 
+  function savedStepLabel(step) {
+    const number = Number(step);
+    const item = elements.wizardSteps[number - 1];
+    const name = item ? item.querySelector("strong").textContent.trim() : "";
+    return name
+      ? `Step ${number} of ${elements.wizardSteps.length} — ${name}`
+      : `Step ${number} of ${elements.wizardSteps.length}`;
+  }
+
   function showStart() {
     const draft = state.draft;
     const reason = startBlockReason();
@@ -1663,9 +2833,14 @@
     elements.startReason.textContent = reason;
     elements.startReason.hidden = !reason;
     elements.startDraftHint.hidden = !draft;
+    elements.startOverHint.hidden = !draft;
 
     if (draft) {
-      elements.startDraftHint.textContent = `Saved ${formatDate(draft.savedAt)}, step ${draft.step} of 6.`;
+      elements.startDraftHint.textContent = [
+        `${savedStepLabel(draft.step)}.`,
+        `Saved ${formatDate(draft.savedAt)}.`,
+        "Resume application continues from this step.",
+      ].join(" ");
     }
 
     if (reason) {
@@ -1703,8 +2878,10 @@
     elements.program.value = "";
     fillBatchOptions("");
     resetDocumentState();
+    resetLocationFields();
     prefillContactFields();
     elements.draftBanner.hidden = true;
+    resetDraftSaveStatus();
   }
 
   function applyDraftValues(draft) {
@@ -1734,8 +2911,10 @@
   }
 
   function openForm({ draft = null } = {}) {
+    setDateOfBirthMax();
     resetApplicationForm();
     renderProgramOptions();
+    void ensureProvinces();
 
     const saved = (draft && draft.values) || {};
     const savedProgram = typeof saved.program === "string" ? saved.program : "";
@@ -1757,6 +2936,10 @@
     }
 
     applyDraftValues(draft);
+
+    if (draft) {
+      void restoreAddressSelections(saved);
+    }
 
     state.draft = draft;
 
@@ -1889,6 +3072,29 @@
 
   // ---------- Events ----------
 
+  elements.dateOfBirth.addEventListener("focus", setDateOfBirthMax);
+
+  elements.addressProvince.addEventListener("change", () => {
+    handleProvinceChange({ focus: true });
+  });
+
+  elements.addressCity.addEventListener("change", () => {
+    handleCityChange({ focus: true });
+  });
+
+  elements.addressBarangay.addEventListener("change", () => {
+    handleBarangayChange({ focus: true });
+  });
+
+  ["phone", "emergencyContactPhone"].forEach((id) => {
+    const input = document.getElementById(id);
+
+    if (!input) return;
+
+    input.addEventListener("paste", handlePhonePaste);
+    input.addEventListener("blur", () => normalizePhoneField(input));
+  });
+
   elements.program.addEventListener("change", () => {
     fillBatchOptions(elements.program.value);
   });
@@ -1973,6 +3179,12 @@
     elements.draftBanner.hidden = true;
   });
 
+  elements.draftSaveRetry.addEventListener("click", () => {
+    window.clearTimeout(draftSaveTimer);
+    draftSaveTimer = null;
+    saveDraft();
+  });
+
   function closeWithdrawModal() {
     elements.withdrawModal.classList.remove("show");
     document.body.classList.remove("modal-open");
@@ -2022,11 +3234,14 @@
   elements.form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    if (state.step !== 6) return;
+    // Ignore a second submit from a double click or Enter while the first
+    // request is still running, and after the form has closed on success.
+    if (!state.formOpen || state.submitting || state.step !== 6) return;
 
     for (let step = 1; step <= 5; step += 1) {
-      if (!validateStep(step)) {
-        goToStep(step);
+      if (!validateStep(step, { focus: false })) {
+        await goToStep(step, { smooth: false, focusHeading: false });
+        focusFirstInvalid(step);
         return;
       }
     }
@@ -2081,6 +3296,7 @@
     elements.submitBtn.disabled = true;
     elements.submitBtn.textContent = "Uploading documents…";
     state.submitting = true;
+    setUploadProgress(0);
 
     try {
       await submitWithProgress(form);
@@ -2092,6 +3308,8 @@
 
       await loadApplicationState();
       showStatus();
+      focusPanel(elements.status, elements.statusTitle);
+      showToast("Application submitted successfully.", "success");
     } catch (error) {
       elements.submitError.textContent =
         error.message || "Unable to submit your application. Please try again.";
@@ -2099,7 +3317,8 @@
     } finally {
       state.submitting = false;
       elements.submitBtn.disabled = false;
-      elements.submitBtn.textContent = "Submit application";
+      elements.submitBtn.textContent = "Confirm and submit application";
+      hideUploadProgress();
     }
   });
 
@@ -2109,16 +3328,21 @@
 
     if (!field.matches("input, select, textarea")) return;
 
-    field.removeAttribute("aria-invalid");
+    clearFieldError(field);
 
-    const wrap = fieldWrap(field);
-    const error = wrap ? wrap.querySelector(".field__error") : null;
-
-    if (error) error.remove();
+    if (ADDRESS_LOCATION_IDS.has(field.id)) {
+      state.addressRevision += 1;
+    }
   });
 
-  elements.form.addEventListener("input", queueDraftSave);
-  elements.form.addEventListener("change", queueDraftSave);
+  elements.form.addEventListener("input", () => {
+    updateAddressField();
+    queueDraftSave();
+  });
+  elements.form.addEventListener("change", () => {
+    updateAddressField();
+    queueDraftSave();
+  });
 
   // ---------- Init ----------
 

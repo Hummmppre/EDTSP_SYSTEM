@@ -18,6 +18,10 @@ const authStorage = localStorage.getItem("edtspToken")
 
 let user = null;
 let traineeProfile = null;
+let avatarObjectUrl = null;
+let avatarRequestId = 0;
+let pendingAvatarFile = null;
+let pendingAvatarPreviewUrl = null;
 
 // =============================
 // AUTHENTICATION CHECK
@@ -57,6 +61,40 @@ function setText(id, value) {
   }
 }
 
+function userInitials() {
+  const first = (user && user.firstName) || "";
+  const last = (user && user.lastName) || "";
+
+  return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || "T";
+}
+
+function renderAvatar(element, url, initials) {
+  if (!element) return;
+
+  element.innerHTML = "";
+
+  if (url) {
+    const image = document.createElement("img");
+
+    image.className = "avatar__image";
+    image.alt = "";
+    image.src = url;
+    element.appendChild(image);
+
+    return;
+  }
+
+  element.textContent = initials || "T";
+}
+
+// The top-bar avatar exists on every trainee page; the editor and the preview
+// avatars only exist on the profile page.
+function renderAvatars(url, initials) {
+  ["topbarInitials", "profileAvatar", "avatarPreviewAvatar"].forEach((id) => {
+    renderAvatar(document.getElementById(id), url, initials);
+  });
+}
+
 // =============================
 // LOAD TRAINEE INFORMATION
 // =============================
@@ -92,6 +130,7 @@ async function loadTraineeProfile() {
     authStorage.setItem("edtspUser", JSON.stringify(user));
 
     displayTraineeInformation();
+    loadTraineeAvatar();
 
     console.log("Trainee information loaded successfully.");
   } catch (error) {
@@ -111,15 +150,13 @@ function displayTraineeInformation() {
 
   const fullName = `${firstName} ${lastName}`.trim();
 
-  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-
-  // Sidebar
-  setText("sidebarName", fullName);
-  setText("userInitials", initials);
+  const initials = userInitials();
 
   // Topbar
   setText("topbarName", fullName);
-  setText("topbarInitials", initials);
+
+  // Avatars (top bar and the profile-picture editor)
+  renderAvatars(avatarObjectUrl, initials);
 
   // Welcome message
   setText("welcomeName", firstName);
@@ -161,6 +198,64 @@ function displayTraineeInformation() {
   }
 
   displayEnrollmentCard();
+}
+
+// =============================
+// PROFILE PICTURE
+// =============================
+
+async function loadTraineeAvatar() {
+  const hasAvatar =
+    traineeProfile && traineeProfile.avatar && traineeProfile.avatar.fileId;
+
+  if (!hasAvatar) {
+    avatarRequestId += 1;
+
+    if (avatarObjectUrl) {
+      URL.revokeObjectURL(avatarObjectUrl);
+      avatarObjectUrl = null;
+    }
+
+    renderAvatars(null, userInitials());
+    return;
+  }
+
+  // A just-chosen preview wins over the saved picture while it is pending.
+  if (pendingAvatarPreviewUrl) return;
+
+  const requestId = ++avatarRequestId;
+
+  try {
+    const response = await fetch(`${API_URL}/me/avatar`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem("edtspToken");
+      localStorage.removeItem("edtspUser");
+      sessionStorage.removeItem("edtspToken");
+      sessionStorage.removeItem("edtspUser");
+      window.location.href = "../login.html";
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error("Unable to load your profile picture.");
+    }
+
+    const blob = await response.blob();
+
+    // A newer selection or save may have happened while this was loading.
+    if (requestId !== avatarRequestId || pendingAvatarPreviewUrl) return;
+
+    if (avatarObjectUrl) URL.revokeObjectURL(avatarObjectUrl);
+
+    avatarObjectUrl = URL.createObjectURL(blob);
+    renderAvatars(avatarObjectUrl, userInitials());
+  } catch (error) {
+    console.error("Trainee avatar error:", error);
+    renderAvatars(avatarObjectUrl, userInitials());
+  }
 }
 
 // =============================
@@ -514,6 +609,11 @@ const confirmLogoutButton = document.getElementById("confirmLogout");
 function closeLogoutModal() {
   logoutModal.classList.remove("show");
   document.body.classList.remove("modal-open");
+
+  const returnFocus =
+    document.getElementById("userMenuButton") || logoutButton;
+
+  if (returnFocus) returnFocus.focus();
 }
 
 if (logoutButton && logoutModal) {
@@ -533,6 +633,195 @@ if (logoutButton && logoutModal) {
     sessionStorage.removeItem("edtspUser");
 
     window.location.href = "../login.html";
+  });
+}
+
+// =============================
+// PROFILE PICTURE UPLOAD
+// =============================
+
+const avatarInput = document.getElementById("avatarInput");
+const avatarChoose = document.getElementById("avatarChoose");
+const avatarSave = document.getElementById("avatarSave");
+const avatarMessage = document.getElementById("avatarMessage");
+const avatarError = document.getElementById("avatarError");
+const profileAvatar = document.getElementById("profileAvatar");
+const avatarPreviewAvatar = document.getElementById("avatarPreviewAvatar");
+
+const AVATAR_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
+function setAvatarMessages(message, error) {
+  if (avatarMessage) {
+    avatarMessage.textContent = message || "";
+    avatarMessage.hidden = !message;
+  }
+
+  if (avatarError) {
+    avatarError.textContent = error || "";
+    avatarError.hidden = !error;
+  }
+}
+
+if (avatarInput && avatarChoose && avatarSave) {
+  avatarChoose.addEventListener("click", () => avatarInput.click());
+
+  avatarInput.addEventListener("change", () => {
+    const file = avatarInput.files && avatarInput.files[0];
+
+    if (!file) return;
+
+    if (!AVATAR_TYPES.includes(file.type)) {
+      setAvatarMessages("", "Choose a JPG, PNG or WebP image.");
+      avatarInput.value = "";
+      return;
+    }
+
+    if (!file.size) {
+      setAvatarMessages("", "That file is empty. Choose another image.");
+      avatarInput.value = "";
+      return;
+    }
+
+    if (file.size > AVATAR_MAX_BYTES) {
+      setAvatarMessages("", "Your profile picture must be 2 MB or smaller.");
+      avatarInput.value = "";
+      return;
+    }
+
+    avatarRequestId += 1;
+
+    if (pendingAvatarPreviewUrl) URL.revokeObjectURL(pendingAvatarPreviewUrl);
+
+    pendingAvatarFile = file;
+    pendingAvatarPreviewUrl = URL.createObjectURL(file);
+
+    renderAvatar(profileAvatar, pendingAvatarPreviewUrl, userInitials());
+    renderAvatar(avatarPreviewAvatar, pendingAvatarPreviewUrl, userInitials());
+    setAvatarMessages("Preview ready. Save to update your picture.", "");
+    avatarSave.disabled = false;
+    avatarInput.value = "";
+  });
+
+  avatarSave.addEventListener("click", async () => {
+    if (!pendingAvatarFile) return;
+
+    const formData = new FormData();
+
+    formData.append("avatar", pendingAvatarFile);
+
+    avatarSave.disabled = true;
+    avatarSave.textContent = "Saving…";
+    setAvatarMessages("", "");
+
+    try {
+      const response = await fetch(`${API_URL}/me/avatar`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        localStorage.removeItem("edtspToken");
+        localStorage.removeItem("edtspUser");
+        sessionStorage.removeItem("edtspToken");
+        sessionStorage.removeItem("edtspUser");
+        window.location.href = "../login.html";
+        return;
+      }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to save your profile picture.");
+      }
+
+      traineeProfile = traineeProfile || {};
+      traineeProfile.avatar = data.avatar;
+
+      const savedPreviewUrl = pendingAvatarPreviewUrl;
+
+      avatarRequestId += 1;
+      pendingAvatarPreviewUrl = null;
+      pendingAvatarFile = null;
+
+      if (avatarObjectUrl) URL.revokeObjectURL(avatarObjectUrl);
+
+      avatarObjectUrl = savedPreviewUrl;
+      renderAvatars(avatarObjectUrl, userInitials());
+      setAvatarMessages(data.message || "Profile picture updated.", "");
+    } catch (error) {
+      console.error("Save trainee avatar error:", error);
+      setAvatarMessages(
+        "",
+        error.message || "Unable to save your profile picture.",
+      );
+    } finally {
+      avatarSave.textContent = "Save photo";
+      avatarSave.disabled = !pendingAvatarFile;
+    }
+  });
+}
+
+// =============================
+// PROFILE PICTURE PREVIEW
+// =============================
+
+const avatarPreviewOpen = document.getElementById("avatarPreviewOpen");
+const avatarPreview = document.getElementById("avatarPreview");
+const avatarPreviewClose = document.getElementById("avatarPreviewClose");
+
+if (avatarPreviewOpen && avatarPreview && avatarPreviewClose) {
+  let previewReturnFocus = null;
+
+  function openAvatarPreview() {
+    previewReturnFocus = document.activeElement;
+
+    avatarPreview.hidden = false;
+    document.body.classList.add("modal-open");
+
+    avatarPreviewClose.focus();
+  }
+
+  function closeAvatarPreview() {
+    if (avatarPreview.hidden) return;
+
+    avatarPreview.hidden = true;
+
+    // Another dialog may still be holding the page scroll lock.
+    if (!document.querySelector(".admin-modal.show")) {
+      document.body.classList.remove("modal-open");
+    }
+
+    const focusTarget =
+      previewReturnFocus && document.contains(previewReturnFocus)
+        ? previewReturnFocus
+        : avatarPreviewOpen;
+
+    if (focusTarget) focusTarget.focus();
+  }
+
+  avatarPreviewOpen.addEventListener("click", openAvatarPreview);
+  avatarPreviewClose.addEventListener("click", closeAvatarPreview);
+
+  // A click on the dimmed area closes; a click on the picture itself does not.
+  avatarPreview.addEventListener("click", (event) => {
+    if (!event.target.closest("#avatarPreviewAvatar")) closeAvatarPreview();
+  });
+
+  avatarPreview.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeAvatarPreview();
+      return;
+    }
+
+    if (event.key !== "Tab") return;
+
+    // The close button is the only control, so focus stays on it.
+    event.preventDefault();
+    avatarPreviewClose.focus();
   });
 }
 

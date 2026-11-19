@@ -1,6 +1,13 @@
 
 const User = require("../models/User");
 const TraineeProfile = require("../models/TraineeProfile");
+const { assignTraineeId } = require("../lib/traineeId");
+const {
+    validateAvatar,
+    storeAvatar,
+    deleteAvatarFile,
+    streamAvatar
+} = require("../lib/avatarUpload");
 
 // GET: Retrieve the logged-in trainee's information
 const getMyProfile = async (req, res) => {
@@ -15,16 +22,14 @@ const getMyProfile = async (req, res) => {
             });
         }
 
-        // Find this account's profile
+        // Find this account's profile, creating one and issuing a trainee ID
+        // when the record is missing or predates automatic IDs.
         let profile = await TraineeProfile.findOne({
             user: req.user.id
         });
 
-        // Create a profile if one does not exist
-        if (!profile) {
-            profile = await TraineeProfile.create({
-                user: req.user.id
-            });
+        if (!profile || !profile.traineeId) {
+            profile = await assignTraineeId(req.user.id);
         }
 
         return res.status(200).json({
@@ -86,7 +91,102 @@ const updateMyProfile = async (req, res) => {
     }
 };
 
+// GET: Stream the logged-in trainee's profile picture
+const getMyAvatar = async (req, res) => {
+    try {
+        const profile = await TraineeProfile.findOne({
+            user: req.user.id
+        }).select("avatar");
+
+        if (!profile || !profile.avatar || !profile.avatar.fileId) {
+            return res.status(404).json({
+                success: false,
+                message: "No profile picture is set."
+            });
+        }
+
+        return await streamAvatar(res, profile.avatar);
+
+    } catch (error) {
+        console.error("Get trainee avatar error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to load your profile picture."
+        });
+    }
+};
+
+// POST: Replace the logged-in trainee's profile picture
+const uploadMyAvatar = async (req, res) => {
+    let storedFileId = null;
+
+    try {
+        const validation = validateAvatar(req.file);
+
+        if (validation.error) {
+            return res.status(400).json({
+                success: false,
+                message: validation.error
+            });
+        }
+
+        const accepted = validation.file;
+
+        let profile = await TraineeProfile.findOne({ user: req.user.id });
+
+        if (!profile) {
+            profile = await assignTraineeId(req.user.id);
+        }
+
+        const previousFileId = profile.avatar && profile.avatar.fileId;
+
+        storedFileId = await storeAvatar({
+            buffer: accepted.buffer,
+            contentType: accepted.contentType,
+            userId: req.user.id
+        });
+
+        profile.avatar = {
+            fileId: storedFileId,
+            contentType: accepted.contentType,
+            size: accepted.size,
+            updatedAt: new Date()
+        };
+
+        await profile.save();
+
+        // The new picture is safely recorded before the old blob is dropped.
+        if (
+            previousFileId &&
+            String(previousFileId) !== String(storedFileId)
+        ) {
+            await deleteAvatarFile(previousFileId);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile picture updated.",
+            avatar: profile.avatar
+        });
+
+    } catch (error) {
+        if (storedFileId) {
+            await deleteAvatarFile(storedFileId);
+        }
+
+        console.error("Upload trainee avatar error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to save your profile picture. Please try again."
+        });
+    }
+};
+
 module.exports = {
     getMyProfile,
-    updateMyProfile
+    updateMyProfile,
+    getMyAvatar,
+    uploadMyAvatar
 };

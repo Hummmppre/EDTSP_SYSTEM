@@ -34,14 +34,6 @@
           <span class="brand__type">Esperon<small>Dairy training</small></span>
         </a>
 
-        <div class="who">
-          <span class="avatar" id="userInitials">T</span>
-          <span class="who__text">
-            <strong id="sidebarName">Trainee</strong>
-            <small>Trainee account</small>
-          </span>
-        </div>
-
         <nav class="nav" aria-label="Main">
           <p class="nav__label">Training</p>
 
@@ -94,24 +86,6 @@
             <span>Apply for training</span>
           </a>
 
-          <p class="nav__label">Account</p>
-
-          <a class="nav__link" href="profile.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.2" />
-              <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3" />
-            </svg>
-            <span>My profile</span>
-          </a>
-
-          <a class="nav__link nav__link--quiet" href="#" id="logoutButton">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
-              <path d="M10 12H3" />
-              <path d="m6 9-3 3 3 3" />
-            </svg>
-            <span>Log out</span>
-          </a>
         </nav>
 
         <p class="sidebar__foot">
@@ -147,9 +121,53 @@
             </p>
           </div>
 
-          <div class="topbar__user">
-            <span id="topbarName">Trainee</span>
-            <span class="avatar avatar--sm" id="topbarInitials">T</span>
+          <div class="user-menu" data-user-menu>
+            <button
+              class="user-menu__trigger"
+              data-user-menu-trigger
+              id="userMenuButton"
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="userMenu"
+            >
+              <span class="user-menu__name" id="topbarName">Trainee</span>
+              <span class="avatar avatar--sm" id="topbarInitials" aria-hidden="true">T</span>
+              <svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+
+            <div
+              class="user-menu__panel"
+              data-user-menu-panel
+              id="userMenu"
+              role="menu"
+              aria-labelledby="userMenuButton"
+              hidden
+            >
+              <a class="user-menu__item" role="menuitem" href="profile.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="8" r="3.2" />
+                  <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3" />
+                </svg>
+                <span>My profile</span>
+              </a>
+              <div class="user-menu__rule" role="separator"></div>
+              <button
+                class="user-menu__item"
+                id="logoutButton"
+                type="button"
+                role="menuitem"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+                  <path d="M10 12H3" />
+                  <path d="m6 9-3 3 3 3" />
+                </svg>
+                <span>Log out</span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -245,12 +263,17 @@
                 </div>
 
                 <p class="field__hint" id="startDraftHint" hidden></p>
+                <p class="field__hint" id="startOverHint" hidden>
+                  Start over clears saved answers. You'll be asked to confirm
+                  first.
+                </p>
 
                 <div class="wizard__actions">
                   <button
                     class="btn btn--ghost"
                     id="startOverBtn"
                     type="button"
+                    aria-describedby="startOverHint"
                     hidden
                   >
                     Start over
@@ -290,13 +313,13 @@
                 aria-labelledby="status-title"
               >
                 <header class="panel__head">
-                  <h2 id="status-title">Your application</h2>
+                  <h2 id="status-title" tabindex="-1">Your application</h2>
                   <span class="status-badge" id="statusBadge" hidden
                     >Submitted</span
                   >
                 </header>
 
-                <div class="state" id="statusMessage" hidden>
+                <div class="state" id="statusMessage" role="status" hidden>
                   <strong id="statusMessageTitle"></strong>
                   <p id="statusMessageText"></p>
                 </div>
@@ -365,6 +388,13 @@
                   <span class="panel__meta" id="wizardMeta">Step 1 of 6</span>
                 </header>
 
+                <p
+                  class="sr-only"
+                  id="wizardStepAnnouncement"
+                  role="status"
+                  aria-atomic="true"
+                ></p>
+
                 <p class="draft-note" id="draftBanner" role="status" hidden>
                   <span id="draftBannerText"></span>
                   <button
@@ -376,41 +406,118 @@
                   </button>
                 </p>
 
+                <div
+                  class="draft-save"
+                  id="draftSaveStatus"
+                  role="status"
+                  aria-live="polite"
+                  hidden
+                >
+                  <span class="draft-save__dot" aria-hidden="true"></span>
+                  <span id="draftSaveStatusText"></span>
+                  <button
+                    class="document-link"
+                    id="draftSaveRetry"
+                    type="button"
+                    aria-describedby="draftSaveStatusText"
+                    hidden
+                  >
+                    Retry
+                  </button>
+                </div>
+
+                <div class="wizard-progress">
+                  <div class="wizard-progress__top">
+                    <strong id="wizardProgressCurrent"
+                      >Step 1 of 6 — Applicant</strong
+                    >
+                    <span id="wizardProgressCounts"
+                      >0 completed · 5 remaining</span
+                    >
+                  </div>
+                  <div
+                    class="wizard-progress__track"
+                    id="wizardProgressBar"
+                    role="progressbar"
+                    aria-labelledby="wizardProgressCurrent"
+                    aria-describedby="wizardProgressCounts"
+                    aria-valuemin="1"
+                    aria-valuemax="6"
+                    aria-valuenow="1"
+                  >
+                    <span
+                      class="wizard-progress__fill"
+                      id="wizardProgressFill"
+                    ></span>
+                  </div>
+                </div>
+
                 <ol class="process process--steps" id="wizardSteps">
                   <li data-step="1">
                     <span class="process__num">01</span>
                     <strong>Applicant</strong>
                     <p>Contact details</p>
+                    <span
+                      class="sr-only process__state"
+                      data-step-state
+                    ></span>
                   </li>
                   <li data-step="2">
                     <span class="process__num">02</span>
                     <strong>Background</strong>
                     <p>Personal and school</p>
+                    <span
+                      class="sr-only process__state"
+                      data-step-state
+                    ></span>
                   </li>
                   <li data-step="3">
                     <span class="process__num">03</span>
                     <strong>Emergency contact</strong>
                     <p>Who to reach</p>
+                    <span
+                      class="sr-only process__state"
+                      data-step-state
+                    ></span>
                   </li>
                   <li data-step="4">
                     <span class="process__num">04</span>
                     <strong>Training choice</strong>
                     <p>Program and batch</p>
+                    <span
+                      class="sr-only process__state"
+                      data-step-state
+                    ></span>
                   </li>
                   <li data-step="5">
                     <span class="process__num">05</span>
                     <strong>Documents</strong>
                     <p>CV and valid ID</p>
+                    <span
+                      class="sr-only process__state"
+                      data-step-state
+                    ></span>
                   </li>
                   <li data-step="6">
                     <span class="process__num">06</span>
-                    <strong>Review</strong>
-                    <p>Check and submit</p>
+                    <strong>Confirmation</strong>
+                    <p>Review and confirm</p>
+                    <span
+                      class="sr-only process__state"
+                      data-step-state
+                    ></span>
                   </li>
                 </ol>
 
                 <form id="applicationForm" novalidate>
                   <div class="wizard__step" data-step="1">
+                    <h3
+                      class="wizard__step-title"
+                      data-step-heading
+                      tabindex="-1"
+                    >
+                      Applicant details
+                    </h3>
                     <div class="form-grid">
                       <div class="field">
                         <label for="firstName">First name</label>
@@ -449,29 +556,125 @@
                       </div>
 
                       <div class="field">
-                        <label for="phone">Phone</label>
+                        <label for="phone">Phone number</label>
                         <input
                           id="phone"
                           name="phone"
                           type="tel"
                           autocomplete="tel"
+                          placeholder="e.g. 0917 123 4567"
+                          aria-describedby="phoneHint"
+                          required
+                        />
+                        <p class="field__hint" id="phoneHint">
+                          e.g. 0917 123 4567 or +63 917 123 4567. Pasted
+                          formatting is tidied for you.
+                        </p>
+                      </div>
+
+                      <div class="field field--full">
+                        <label for="streetAddress">House / street</label>
+                        <input
+                          id="streetAddress"
+                          name="streetAddress"
+                          type="text"
+                          autocomplete="address-line1"
+                          placeholder="e.g. 123 Rizal Street, Purok 2"
                           required
                         />
                       </div>
 
-                      <div class="field field--full">
-                        <label for="address">Address</label>
-                        <textarea
-                          id="address"
-                          name="address"
-                          autocomplete="street-address"
-                          required
-                        ></textarea>
+                      <div class="field">
+                        <label for="addressProvince">Province</label>
+                        <select
+                          id="addressProvince"
+                          autocomplete="address-level1"
+                          aria-describedby="addressLocationHint"
+                        >
+                          <option value="">Select province</option>
+                          <option value="__manual">
+                            Not listed — enter manually
+                          </option>
+                        </select>
+                        <input
+                          id="addressProvinceManual"
+                          type="text"
+                          placeholder="Enter province"
+                          aria-label="Enter province manually"
+                          aria-describedby="addressLocationHint"
+                          hidden
+                        />
                       </div>
+
+                      <div class="field">
+                        <label for="addressCity">City / municipality</label>
+                        <select
+                          id="addressCity"
+                          autocomplete="address-level2"
+                          aria-describedby="addressLocationHint"
+                          disabled
+                        >
+                          <option value="">Select province first</option>
+                          <option value="__manual">
+                            Not listed — enter manually
+                          </option>
+                        </select>
+                        <input
+                          id="addressCityManual"
+                          type="text"
+                          placeholder="Enter city or municipality"
+                          aria-label="Enter city or municipality manually"
+                          aria-describedby="addressLocationHint"
+                          hidden
+                        />
+                      </div>
+
+                      <div class="field">
+                        <label for="addressBarangay">Barangay</label>
+                        <select
+                          id="addressBarangay"
+                          autocomplete="address-level3"
+                          aria-describedby="addressLocationHint"
+                          disabled
+                        >
+                          <option value="">Select city / municipality first</option>
+                          <option value="__manual">
+                            Not listed — enter manually
+                          </option>
+                        </select>
+                        <input
+                          id="addressBarangayManual"
+                          type="text"
+                          placeholder="Enter barangay"
+                          aria-label="Enter barangay manually"
+                          aria-describedby="addressLocationHint"
+                          hidden
+                        />
+                      </div>
+
+                      <p class="field__hint field--full" id="addressLocationHint">
+                        Choose from the list, or select “Not listed” to type a
+                        location.
+                      </p>
+
+                      <input id="address" name="address" type="hidden" />
+
+                      <p
+                        class="field__hint field--full"
+                        id="addressPreview"
+                        hidden
+                      ></p>
                     </div>
                   </div>
 
                   <div class="wizard__step" data-step="2" hidden>
+                    <h3
+                      class="wizard__step-title"
+                      data-step-heading
+                      tabindex="-1"
+                    >
+                      Background
+                    </h3>
                     <div class="form-grid">
                       <div class="field">
                         <label for="dateOfBirth">Date of birth</label>
@@ -537,6 +740,13 @@
                   </div>
 
                   <div class="wizard__step" data-step="3" hidden>
+                    <h3
+                      class="wizard__step-title"
+                      data-step-heading
+                      tabindex="-1"
+                    >
+                      Emergency contact
+                    </h3>
                     <div class="form-grid">
                       <div class="field">
                         <label for="emergencyContactName">Contact name</label>
@@ -549,13 +759,21 @@
                       </div>
 
                       <div class="field">
-                        <label for="emergencyContactPhone">Contact phone</label>
+                        <label for="emergencyContactPhone"
+                          >Contact phone number</label
+                        >
                         <input
                           id="emergencyContactPhone"
                           name="emergencyContactPhone"
                           type="tel"
+                          placeholder="e.g. 0917 123 4567"
+                          aria-describedby="emergencyContactPhoneHint"
                           required
                         />
+                        <p class="field__hint" id="emergencyContactPhoneHint">
+                          e.g. 0917 123 4567 or +63 917 123 4567. Pasted
+                          formatting is tidied for you.
+                        </p>
                       </div>
 
                       <div class="field field--full">
@@ -573,6 +791,13 @@
                   </div>
 
                   <div class="wizard__step" data-step="4" hidden>
+                    <h3
+                      class="wizard__step-title"
+                      data-step-heading
+                      tabindex="-1"
+                    >
+                      Training choice
+                    </h3>
                     <div class="form-grid">
                       <div class="field">
                         <label for="program">Program</label>
@@ -625,6 +850,21 @@
                   </div>
 
                   <div class="wizard__step" data-step="5" hidden>
+                    <h3
+                      class="wizard__step-title"
+                      data-step-heading
+                      tabindex="-1"
+                    >
+                      Documents
+                    </h3>
+                    <div class="document-requirements" id="documentRequirements">
+                      <strong>File requirements</strong>
+                      <p>
+                        PDF, JPG or PNG. Up to 10 MB per file, 10 files per
+                        document, and 30 MB across this application.
+                      </p>
+                    </div>
+
                     <div class="form-grid">
                       <div class="field field--full" id="cvDocumentField">
                         <label class="field__label" for="cvFiles">
@@ -639,14 +879,19 @@
                             type="file"
                             multiple
                             accept=".pdf,.jpg,.jpeg,.png"
+                            aria-describedby="documentRequirements"
                           />
                           <label class="btn btn--ghost btn--sm" for="cvFiles"
                             >Choose files</label
                           >
                         </div>
 
-                        <p class="field__hint">
-                          PDF, JPG or PNG · up to 10 MB each.
+                        <p
+                          class="field__hint document-list__summary"
+                          id="cvListSummary"
+                          aria-live="polite"
+                        >
+                          No files selected yet.
                         </p>
 
                         <ul
@@ -674,6 +919,7 @@
                             type="file"
                             multiple
                             accept=".pdf,.jpg,.jpeg,.png"
+                            aria-describedby="documentRequirements"
                           />
                           <label
                             class="btn btn--ghost btn--sm"
@@ -682,8 +928,12 @@
                           >
                         </div>
 
-                        <p class="field__hint">
-                          PDF, JPG or PNG · up to 10 MB each.
+                        <p
+                          class="field__hint document-list__summary"
+                          id="validIdListSummary"
+                          aria-live="polite"
+                        >
+                          No files selected yet.
                         </p>
 
                         <ul
@@ -708,12 +958,28 @@
                   </div>
 
                   <div class="wizard__step" data-step="6" hidden>
+                    <header class="review__intro">
+                      <h3 data-step-heading tabindex="-1">
+                        Application overview
+                      </h3>
+                      <p>
+                        Check every answer and uploaded document below, then
+                        confirm and submit when everything is correct.
+                      </p>
+                    </header>
                     <div class="review" id="reviewSummary"></div>
-                    <p class="field__hint">
-                      Submitting sends this application for review. You cannot
-                      edit it afterwards, but you can withdraw it while it is
-                      under review.
-                    </p>
+                    <section
+                      class="review__next"
+                      aria-labelledby="reviewNextTitle"
+                    >
+                      <h3 id="reviewNextTitle">What happens next</h3>
+                      <p>
+                        When you submit, your application will be sent to the
+                        training office for review. We'll email you their
+                        decision. You cannot edit the application afterwards,
+                        but you can withdraw it before a decision is made.
+                      </p>
+                    </section>
                   </div>
 
                   <p
@@ -722,6 +988,32 @@
                     role="alert"
                     hidden
                   ></p>
+
+                  <div class="upload-progress" id="uploadProgress" hidden>
+                    <div class="upload-progress__head">
+                      <strong id="uploadProgressTitle"
+                        >Uploading documents</strong
+                      >
+                      <span id="uploadProgressValue">0%</span>
+                    </div>
+                    <div
+                      class="upload-progress__track"
+                      id="uploadProgressBar"
+                      role="progressbar"
+                      aria-labelledby="uploadProgressTitle"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                      aria-valuenow="0"
+                    >
+                      <span
+                        class="upload-progress__fill"
+                        id="uploadProgressFill"
+                      ></span>
+                    </div>
+                    <p class="upload-progress__hint">
+                      Keep this page open until your application is submitted.
+                    </p>
+                  </div>
 
                   <div class="wizard__actions">
                     <button
@@ -753,7 +1045,7 @@
                         type="submit"
                         hidden
                       >
-                        Submit application
+                        Confirm and submit application
                       </button>
                     </div>
                   </div>
@@ -768,33 +1060,28 @@
                   <span class="panel__meta">Guidance</span>
                 </header>
 
-                <dl class="facts">
+                <dl class="facts facts--guidance">
                   <div>
                     <dt>Eligibility</dt>
-                    <dd>
-                      18 years or older with a complete contact and emergency
-                      record.
-                    </dd>
+                    <dd>Aged 18 or older, with contact and emergency details.</dd>
                   </div>
                   <div>
                     <dt>Applications</dt>
                     <dd>
-                      One open application at a time. Withdraw it to apply
-                      again.
+                      One application at a time. You can withdraw it before a
+                      decision, then apply again.
                     </dd>
                   </div>
                   <div>
                     <dt>Review</dt>
                     <dd>
-                      The training office reviews every application. Decisions
-                      arrive by email.
+                      The training office reviews each application and emails
+                      its decision.
                     </dd>
                   </div>
                   <div>
                     <dt>Approval</dt>
-                    <dd>
-                      Enrolment starts automatically and a trainee ID is issued.
-                    </dd>
+                    <dd>Enrolment starts automatically once approved.</dd>
                   </div>
                 </dl>
               </section>
@@ -878,6 +1165,40 @@
             type="button"
           >
             Remove file
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="admin-modal"
+      id="startOverConfirmModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="startOverConfirmTitle"
+    >
+      <div class="admin-modal-content">
+        <div class="modal-heading">
+          <div>
+            <h2 id="startOverConfirmTitle">Start over?</h2>
+            <p>Your saved answers will be cleared.</p>
+          </div>
+
+          <button
+            class="modal-close"
+            id="cancelStartOverClose"
+            type="button"
+            aria-label="Keep saved answers"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn--ghost" id="cancelStartOver" type="button">
+            Keep my answers
+          </button>
+          <button class="btn btn--primary" id="confirmStartOver" type="button">
+            Start over
           </button>
         </div>
       </div>

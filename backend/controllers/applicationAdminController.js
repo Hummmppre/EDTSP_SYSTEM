@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const TrainingApplication = require("../models/TrainingApplication");
 const TraineeProfile = require("../models/TraineeProfile");
 const Batch = require("../models/Batch");
-const Counter = require("../models/Counter");
+const { assignTraineeId } = require("../lib/traineeId");
 const { sendApplicationDecision } = require("../lib/mailer");
 const { streamDocumentFile, MESSAGES } = require("../lib/documentUpload");
 
@@ -41,18 +41,6 @@ function buildFilter(query = {}) {
     }
 
     return filter;
-}
-
-async function nextTraineeId() {
-    const year = new Date().getFullYear();
-
-    const counter = await Counter.findOneAndUpdate(
-        { _id: `traineeId-${year}` },
-        { $inc: { seq: 1 } },
-        { upsert: true, new: true }
-    );
-
-    return `EDT-${year}-${String(counter.seq).padStart(3, "0")}`;
 }
 
 function csvValue(value) {
@@ -245,7 +233,7 @@ const decideApplication = async (req, res) => {
 
             claimedBatchId = batch._id;
 
-            const profile = await TraineeProfile.findOneAndUpdate(
+            await TraineeProfile.findOneAndUpdate(
                 { user: application.user },
                 {
                     $set: {
@@ -257,11 +245,8 @@ const decideApplication = async (req, res) => {
                 { new: true, upsert: true, setDefaultsOnInsert: true }
             );
 
-            // Keep an ID that was already issued; only mint one when missing.
-            if (!profile.traineeId) {
-                profile.traineeId = await nextTraineeId();
-                await profile.save();
-            }
+            // The trainee already has an ID from signup; keep it if so.
+            await assignTraineeId(application.user);
 
             application.status = "Approved";
         } else {

@@ -32,14 +32,6 @@
           <span class="brand__type">Esperon<small>Dairy training</small></span>
         </a>
 
-        <div class="who">
-          <span class="avatar" id="userInitials">T</span>
-          <span class="who__text">
-            <strong id="sidebarName">Trainee</strong>
-            <small>Trainee account</small>
-          </span>
-        </div>
-
         <nav class="nav" aria-label="Main">
           <p class="nav__label">Training</p>
 
@@ -96,24 +88,6 @@
             <span>Apply for training</span>
           </a>
 
-          <p class="nav__label">Account</p>
-
-          <a class="nav__link" href="profile.html">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.2" />
-              <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3" />
-            </svg>
-            <span>My profile</span>
-          </a>
-
-          <a class="nav__link nav__link--quiet" href="#" id="logoutButton">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
-              <path d="M10 12H3" />
-              <path d="m6 9-3 3 3 3" />
-            </svg>
-            <span>Log out</span>
-          </a>
         </nav>
 
         <p class="sidebar__foot">
@@ -149,9 +123,53 @@
             </p>
           </div>
 
-          <div class="topbar__user">
-            <span id="topbarName">Trainee</span>
-            <span class="avatar avatar--sm" id="topbarInitials">T</span>
+          <div class="user-menu" data-user-menu>
+            <button
+              class="user-menu__trigger"
+              data-user-menu-trigger
+              id="userMenuButton"
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="userMenu"
+            >
+              <span class="user-menu__name" id="topbarName">Trainee</span>
+              <span class="avatar avatar--sm" id="topbarInitials" aria-hidden="true">T</span>
+              <svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+
+            <div
+              class="user-menu__panel"
+              data-user-menu-panel
+              id="userMenu"
+              role="menu"
+              aria-labelledby="userMenuButton"
+              hidden
+            >
+              <a class="user-menu__item" role="menuitem" href="profile.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="8" r="3.2" />
+                  <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3" />
+                </svg>
+                <span>My profile</span>
+              </a>
+              <div class="user-menu__rule" role="separator"></div>
+              <button
+                class="user-menu__item"
+                id="logoutButton"
+                type="button"
+                role="menuitem"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+                  <path d="M10 12H3" />
+                  <path d="m6 9-3 3 3 3" />
+                </svg>
+                <span>Log out</span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -446,9 +464,7 @@
             id="cancelLogoutClose"
             type="button"
             aria-label="Cancel logout"
-          >
-            ×
-          </button>
+          ></button>
         </div>
         <div class="modal-actions">
           <button class="btn btn--ghost" id="cancelLogout" type="button">

@@ -19,6 +19,13 @@ const googleCalendarCredentialSchema = new mongoose.Schema(
             default: ""
         },
 
+        // Scopes Google actually granted. Both integrations reuse this account
+        // only when their required scope is present.
+        scopes: {
+            type: [String],
+            default: []
+        },
+
         calendarId: {
             type: String,
             default: "primary"

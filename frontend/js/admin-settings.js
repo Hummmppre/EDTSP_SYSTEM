@@ -8,10 +8,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailToggle = document.getElementById("emailToggle");
   const googleCalendarToggle = document.getElementById("googleCalendarToggle");
   const googleCalendarStatus = document.getElementById("googleCalendarStatus");
+  const googleCalendarConnectBtn = document.getElementById(
+    "googleCalendarConnectBtn",
+  );
   const googleCalendarDisconnectBtn = document.getElementById(
     "googleCalendarDisconnectBtn",
   );
   const googleSheetsToggle = document.getElementById("googleSheetsToggle");
+  const googleSheetsStatus = document.getElementById("googleSheetsStatus");
+  const googleSheetsConnectBtn = document.getElementById(
+    "googleSheetsConnectBtn",
+  );
   const settingsMessage = document.getElementById("settingsMessage");
 
   const token =
@@ -26,6 +33,9 @@ document.addEventListener("DOMContentLoaded", () => {
     googleSheetsEnabled: true,
   };
 
+  // Shared Google connection status, including per-service authorization.
+  let googleStatus = null;
+
   function showMessage(message, isError = false) {
     if (!settingsMessage) return;
 
@@ -33,9 +43,73 @@ document.addEventListener("DOMContentLoaded", () => {
     settingsMessage.style.color = isError ? "#dc2626" : "#16803c";
   }
 
-  // Connection state shown beside the Google Calendar toggle.
-  async function loadCalendarStatus() {
-    if (!googleCalendarStatus) return;
+  function statusText(label, status) {
+    if (!googleStatus || !googleStatus.configured) {
+      return "Not configured on the server.";
+    }
+
+    if (!status) return `${label} status is unavailable.`;
+
+    if (status.needsReconnect) {
+      return (
+        status.reconnectReason ||
+        "The saved Google connection expired or was revoked. Reconnect the Google account to resume."
+      );
+    }
+
+    if (status.connected) {
+      return status.accountEmail
+        ? `Connected as ${status.accountEmail}.`
+        : "Connected to Google.";
+    }
+
+    if (status.accountEmail) {
+      return `Signed in as ${status.accountEmail}, but ${label} access was not granted. Reconnect Google and approve the request.`;
+    }
+
+    return "No Google account connected.";
+  }
+
+  function renderGoogleStatus() {
+    const calendar = googleStatus && googleStatus.calendar;
+    const sheets = googleStatus && googleStatus.sheets;
+    const configured = Boolean(googleStatus && googleStatus.configured);
+
+    if (googleCalendarStatus) {
+      googleCalendarStatus.textContent = statusText(
+        "Google Calendar",
+        calendar,
+      );
+    }
+
+    if (googleSheetsStatus) {
+      googleSheetsStatus.textContent = statusText("Google Sheets", sheets);
+    }
+
+    if (googleCalendarConnectBtn) {
+      googleCalendarConnectBtn.hidden =
+        !configured || Boolean(calendar && calendar.connected);
+      googleCalendarConnectBtn.textContent =
+        calendar && calendar.accountEmail
+          ? "Reconnect Google"
+          : "Connect Google";
+    }
+
+    if (googleSheetsConnectBtn) {
+      googleSheetsConnectBtn.hidden =
+        !configured || Boolean(sheets && sheets.connected);
+      googleSheetsConnectBtn.textContent =
+        sheets && sheets.accountEmail ? "Reconnect Google" : "Connect Google";
+    }
+
+    if (googleCalendarDisconnectBtn) {
+      googleCalendarDisconnectBtn.hidden =
+        !configured || !googleStatus.accountConnected;
+    }
+  }
+
+  async function loadGoogleStatus() {
+    if (!googleCalendarStatus && !googleSheetsStatus) return;
 
     try {
       const response = await fetch(`${CALENDAR_API_URL}/status`, {
@@ -48,31 +122,76 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Google Calendar status is unavailable.",
+          data.message || "Google integration status is unavailable.",
         );
       }
 
-      if (!data.configured) {
-        googleCalendarStatus.textContent = "Not configured on the server.";
-      } else if (data.needsReconnect) {
+      googleStatus = data;
+      renderGoogleStatus();
+    } catch (error) {
+      console.error("Google integration status error:", error);
+      googleStatus = null;
+
+      if (googleCalendarStatus) {
         googleCalendarStatus.textContent =
-          "The saved connection is no longer valid. Connect again from Cow maintenance.";
-      } else if (data.connected) {
-        googleCalendarStatus.textContent = data.accountEmail
-          ? `Connected as ${data.accountEmail}.`
-          : "Connected.";
-      } else {
-        googleCalendarStatus.textContent =
-          "No Google account connected. Connect one from Cow maintenance.";
+          "Google integration status is unavailable right now.";
       }
 
-      if (googleCalendarDisconnectBtn) {
-        googleCalendarDisconnectBtn.hidden = !data.connected;
+      if (googleSheetsStatus) {
+        googleSheetsStatus.textContent =
+          "Google integration status is unavailable right now.";
       }
+
+      if (googleCalendarConnectBtn) googleCalendarConnectBtn.hidden = true;
+      if (googleSheetsConnectBtn) googleSheetsConnectBtn.hidden = true;
+      if (googleCalendarDisconnectBtn) {
+        googleCalendarDisconnectBtn.hidden = true;
+      }
+    }
+  }
+
+  // Sends the administrator through Google's own consent screen. The backend
+  // stores the refresh token; only an authorization URL reaches the browser.
+  async function startGoogleConnect(service) {
+    const button =
+      service === "sheets" ? googleSheetsConnectBtn : googleCalendarConnectBtn;
+
+    if (!button) return;
+
+    const originalLabel = button.textContent;
+
+    button.disabled = true;
+    button.textContent = "Opening Google…";
+
+    try {
+      const returnTo = new URL(window.location.href);
+
+      returnTo.hash = "";
+      returnTo.search = "";
+
+      const response = await fetch(
+        `${CALENDAR_API_URL}/connect?returnTo=${encodeURIComponent(returnTo.toString())}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.authUrl) {
+        throw new Error(
+          data.message || "Google authorization could not be started.",
+        );
+      }
+
+      window.location.href = data.authUrl;
     } catch (error) {
-      console.error("Google Calendar status error:", error);
-      googleCalendarStatus.textContent =
-        "Google Calendar status is unavailable right now.";
+      console.error("Google connect error:", error);
+      button.disabled = false;
+      button.textContent = originalLabel;
+      showMessage(error.message, true);
     }
   }
 
@@ -112,8 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Save updated settings to MongoDB
-  async function saveSettings() {
+  async function saveSettings(connectService = "") {
     const nextSettings = {
       googleAuthEnabled: googleAuthToggle.checked,
       recaptchaEnabled: recaptchaToggle.checked,
@@ -121,6 +239,8 @@ document.addEventListener("DOMContentLoaded", () => {
       googleCalendarEnabled: googleCalendarToggle.checked,
       googleSheetsEnabled: googleSheetsToggle.checked,
     };
+
+    let saved = false;
 
     try {
       googleAuthToggle.disabled = true;
@@ -153,6 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       savedSettings = nextSettings;
+      saved = true;
       showMessage("Settings saved successfully.");
     } catch (error) {
       console.error("Save settings error:", error);
@@ -172,6 +293,56 @@ document.addEventListener("DOMContentLoaded", () => {
       googleCalendarToggle.disabled = false;
       googleSheetsToggle.disabled = false;
     }
+
+    if (!saved || !connectService) return;
+
+    const enabled =
+      connectService === "sheets"
+        ? googleSheetsToggle.checked
+        : googleCalendarToggle.checked;
+
+    if (!enabled) return;
+
+    // Enabling an integration that has not been authorized (or whose access
+    // was revoked) guides the admin through Google consent right away.
+    const serviceStatus =
+      googleStatus && googleStatus[connectService]
+        ? googleStatus[connectService]
+        : null;
+
+    if (!serviceStatus || !serviceStatus.connected) {
+      await startGoogleConnect(connectService);
+    }
+  }
+
+  function handleGoogleReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("google") || params.get("calendar");
+
+    if (!result) return;
+
+    if (result === "connected") {
+      showMessage(
+        "Google connected. Calendar events and Sheets exports will use this account.",
+      );
+    } else {
+      showMessage(
+        params.get("googleReason") ||
+          params.get("calendarReason") ||
+          "Google could not be connected. Please try again.",
+        true,
+      );
+    }
+
+    params.delete("google");
+    params.delete("calendar");
+    params.delete("googleReason");
+    params.delete("calendarReason");
+
+    const query = params.toString();
+    const cleanUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+
+    window.history.replaceState({}, "", cleanUrl);
   }
 
   if (!token) {
@@ -179,17 +350,31 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  googleAuthToggle.addEventListener("change", saveSettings);
-  recaptchaToggle.addEventListener("change", saveSettings);
-  emailToggle.addEventListener("change", saveSettings);
-  googleCalendarToggle.addEventListener("change", saveSettings);
-  googleSheetsToggle.addEventListener("change", saveSettings);
+  googleAuthToggle.addEventListener("change", () => saveSettings());
+  recaptchaToggle.addEventListener("change", () => saveSettings());
+  emailToggle.addEventListener("change", () => saveSettings());
+  googleCalendarToggle.addEventListener("change", () =>
+    saveSettings("calendar"),
+  );
+  googleSheetsToggle.addEventListener("change", () => saveSettings("sheets"));
+
+  if (googleCalendarConnectBtn) {
+    googleCalendarConnectBtn.addEventListener("click", () =>
+      startGoogleConnect("calendar"),
+    );
+  }
+
+  if (googleSheetsConnectBtn) {
+    googleSheetsConnectBtn.addEventListener("click", () =>
+      startGoogleConnect("sheets"),
+    );
+  }
 
   if (googleCalendarDisconnectBtn) {
     googleCalendarDisconnectBtn.addEventListener("click", async () => {
       if (
         !window.confirm(
-          "Disconnect Google Calendar? New maintenance activities will no longer be added to the calendar.",
+          "Disconnect this Google account? Calendar events and Sheets exports will stop until an account is reconnected.",
         )
       ) {
         return;
@@ -212,14 +397,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!response.ok) {
           throw new Error(
-            data.message || "Unable to disconnect Google Calendar.",
+            data.message || "Unable to disconnect the Google account.",
           );
         }
 
         showMessage(data.message);
-        await loadCalendarStatus();
+        await loadGoogleStatus();
       } catch (error) {
-        console.error("Google Calendar disconnect error:", error);
+        console.error("Google disconnect error:", error);
         showMessage(error.message, true);
       } finally {
         googleCalendarDisconnectBtn.disabled = false;
@@ -228,8 +413,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  loadSettings();
-  loadCalendarStatus();
+  Promise.allSettled([loadSettings(), loadGoogleStatus()]).then(() => {
+    handleGoogleReturn();
+  });
 });
 const settingsLogoutBtn = document.getElementById("logoutBtn");
 const settingsLogoutModal = document.getElementById("adminLogoutModal");
@@ -241,7 +427,11 @@ if (settingsLogoutBtn && settingsLogoutModal) {
   function closeSettingsLogoutModal() {
     settingsLogoutModal.classList.remove("show");
     document.body.classList.remove("modal-open");
-    settingsLogoutBtn.focus();
+
+    const returnFocus =
+      document.getElementById("userMenuButton") || settingsLogoutBtn;
+
+    if (returnFocus) returnFocus.focus();
   }
 
   settingsLogoutBtn.addEventListener("click", () => {

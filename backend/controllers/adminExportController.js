@@ -20,7 +20,7 @@ const exporters = {
   applications: async () => {
     const records = await TrainingApplication.find()
       .select(
-        "firstName lastName email phone program batch status submittedAt decidedAt publicNote",
+        "firstName lastName email phone program batch status submittedAt decidedAt publicNote internalNote",
       )
       .populate("program", "name")
       .populate("batch", "label")
@@ -43,6 +43,7 @@ const exporters = {
           "Status",
           "Decision date",
           "Public note",
+          "Internal note",
         ],
         ...records.map((record) => [
           String(record._id),
@@ -56,6 +57,7 @@ const exporters = {
           record.status,
           formatDate(record.decidedAt),
           record.publicNote || "",
+          record.internalNote || "",
         ]),
       ],
     };
@@ -162,6 +164,21 @@ async function exportToGoogleSheets(req, res) {
         success: false,
         message:
           "Google Sheets export is turned off in System settings. Turn it on there to export records.",
+      });
+    }
+
+    if (error.code === "not_configured") {
+      return res.status(503).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    if (["not_connected", "missing_scope", "needs_reconnect"].includes(error.code)) {
+      return res.status(409).json({
+        success: false,
+        reconnectRequired: true,
+        message: error.message,
       });
     }
 

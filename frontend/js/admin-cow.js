@@ -788,6 +788,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 calendarStatus.textContent = data.accountEmail
                     ? `Connected as ${data.accountEmail}. New maintenance activities are added automatically.`
                     : "Connected. New maintenance activities are added automatically.";
+            } else if (data.accountEmail && data.authorized === false) {
+                calendarStatus.textContent =
+                    `Signed in as ${data.accountEmail}, but Calendar access was not granted. Reconnect and approve the request.`;
+                calendarStatus.classList.add("is-error");
             } else {
                 calendarStatus.textContent =
                     "Not connected. Connect a Google account to add maintenance activities to its calendar.";
@@ -795,7 +799,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (calendarConnectBtn) {
                 calendarConnectBtn.hidden = false;
-                calendarConnectBtn.textContent = data.connected
+                calendarConnectBtn.textContent = data.accountEmail
                     ? "Reconnect Google Calendar"
                     : "Connect Google Calendar";
             }

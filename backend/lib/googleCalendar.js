@@ -1,68 +1,23 @@
-const jwt = require("jsonwebtoken");
 const { google } = require("googleapis");
 
-const GoogleCalendarCredential = require("../models/GoogleCalendarCredential");
 const MaintenanceActivity = require("../models/MaintenanceActivity");
-const SystemSettings = require("../models/SystemSettings");
+const {
+  integrationError,
+  isDeadCredentialError,
+  isMissingScopeError,
+  isConfigured,
+  isServiceEnabled,
+  getConnectionStatus,
+  markConnectionInvalid,
+  getAuthorizedClient,
+  buildAuthUrl,
+  exchangeCode,
+  disconnect,
+  signState,
+  verifyState,
+} = require("./googleConnection");
 
-const PROVIDER = "google";
-const STATE_PURPOSE = "google-calendar-oauth";
 const EVENT_DURATION_MS = 30 * 60 * 1000;
-
-const SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/drive.file",
-];
-
-function integrationError(message, code) {
-  const error = new Error(message);
-
-  error.code = code;
-
-  return error;
-}
-
-function isDeadCredentialError(error) {
-  const reason =
-    error && error.response && error.response.data
-      ? error.response.data.error
-      : null;
-
-  return (
-    reason === "invalid_grant" || (error && error.code === "invalid_grant")
-  );
-}
-
-function getOAuthClient() {
-  const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_CALENDAR_REDIRECT_URI;
-
-  if (!clientId || !clientSecret || !redirectUri) return null;
-
-  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-}
-
-function isConfigured() {
-  return Boolean(getOAuthClient());
-}
-
-// Administrators can switch the integration off from System Settings.
-async function isEnabled() {
-  try {
-    const settings = await SystemSettings.findOne().lean();
-
-    return !settings || settings.googleCalendarEnabled !== false;
-  } catch (error) {
-    // A settings lookup failure must not silently stop calendar sync.
-    console.error(
-      `[google-calendar] Could not read the calendar setting: ${error.message}`,
-    );
-
-    return true;
-  }
-}
 
 function getCalendarId() {
   return process.env.GOOGLE_CALENDAR_ID || "primary";
@@ -72,177 +27,26 @@ function getTimeZone() {
   return process.env.GOOGLE_CALENDAR_TIMEZONE || "Asia/Manila";
 }
 
+async function isEnabled() {
+  return isServiceEnabled("calendar");
+}
+
 async function getCalendarStatus({ verify = false } = {}) {
   const enabled = await isEnabled();
-  const configured = isConfigured();
+  const connection = await getConnectionStatus({ verify });
 
-  if (!configured) {
-    return {
-      enabled,
-      configured: false,
-      connected: false,
-      accountEmail: "",
-      calendarId: "",
-      needsReconnect: false,
-    };
-  }
-
-  const credential = await GoogleCalendarCredential.findOne({
-    provider: PROVIDER,
-  }).lean();
-
-  const envRefreshToken = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN || "";
-  const refreshToken =
-    (credential && credential.refreshToken) || envRefreshToken;
-
-  const status = {
+  return {
     enabled,
-    configured: true,
-    connected: Boolean(refreshToken),
-    accountEmail: credential ? credential.accountEmail || "" : "",
-    calendarId: getCalendarId(),
-    needsReconnect: false,
+    configured: connection.configured,
+    accountConnected: connection.connected,
+    connected: connection.connected && connection.calendarAuthorized,
+    authorized: connection.calendarAuthorized,
+    accountEmail: connection.connected ? connection.accountEmail : "",
+    calendarId: connection.configured ? getCalendarId() : "",
+    needsReconnect: connection.needsReconnect,
+    reconnectReason: connection.reconnectReason,
+    scopes: connection.scopes,
   };
-
-  if (!enabled || !verify || !refreshToken) return status;
-
-  try {
-    await refreshAccessToken();
-
-    return status;
-  } catch (error) {
-    // A network blip or quota error must not look like a revoked connection.
-    if (!isDeadCredentialError(error)) {
-      console.warn(
-        `[google-calendar] Connection could not be verified: ${error.message}`,
-      );
-
-      return status;
-    }
-
-    console.warn(
-      `[google-calendar] Stored connection was revoked: ${error.message}`,
-    );
-
-    if (!envRefreshToken && credential) {
-      await GoogleCalendarCredential.deleteOne({ _id: credential._id });
-    }
-
-    return {
-      ...status,
-      connected: false,
-      accountEmail: "",
-      needsReconnect: true,
-    };
-  }
-}
-
-async function getAuthorizedClient() {
-  const client = getOAuthClient();
-
-  if (!client) {
-    throw integrationError(
-      "Google Calendar is not configured on the server.",
-      "not_configured",
-    );
-  }
-
-  let refreshToken = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN;
-
-  if (!refreshToken) {
-    const credential = await GoogleCalendarCredential.findOne({
-      provider: PROVIDER,
-    });
-
-    refreshToken = credential ? credential.refreshToken : null;
-  }
-
-  if (!refreshToken) {
-    throw integrationError(
-      "Google Calendar is not connected.",
-      "not_connected",
-    );
-  }
-
-  client.setCredentials({ refresh_token: refreshToken });
-
-  return client;
-}
-
-async function refreshAccessToken() {
-  const client = await getAuthorizedClient();
-
-  await client.refreshAccessToken();
-
-  return client;
-}
-
-function buildAuthUrl(state) {
-  const client = getOAuthClient();
-
-  if (!client) {
-    throw integrationError(
-      "Google Calendar is not configured on the server.",
-      "not_configured",
-    );
-  }
-
-  return client.generateAuthUrl({
-    access_type: "offline",
-    prompt: "consent",
-    include_granted_scopes: true,
-    scope: SCOPES,
-    state,
-  });
-}
-
-async function exchangeCode(code) {
-  const client = getOAuthClient();
-
-  if (!client) {
-    throw integrationError(
-      "Google Calendar is not configured on the server.",
-      "not_configured",
-    );
-  }
-
-  const { tokens } = await client.getToken(code);
-
-  if (!tokens || !tokens.refresh_token) {
-    throw integrationError(
-      "Google did not return a refresh token. Reconnect and allow offline access.",
-      "no_refresh_token",
-    );
-  }
-
-  client.setCredentials(tokens);
-
-  let accountEmail = "";
-
-  try {
-    const userInfo = await google
-      .oauth2({ version: "v2", auth: client })
-      .userinfo.get();
-
-    accountEmail = userInfo.data.email || "";
-  } catch (error) {
-    // The calendar still works without the email; it is display-only.
-    console.warn(
-      `[google-calendar] Connected account email unavailable: ${error.message}`,
-    );
-  }
-
-  await GoogleCalendarCredential.findOneAndUpdate(
-    { provider: PROVIDER },
-    {
-      provider: PROVIDER,
-      refreshToken: tokens.refresh_token,
-      accountEmail,
-      calendarId: getCalendarId(),
-      connectedAt: new Date(),
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  );
 }
 
 function fullName(user) {
@@ -259,7 +63,7 @@ async function createEventForActivity({ activity, cow, auth: existingAuth }) {
     );
   }
 
-  const auth = existingAuth || (await getAuthorizedClient());
+  const auth = existingAuth || (await getAuthorizedClient({ service: "calendar" }));
   const calendar = google.calendar({ version: "v3", auth });
 
   const start = new Date(activity.scheduledFor);
@@ -284,22 +88,43 @@ async function createEventForActivity({ activity, cow, auth: existingAuth }) {
     "Scheduled from the EDTSP cow maintenance portal.",
   ].join("\n");
 
-  const response = await calendar.events.insert({
-    calendarId: getCalendarId(),
-    requestBody: {
-      summary: `${activity.type} — ${cow.name} (${cow.cowId})`,
-      description,
-      start: {
-        dateTime: start.toISOString(),
-        timeZone: getTimeZone(),
+  let response;
+
+  try {
+    response = await calendar.events.insert({
+      calendarId: getCalendarId(),
+      requestBody: {
+        summary: `${activity.type} — ${cow.name} (${cow.cowId})`,
+        description,
+        start: {
+          dateTime: start.toISOString(),
+          timeZone: getTimeZone(),
+        },
+        end: {
+          dateTime: end.toISOString(),
+          timeZone: getTimeZone(),
+        },
+        reminders: { useDefault: true },
       },
-      end: {
-        dateTime: end.toISOString(),
-        timeZone: getTimeZone(),
-      },
-      reminders: { useDefault: true },
-    },
-  });
+    });
+  } catch (error) {
+    if (isDeadCredentialError(error)) {
+      await markConnectionInvalid();
+      throw integrationError(
+        "The Google connection expired or was revoked. Reconnect the Google account in System settings, then try again.",
+        "needs_reconnect",
+      );
+    }
+
+    if (isMissingScopeError(error)) {
+      throw integrationError(
+        "The saved Google connection is missing Calendar access. Reconnect the Google account in System settings and approve the requested permissions.",
+        "missing_scope",
+      );
+    }
+
+    throw error;
+  }
 
   return {
     id: response.data.id || "",
@@ -317,7 +142,7 @@ async function syncPendingActivities() {
     );
   }
 
-  const auth = await getAuthorizedClient();
+  const auth = await getAuthorizedClient({ service: "calendar" });
 
   const activities = await MaintenanceActivity.find({
     status: "Pending",
@@ -351,73 +176,21 @@ async function syncPendingActivities() {
       await activity.save();
       synced += 1;
     } catch (error) {
+      if (
+        error.code === "needs_reconnect" ||
+        error.code === "missing_scope" ||
+        error.code === "not_connected"
+      ) {
+        // Retrying the remaining activities cannot succeed without consent.
+        throw error;
+      }
+
       console.error("Google Calendar activity sync error:", error);
       failed += 1;
     }
   }
 
   return { total: activities.length, synced, failed };
-}
-
-// Removes the saved connection so no new events are added. Existing events stay
-// on the calendar; only the stored refresh token is forgotten and revoked.
-async function disconnect() {
-  const envRefreshToken = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN || "";
-  const credential = await GoogleCalendarCredential.findOne({
-    provider: PROVIDER,
-  });
-
-  if (!credential) {
-    if (envRefreshToken) {
-      throw integrationError(
-        "This connection comes from the server's GOOGLE_CALENDAR_REFRESH_TOKEN variable. Remove it on the server to disconnect.",
-        "env_locked",
-      );
-    }
-
-    return { disconnected: false, accountEmail: "" };
-  }
-
-  const client = getOAuthClient();
-
-  if (client) {
-    try {
-      await client.revokeToken(credential.refreshToken);
-    } catch (error) {
-      // The local token is deleted regardless; the admin can also revoke
-      // access from their Google account.
-      console.warn(`[google-calendar] Token revoke failed: ${error.message}`);
-    }
-  }
-
-  await GoogleCalendarCredential.deleteOne({ _id: credential._id });
-
-  return {
-    disconnected: true,
-    accountEmail: credential.accountEmail || "",
-  };
-}
-
-function signState({ adminId, returnTo }) {
-  return jwt.sign(
-    {
-      purpose: STATE_PURPOSE,
-      adminId: String(adminId),
-      returnTo: returnTo || "",
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "10m" },
-  );
-}
-
-function verifyState(state) {
-  const payload = jwt.verify(state, process.env.JWT_SECRET);
-
-  if (!payload || payload.purpose !== STATE_PURPOSE) {
-    throw new Error("Invalid Google Calendar authorization state.");
-  }
-
-  return payload;
 }
 
 module.exports = {
