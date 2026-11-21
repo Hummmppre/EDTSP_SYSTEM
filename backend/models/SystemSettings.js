@@ -22,6 +22,12 @@ const systemSettingsSchema = new mongoose.Schema(
         googleSheetsEnabled: {
             type: Boolean,
             default: true
+        },
+        // Public by design: the browser needs this value to render the widget.
+        recaptchaSiteKey: {
+            type: String,
+            default: "",
+            maxlength: 256
         }
     },
     {

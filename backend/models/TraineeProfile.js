@@ -1,5 +1,6 @@
 
 const mongoose = require("mongoose");
+const { exposeVersionAsJson } = require("../lib/versioning");
 
 const traineeProfileSchema = new mongoose.Schema(
     {
@@ -29,14 +30,6 @@ const traineeProfileSchema = new mongoose.Schema(
             type: String,
             enum: ["Pending", "Ongoing", "Completed", "Inactive"],
             default: "Pending"
-        },
-
-        // Optimistic-concurrency counter. Every write increments it; an admin
-        // form only saves when the version it read still matches.
-        version: {
-            type: Number,
-            default: 0,
-            min: 0
         },
 
         phone: {
@@ -69,6 +62,8 @@ const traineeProfileSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+exposeVersionAsJson(traineeProfileSchema);
 
 const TraineeProfile = mongoose.model(
     "TraineeProfile",

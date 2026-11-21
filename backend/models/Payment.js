@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { exposeVersionAsJson } = require("../lib/versioning");
 
 const paymentSchema = new mongoose.Schema(
     {
@@ -67,13 +68,6 @@ const paymentSchema = new mongoose.Schema(
         recordedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
-        },
-
-        // Optimistic-concurrency counter for payment edits.
-        version: {
-            type: Number,
-            default: 0,
-            min: 0
         }
     },
     { timestamps: true }
@@ -81,6 +75,8 @@ const paymentSchema = new mongoose.Schema(
 
 paymentSchema.index({ application: 1, paymentDate: -1 });
 paymentSchema.index({ paymentDate: -1 });
+
+exposeVersionAsJson(paymentSchema);
 
 const Payment = mongoose.model("Payment", paymentSchema);
 

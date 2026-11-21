@@ -9,6 +9,17 @@ const {
     verifyState
 } = require("../lib/googleCalendar");
 const { getSheetsStatus } = require("../lib/googleSheets");
+const User = require("../models/User");
+const { readConnection } = require("../lib/googleConnection");
+const { validateIntegration } = require("../lib/integrations");
+const {
+    resolveForValidation
+} = require("../lib/integrationCredentials");
+const {
+    upsertValidationStatus,
+    credentialUpdatedAtFor
+} = require("../lib/integrationStatus");
+const { recordAudit } = require("../lib/integrationAudit");
 
 function escapeHtml(value) {
     return String(value === undefined || value === null ? "" : value).replace(
@@ -132,7 +143,7 @@ const getStatus = async (req, res) => {
 
 const getConnectUrl = async (req, res) => {
     try {
-        if (!isConfigured()) {
+        if (!(await isConfigured())) {
             return res.status(503).json({
                 success: false,
                 message:
@@ -148,7 +159,7 @@ const getConnectUrl = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            authUrl: buildAuthUrl(state)
+            authUrl: await buildAuthUrl(state)
         });
     } catch (error) {
         console.error("Google connect error:", error);
@@ -159,6 +170,73 @@ const getConnectUrl = async (req, res) => {
         });
     }
 };
+
+async function validateGoogleCardsAfterConnect(adminId, ip) {
+    let admin = { id: adminId, email: "unknown" };
+
+    try {
+        const user = await User.findById(adminId).select("email").lean();
+
+        if (user && user.email) admin = { id: adminId, email: user.email };
+    } catch (error) {
+        // Status still persists when the audit actor cannot be resolved.
+    }
+
+    let refreshToken = "";
+    let scopes = [];
+
+    try {
+        const connection = await readConnection();
+
+        refreshToken = connection.refreshToken || "";
+        scopes = connection.credential && Array.isArray(connection.credential.scopes)
+            ? connection.credential.scopes
+            : [];
+    } catch (error) {
+        console.warn(`[google] Post-connect validation could not read the token: ${error.message}`);
+    }
+
+    const cards = ["google-calendar", "google-sheets"];
+
+    await Promise.allSettled(
+        cards.map(async (card) => {
+            try {
+                const resolved = await resolveForValidation(card, {});
+                const result = await validateIntegration(card, {
+                    values: resolved.values,
+                    context: {
+                        refreshToken,
+                        scopes,
+                        redirectUri: process.env.GOOGLE_CALENDAR_REDIRECT_URI || "http://localhost"
+                    }
+                });
+
+                await upsertValidationStatus({
+                    card,
+                    valid: result.valid,
+                    state: result.state,
+                    code: result.code,
+                    message: result.message,
+                    checkedAt: result.checkedAt,
+                    credentialUpdatedAt: await credentialUpdatedAtFor(card)
+                });
+
+                if (admin.email !== "unknown") {
+                    await recordAudit({
+                        card,
+                        action: "test",
+                        outcome: result.valid ? "success" : "failure",
+                        code: result.code,
+                        admin,
+                        ip
+                    });
+                }
+            } catch (error) {
+                console.warn(`[google] Post-connect ${card} validation failed: ${error.message}`);
+            }
+        })
+    );
+}
 
 const handleCallback = async (req, res) => {
     const { code, error, state } = req.query;
@@ -201,6 +279,7 @@ const handleCallback = async (req, res) => {
 
     try {
         await exchangeCode(code);
+        await validateGoogleCardsAfterConnect(payload.adminId, req.ip);
 
         return finishAuthorization(res, returnTo, true, "");
     } catch (exchangeError) {

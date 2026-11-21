@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { exposeVersionAsJson } = require("../lib/versioning");
 
 const programSchema = new mongoose.Schema(
     {
@@ -30,17 +31,12 @@ const programSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
-        },
-
-        // Optimistic-concurrency counter for program edits.
-        version: {
-            type: Number,
-            default: 0,
-            min: 0
         }
     },
     { timestamps: true }
 );
+
+exposeVersionAsJson(programSchema);
 
 const Program = mongoose.model("Program", programSchema);
 

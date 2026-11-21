@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { exposeVersionAsJson } = require("../lib/versioning");
 
 const cowSchema = new mongoose.Schema(
     {
@@ -56,17 +57,12 @@ const cowSchema = new mongoose.Schema(
             default: "",
             trim: true,
             maxlength: 500
-        },
-
-        // Optimistic-concurrency counter for care-record edits.
-        version: {
-            type: Number,
-            default: 0,
-            min: 0
         }
     },
     { timestamps: true }
 );
+
+exposeVersionAsJson(cowSchema);
 
 const Cow = mongoose.model("Cow", cowSchema);
 

@@ -188,6 +188,19 @@ const traineeUploadLimiter = createLimiter({
   },
 });
 
+const integrationValidationLimiter = createLimiter({
+  windowMs: 15 * MINUTE,
+  limit: 20,
+  prefix: "integration-validation",
+  message:
+    "Too many integration validations. Please wait 15 minutes and try again.",
+  keyGenerator: (req) => {
+    const userId = req.user && (req.user.id || req.user._id);
+
+    return userId ? `admin:${userId}` : `ip:${clientIp(req)}`;
+  },
+});
+
 const loginFailureCounter = createCounter({
   prefix: "login-failure",
   windowMs: LOGIN_FAILURE_WINDOW_MS,
@@ -282,6 +295,7 @@ module.exports = {
   forgotPasswordAccountLimiter,
   forgotPasswordIpLimiter,
   googleLoginLimiter,
+  integrationValidationLimiter,
   loginFailureGuard,
   loginLimiter,
   recordLoginFailure,

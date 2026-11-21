@@ -255,7 +255,7 @@ const updateTrainee = async (req, res) => {
 
         // One atomic write guards the whole logical trainee record: it only
         // matches the version the admin read and it advances that version.
-        const profileUpdate = { $inc: { version: 1 } };
+        const profileUpdate = { $inc: { __v: 1 } };
 
         if (Object.keys(profileSet).length > 0) {
             profileUpdate.$set = profileSet;
@@ -290,7 +290,7 @@ const updateTrainee = async (req, res) => {
         notifyRecordUpdated({
             resource: "trainee",
             id: String(user._id),
-            version: updatedProfile.version,
+            version: currentVersionOf(updatedProfile),
             actorId: req.user && req.user.id
         });
 

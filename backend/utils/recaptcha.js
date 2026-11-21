@@ -1,15 +1,22 @@
 const axios = require("axios");
+const { resolveField } = require("../lib/integrationCredentials");
 
 const verifyRecaptcha = async (token) => {
   try {
-    if (!token || !process.env.RECAPTCHA_SECRET_KEY) {
+    if (!token) {
+      return false;
+    }
+
+    const secret = await resolveField("recaptcha", "secretKey");
+
+    if (!secret.value) {
       return false;
     }
 
     const response = await axios.post(
       "https://www.google.com/recaptcha/api/siteverify",
       new URLSearchParams({
-        secret: process.env.RECAPTCHA_SECRET_KEY,
+        secret: secret.value,
         response: token,
       }),
     );

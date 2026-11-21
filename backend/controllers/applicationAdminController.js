@@ -222,7 +222,7 @@ const decideApplication = async (req, res) => {
                     status: "Open",
                     $expr: { $lt: ["$filledCount", "$slotCapacity"] }
                 },
-                { $inc: { filledCount: 1, version: 1 } },
+                { $inc: { filledCount: 1, __v: 1 } },
                 { new: true }
             );
 
@@ -235,6 +235,14 @@ const decideApplication = async (req, res) => {
 
             claimedBatchId = batch._id;
 
+            // Create the profile first so a new record starts at __v 0; the
+            // enrollment write is then a normal update that increments it.
+            await TraineeProfile.findOneAndUpdate(
+                { user: application.user },
+                { $setOnInsert: { user: application.user } },
+                { upsert: true, setDefaultsOnInsert: true }
+            );
+
             await TraineeProfile.findOneAndUpdate(
                 { user: application.user },
                 {
@@ -242,10 +250,9 @@ const decideApplication = async (req, res) => {
                         program: application.program.name,
                         enrollmentStatus: "Ongoing"
                     },
-                    $setOnInsert: { user: application.user },
-                    $inc: { version: 1 }
+                    $inc: { __v: 1 }
                 },
-                { new: true, upsert: true, setDefaultsOnInsert: true }
+                { new: true, runValidators: true }
             );
 
             // The trainee already has an ID from signup; keep it if so.
@@ -266,7 +273,7 @@ const decideApplication = async (req, res) => {
             notifyRecordUpdated({
                 resource: "trainee",
                 id: String(application.user),
-                version: approvedProfile.version,
+                version: approvedProfile.__v,
                 actorId: req.user && req.user.id
             });
         }
@@ -295,7 +302,7 @@ const decideApplication = async (req, res) => {
             try {
                 await Batch.updateOne(
                     { _id: claimedBatchId },
-                    { $inc: { filledCount: -1, version: 1 } }
+                    { $inc: { filledCount: -1, __v: 1 } }
                 );
             } catch (rollbackError) {
                 console.error("Batch slot rollback failed:", rollbackError);

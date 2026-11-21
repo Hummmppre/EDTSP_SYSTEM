@@ -106,6 +106,9 @@ document.addEventListener("DOMContentLoaded", () => {
       googleCalendarDisconnectBtn.hidden =
         !configured || !googleStatus.accountConnected;
     }
+
+    renderGoogleToken("google-calendar");
+    renderGoogleToken("google-sheets");
   }
 
   async function loadGoogleStatus() {
@@ -223,6 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
       emailToggle.checked = savedSettings.emailEnabled;
       googleCalendarToggle.checked = savedSettings.googleCalendarEnabled;
       googleSheetsToggle.checked = savedSettings.googleSheetsEnabled;
+
+      if (data.integrations) {
+        applyIntegrationMetadata(data.integrations);
+      }
 
       showMessage("Settings loaded successfully.");
     } catch (error) {
@@ -410,6 +417,806 @@ document.addEventListener("DOMContentLoaded", () => {
         googleCalendarDisconnectBtn.disabled = false;
         googleCalendarDisconnectBtn.textContent = originalLabel;
       }
+    });
+  }
+
+  /* ---------- Integration credentials ---------- */
+
+  const INTEGRATION_LABELS = {
+    "google-auth": "Google Authentication",
+    brevo: "Brevo",
+    "google-calendar": "Google Calendar",
+    "google-sheets": "Google Sheets",
+    recaptcha: "reCAPTCHA",
+  };
+
+  const integrationState = new Map();
+  let pendingClearCard = null;
+  let clearReturnFocus = null;
+
+  const clearModal = document.getElementById("integrationClearModal");
+  const clearTitle = document.getElementById("integrationClearTitle");
+  const clearCopy = document.getElementById("integrationClearCopy");
+  const clearConfirm = document.getElementById("integrationClearConfirm");
+  const clearCancel = document.getElementById("integrationClearCancel");
+  const clearClose = document.getElementById("integrationClearClose");
+
+  const auditToggle = document.getElementById("integrationAuditToggle");
+  const auditBody = document.getElementById("integrationAuditBody");
+  const auditRows = document.getElementById("integrationAuditRows");
+  const auditEmpty = document.getElementById("integrationAuditEmpty");
+  const auditError = document.getElementById("integrationAuditError");
+  const auditMore = document.getElementById("integrationAuditMore");
+  const auditRetry = document.getElementById("integrationAuditRetry");
+  const auditState = {
+    loaded: false,
+    loading: false,
+    entries: [],
+    nextBefore: null,
+  };
+
+  function getState(card) {
+    return integrationState.get(card);
+  }
+
+  function relativeTime(value) {
+    if (!value) return "unknown time";
+
+    const diff = Date.now() - new Date(value).getTime();
+    const minutes = Math.round(diff / 60000);
+
+    if (!Number.isFinite(minutes)) return "unknown time";
+    if (Math.abs(minutes) < 1) return "just now";
+    if (Math.abs(minutes) < 60) return `${minutes} min ago`;
+
+    const hours = Math.round(minutes / 60);
+
+    if (Math.abs(hours) < 24) return `${hours} hr ago`;
+
+    const days = Math.round(hours / 24);
+
+    if (Math.abs(days) < 30) return `${days} day${Math.abs(days) === 1 ? "" : "s"} ago`;
+
+    return new Date(value).toLocaleDateString();
+  }
+
+  function setCardBusy(card, action) {
+    const state = getState(card);
+
+    if (!state) return;
+
+    state.busy = action;
+    renderCard(card);
+  }
+
+  function updateCardControls(card) {
+    const state = getState(card);
+
+    if (!state || !state.root) return;
+
+    const rateLimited = Date.now() < state.rateLimitedUntil;
+    const disabled = Boolean(state.busy) || rateLimited;
+    const actions = state.root.querySelectorAll("[data-action]");
+    const inputs = state.root.querySelectorAll("[data-secret-input]");
+
+    actions.forEach((button) => {
+      button.disabled = disabled;
+    });
+    inputs.forEach((input) => {
+      input.disabled = Boolean(state.busy);
+    });
+
+    const testButton = state.root.querySelector('[data-action="test"]');
+    const saveButton = state.root.querySelector('[data-action="save"]');
+    const clearButton = state.root.querySelector('[data-action="clear"]');
+
+    if (testButton) {
+      testButton.textContent =
+        state.busy === "test" ? "Testing…" : state.defaults.test;
+    }
+    if (saveButton) {
+      saveButton.textContent =
+        state.busy === "save" ? "Saving…" : state.defaults.save;
+    }
+    if (clearButton) {
+      clearButton.textContent =
+        state.busy === "clear" ? "Clearing…" : state.defaults.clear;
+    }
+  }
+
+  function clearCardError(card) {
+    const state = getState(card);
+
+    if (!state) return;
+
+    state.error = null;
+
+    if (state.errorEl) {
+      state.errorEl.textContent = "";
+      state.errorEl.hidden = true;
+    }
+
+    state.root.querySelectorAll("[data-field]").forEach((fieldEl) => {
+      const input = fieldEl.querySelector("[data-secret-input]");
+      const help = fieldEl.querySelector(".integration-field__help");
+
+      if (input) input.removeAttribute("aria-invalid");
+      if (help && help.dataset.originalHelp !== undefined) {
+        help.textContent = help.dataset.originalHelp;
+      }
+    });
+  }
+
+  function showCardError(card, error) {
+    const state = getState(card);
+
+    if (!state) return;
+
+    state.error = error;
+
+    if (state.errorEl) {
+      state.errorEl.textContent = error.message;
+      state.errorEl.hidden = false;
+    }
+
+    if (error.field) {
+      const fieldEl = state.root.querySelector(`[data-field="${error.field}"]`);
+
+      if (fieldEl) {
+        const input = fieldEl.querySelector("[data-secret-input]");
+        const help = fieldEl.querySelector(".integration-field__help");
+
+        if (help) {
+          if (help.dataset.originalHelp === undefined) {
+            help.dataset.originalHelp = help.textContent;
+          }
+          help.textContent = error.message;
+        }
+        if (input) {
+          input.setAttribute("aria-invalid", "true");
+          input.focus();
+        }
+      }
+    }
+  }
+
+  function renderStatus(card) {
+    const state = getState(card);
+
+    if (!state || !state.statusEl) return;
+
+    let text = "Not validated yet.";
+    let statusState = "unverified";
+
+    if (state.busy) {
+      text =
+        state.busy === "test"
+          ? "Testing…"
+          : state.busy === "save"
+            ? "Saving…"
+            : "Clearing…";
+      statusState = "busy";
+    } else if (state.localResult) {
+      text = state.localResult.message || "Validation finished.";
+      statusState =
+        state.localResult.state === "awaiting_connection"
+          ? "awaiting"
+          : state.localResult.state;
+    } else if (state.metadata && state.metadata.lastValidation) {
+      const last = state.metadata.lastValidation;
+      const at = last.checkedAt ? relativeTime(last.checkedAt) : "";
+
+      if (last.state === "valid") {
+        text = `Validated ${at}. ${last.message || ""}`.trim();
+        statusState = "valid";
+      } else if (last.state === "invalid") {
+        text = `Last check failed ${at}. ${last.message || ""}`.trim();
+        statusState = "invalid";
+      } else if (last.state === "awaiting_connection") {
+        text = "Awaiting Google connection. Connect Google to finish validation.";
+        statusState = "awaiting";
+      } else if (last.state === "unreadable_credential") {
+        text = "Saved credential could not be read. Re-enter it or clear it.";
+        statusState = "unreadable";
+      } else if (last.state === "unverified") {
+        text = "Not validated yet.";
+        statusState = "unverified";
+      } else {
+        text = last.message || "Not validated yet.";
+        statusState = "unverified";
+      }
+
+      if (last.stale && last.state === "valid") {
+        text = "Credentials changed since this check — validate again.";
+        statusState = "stale";
+      }
+    }
+
+    state.statusEl.textContent = text;
+    state.statusEl.dataset.state = statusState;
+  }
+
+  function renderCard(card) {
+    const state = getState(card);
+
+    if (!state || !state.root) return;
+
+    const metadata = state.metadata;
+    const fieldMetadata = new Map(
+      metadata && Array.isArray(metadata.fields)
+        ? metadata.fields.map((field) => [field.name, field])
+        : [],
+    );
+
+    state.root.querySelectorAll("[data-field]").forEach((fieldEl) => {
+      const name = fieldEl.dataset.field;
+      const field = fieldMetadata.get(name);
+      const badge = fieldEl.querySelector("[data-source]");
+      const input = fieldEl.querySelector("[data-secret-input]");
+      const source = field ? field.source : "none";
+
+      if (badge) {
+        badge.dataset.source = source;
+        badge.textContent =
+          source === "database"
+            ? "Saved"
+            : source === "environment"
+              ? "Server env"
+              : "Not configured";
+      }
+
+      if (input && !input.value) {
+        const label = (badge ? badge.parentElement.textContent : name)
+          .replace(/Saved|Server env|Not configured/g, "")
+          .trim();
+
+        input.placeholder =
+          source === "database"
+            ? "Saved — enter a new value to replace"
+            : source === "environment"
+              ? "Using server env — enter a value to override"
+              : `Enter a new ${label || "value"}`;
+      }
+
+      if (input) {
+        fieldEl.classList.toggle(
+          "integration-field--dirty",
+          Boolean(input.value.trim()),
+        );
+      }
+    });
+
+    const clearButton = state.root.querySelector('[data-action="clear"]');
+
+    if (clearButton) {
+      clearButton.hidden = !Array.from(fieldMetadata.values()).some(
+        (field) => field.source === "database",
+      );
+    }
+
+    renderStatus(card);
+    updateCardControls(card);
+  }
+
+  function applyMetadata(card, metadata) {
+    const state = getState(card);
+
+    if (!state || !metadata) return;
+
+    state.metadata = metadata;
+    state.localResult = null;
+    clearCardError(card);
+    renderCard(card);
+  }
+
+  function applyIntegrationMetadata(metadataMap) {
+    if (!metadataMap) return;
+
+    Object.entries(metadataMap).forEach(([card, metadata]) => {
+      applyMetadata(card, metadata);
+    });
+  }
+
+  function readFields(card) {
+    const state = getState(card);
+    const fields = {};
+
+    if (!state) return fields;
+
+    state.root.querySelectorAll("[data-field]").forEach((fieldEl) => {
+      const input = fieldEl.querySelector("[data-secret-input]");
+
+      if (!input) return;
+
+      const value = input.value.trim();
+
+      if (value) fields[fieldEl.dataset.field] = value;
+    });
+
+    return fields;
+  }
+
+  function clearFields(card) {
+    const state = getState(card);
+
+    if (!state) return;
+
+    state.root.querySelectorAll("[data-secret-input]").forEach((input) => {
+      input.value = "";
+      input.type = input.dataset.fieldType === "text" ? "text" : "password";
+
+      const control = input.closest(".integration-field__control");
+      const toggle = control && control.querySelector("[data-toggle-visibility]");
+
+      if (toggle) {
+        toggle.textContent = "Show";
+        toggle.setAttribute("aria-pressed", "false");
+      }
+    });
+  }
+
+  function renderGoogleToken(card) {
+    const state = getState(card);
+
+    if (!state || !state.root) return;
+
+    const service =
+      googleStatus && card === "google-calendar"
+        ? googleStatus.calendar
+        : googleStatus && card === "google-sheets"
+          ? googleStatus.sheets
+          : null;
+    const account = state.root.querySelector("[data-token-account]");
+    const scopes = state.root.querySelector("[data-token-scopes]");
+
+    if (account) {
+      account.textContent =
+        service && service.accountEmail
+          ? service.accountEmail
+          : service && service.connected
+            ? "Connected"
+            : "Not connected";
+    }
+
+    if (scopes) {
+      const granted = service && Array.isArray(service.scopes) ? service.scopes : [];
+
+      scopes.textContent = granted.length
+        ? granted.map((scope) => String(scope).split("/").pop()).join(" · ")
+        : "";
+    }
+  }
+
+  async function integrationFetch(path, { method = "GET", fields } = {}) {
+    const response = await fetch(`${API_URL}${path}`, {
+      method,
+      headers: {
+        ...(fields ? { "Content-Type": "application/json" } : {}),
+        Authorization: `Bearer ${token}`,
+      },
+      body: fields ? JSON.stringify({ fields }) : undefined,
+    });
+    let data = {};
+
+    try {
+      data = await response.json();
+    } catch (error) {
+      data = {};
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      data,
+      retryAfter: Number(response.headers.get("Retry-After")) || 60,
+    };
+  }
+
+  function collectError(result, fallback) {
+    return {
+      status: result.status,
+      code: result.data.code || "provider_error",
+      message: result.data.message || fallback,
+      field: result.data.field,
+      retryAfter: result.retryAfter,
+    };
+  }
+
+  function handleAuthExpired() {
+    localStorage.removeItem("edtspToken");
+    localStorage.removeItem("edtspUser");
+    sessionStorage.removeItem("edtspToken");
+    sessionStorage.removeItem("edtspUser");
+    window.location.href = "../login.html";
+  }
+
+  function applyRequestError(card, error) {
+    if (error.status === 401) {
+      showCardError(card, {
+        code: "unauthorized",
+        message: "Your session expired. Sign in again.",
+      });
+      handleAuthExpired();
+      return;
+    }
+
+    if (error.status === 429) {
+      const state = getState(card);
+
+      if (state) {
+        state.rateLimitedUntil = Date.now() + error.retryAfter * 1000;
+
+        window.setTimeout(() => {
+          state.rateLimitedUntil = 0;
+          clearCardError(card);
+          updateCardControls(card);
+        }, error.retryAfter * 1000);
+      }
+    }
+
+    showCardError(card, error);
+  }
+
+  async function testCard(card) {
+    const state = getState(card);
+
+    if (!state || state.busy || Date.now() < state.rateLimitedUntil) return;
+
+    state.localResult = null;
+    clearCardError(card);
+    setCardBusy(card, "test");
+
+    try {
+      const result = await integrationFetch(
+        `/integrations/${encodeURIComponent(card)}/test`,
+        { method: "POST", fields: readFields(card) },
+      );
+
+      if (!result.ok) {
+        applyRequestError(
+          card,
+          collectError(result, "The integration could not be tested."),
+        );
+        return;
+      }
+
+      state.localResult = result.data;
+      await refreshAuditIfLoaded();
+    } catch (error) {
+      applyRequestError(card, {
+        code: "network_error",
+        message: "The server could not be reached. Check your connection and try again.",
+      });
+    } finally {
+      setCardBusy(card, null);
+    }
+  }
+
+  async function saveCard(card) {
+    const state = getState(card);
+
+    if (!state || state.busy || Date.now() < state.rateLimitedUntil) return;
+
+    state.localResult = null;
+    clearCardError(card);
+    setCardBusy(card, "save");
+
+    try {
+      const result = await integrationFetch(
+        `/integrations/${encodeURIComponent(card)}`,
+        { method: "PUT", fields: readFields(card) },
+      );
+
+      if (!result.ok) {
+        applyRequestError(
+          card,
+          collectError(result, "The integration credential could not be saved."),
+        );
+        return;
+      }
+
+      clearFields(card);
+      applyMetadata(card, result.data.integration);
+      state.dirty = false;
+      await refreshAuditIfLoaded();
+    } catch (error) {
+      applyRequestError(card, {
+        code: "network_error",
+        message: "The server could not be reached. Check your connection and try again.",
+      });
+    } finally {
+      setCardBusy(card, null);
+    }
+  }
+
+  function openClearModal(card) {
+    if (!clearModal || !clearTitle || !clearCopy || !clearConfirm) return;
+
+    const label = INTEGRATION_LABELS[card] || card;
+    const google = card === "google-calendar" || card === "google-sheets";
+
+    pendingClearCard = card;
+    clearReturnFocus = clearReturnFocus || document.activeElement;
+    clearTitle.textContent = `Clear saved credentials for ${label}?`;
+    clearCopy.textContent = google
+      ? "The shared Google OAuth client is used by both Google Calendar and Google Sheets. Clearing it affects both cards. Server environment values will be used again where available."
+      : "Server environment values will be used again where available. This does not change the integration toggle.";
+    clearConfirm.dataset.integration = card;
+    clearModal.classList.add("show");
+    document.body.classList.add("modal-open");
+    clearCancel.focus();
+  }
+
+  function closeClearModal() {
+    if (!clearModal) return;
+
+    clearModal.classList.remove("show");
+    document.body.classList.remove("modal-open");
+    pendingClearCard = null;
+
+    if (clearReturnFocus && typeof clearReturnFocus.focus === "function") {
+      clearReturnFocus.focus();
+    }
+    clearReturnFocus = null;
+  }
+
+  async function performClear(card) {
+    const state = getState(card);
+
+    if (!state) return;
+
+    setCardBusy(card, "clear");
+
+    try {
+      const result = await integrationFetch(
+        `/integrations/${encodeURIComponent(card)}`,
+        { method: "DELETE" },
+      );
+
+      if (!result.ok) {
+        applyRequestError(
+          card,
+          collectError(result, "The integration credential could not be cleared."),
+        );
+        return;
+      }
+
+      Object.entries(result.data.integrations || {}).forEach(
+        ([key, metadata]) => {
+          clearFields(key);
+          applyMetadata(key, metadata);
+
+          const target = getState(key);
+
+          if (target) target.dirty = false;
+        },
+      );
+
+      await refreshAuditIfLoaded();
+    } catch (error) {
+      applyRequestError(card, {
+        code: "network_error",
+        message: "The server could not be reached. Check your connection and try again.",
+      });
+    } finally {
+      setCardBusy(card, null);
+      closeClearModal();
+    }
+  }
+
+  function setupIntegrationCards() {
+    document.querySelectorAll("[data-integration]").forEach((root) => {
+      const card = root.dataset.integration;
+      const errorEl = root.querySelector("[data-error]");
+      const statusEl = root.querySelector("[data-status]");
+
+      root.querySelectorAll("[data-field]").forEach((fieldEl) => {
+        const help = fieldEl.querySelector(".integration-field__help");
+        const input = fieldEl.querySelector("[data-secret-input]");
+
+        if (help) help.dataset.originalHelp = help.textContent;
+        if (input) input.dataset.fieldType = input.type;
+      });
+
+      const defaults = {
+        test: root.querySelector('[data-action="test"]')?.textContent || "Test",
+        save: root.querySelector('[data-action="save"]')?.textContent || "Save",
+        clear:
+          root.querySelector('[data-action="clear"]')?.textContent ||
+          "Clear saved key",
+      };
+
+      integrationState.set(card, {
+        root,
+        errorEl,
+        statusEl,
+        defaults,
+        metadata: null,
+        dirty: false,
+        busy: null,
+        localResult: null,
+        error: null,
+        rateLimitedUntil: 0,
+      });
+
+      root.addEventListener("input", (event) => {
+        const input = event.target.closest("[data-secret-input]");
+
+        if (!input) return;
+
+        const state = getState(card);
+        const fieldEl = input.closest("[data-field]");
+
+        if (state) state.dirty = true;
+        if (fieldEl) fieldEl.classList.add("integration-field--dirty");
+        clearCardError(card);
+      });
+
+      root.addEventListener("click", (event) => {
+        const visibility = event.target.closest("[data-toggle-visibility]");
+
+        if (visibility) {
+          const control = visibility.closest(".integration-field__control");
+          const input = control && control.querySelector("[data-secret-input]");
+
+          if (input) {
+            const showing = input.type === "text";
+
+            input.type = showing ? "password" : "text";
+            visibility.setAttribute("aria-pressed", String(!showing));
+            visibility.textContent = showing ? "Show" : "Hide";
+            visibility.setAttribute(
+              "aria-label",
+              `${showing ? "Show" : "Hide"} ${input.name || "credential"}`,
+            );
+          }
+          return;
+        }
+
+        const action = event.target.closest("[data-action]");
+
+        if (!action) return;
+
+        const name = action.dataset.action;
+
+        if (name === "test") testCard(card);
+        if (name === "save") saveCard(card);
+        if (name === "clear") {
+          clearReturnFocus = action;
+          openClearModal(card);
+        }
+      });
+    });
+  }
+
+  function auditActionLabel(action) {
+    return action === "test"
+      ? "Tested"
+      : action === "save"
+        ? "Saved"
+        : action === "clear"
+          ? "Cleared"
+          : action;
+  }
+
+  function renderAudit() {
+    if (!auditRows) return;
+
+    auditRows.textContent = "";
+
+    auditState.entries.forEach((entry) => {
+      const row = document.createElement("tr");
+
+      [
+        new Date(entry.createdAt).toLocaleString(),
+        INTEGRATION_LABELS[entry.integration] || entry.integration,
+        auditActionLabel(entry.action),
+        `${entry.outcome === "success" ? "Success" : "Failure"} · ${entry.code}`,
+        entry.adminEmail || "unknown",
+        entry.ip || "—",
+      ].forEach((value) => {
+        const cell = document.createElement("td");
+
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+
+      auditRows.appendChild(row);
+    });
+
+    if (auditEmpty) {
+      auditEmpty.hidden = !(
+        auditState.loaded && auditState.entries.length === 0
+      );
+    }
+    if (auditMore) {
+      auditMore.hidden = !auditState.nextBefore;
+      auditMore.disabled = auditState.loading;
+    }
+  }
+
+  async function loadAudit({ reset = false } = {}) {
+    if (!auditBody || auditState.loading) return;
+
+    auditState.loading = true;
+
+    if (auditError) {
+      auditError.hidden = true;
+      auditError.textContent = "";
+    }
+    if (auditRetry) auditRetry.hidden = true;
+
+    try {
+      const before =
+        !reset && auditState.nextBefore
+          ? `&before=${encodeURIComponent(auditState.nextBefore)}`
+          : "";
+      const result = await integrationFetch(
+        `/integrations/audit?limit=20${before}`,
+      );
+
+      if (!result.ok) {
+        throw collectError(result, "Activity could not be loaded.");
+      }
+
+      auditState.entries = reset
+        ? result.data.entries || []
+        : auditState.entries.concat(result.data.entries || []);
+      auditState.nextBefore = result.data.nextBefore || null;
+      auditState.loaded = true;
+      renderAudit();
+    } catch (error) {
+      if (auditError) {
+        auditError.textContent = error.message || "Activity could not be loaded.";
+        auditError.hidden = false;
+      }
+      if (auditRetry) auditRetry.hidden = false;
+    } finally {
+      auditState.loading = false;
+      if (auditMore) auditMore.disabled = false;
+    }
+  }
+
+  async function refreshAuditIfLoaded() {
+    if (auditState.loaded) await loadAudit({ reset: true });
+  }
+
+  setupIntegrationCards();
+
+  if (auditToggle && auditBody) {
+    auditToggle.addEventListener("click", () => {
+      const open = auditBody.hidden;
+
+      auditBody.hidden = !open;
+      auditToggle.setAttribute("aria-expanded", String(open));
+      auditToggle.textContent = open ? "Hide activity" : "Show activity";
+
+      if (open && !auditState.loaded) loadAudit({ reset: true });
+    });
+  }
+
+  if (auditMore) {
+    auditMore.addEventListener("click", () => loadAudit());
+  }
+
+  if (auditRetry) {
+    auditRetry.addEventListener("click", () => loadAudit({ reset: true }));
+  }
+
+  if (clearConfirm) {
+    clearConfirm.addEventListener("click", () => {
+      const card = clearConfirm.dataset.integration || pendingClearCard;
+
+      if (card) performClear(card);
+    });
+  }
+
+  if (clearCancel) clearCancel.addEventListener("click", closeClearModal);
+  if (clearClose) clearClose.addEventListener("click", closeClearModal);
+
+  if (clearModal) {
+    clearModal.addEventListener("click", (event) => {
+      if (event.target === clearModal) closeClearModal();
     });
   }
 

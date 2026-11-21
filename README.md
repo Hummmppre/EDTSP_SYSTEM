@@ -20,7 +20,11 @@ The API runs on `http://localhost:5000` by default.
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | Secret used to sign login tokens |
 | `BREVO_API_KEY` | Brevo transactional email API key |
+| `INTEGRATION_ENCRYPTION_KEY` | 32-byte key (base64 or 64 hex characters) used to encrypt credentials saved from System settings |
 | `MAIL_FROM` | Sender identity, e.g. `Esperon Dairy Training Student Portal <no-reply@example.com>` |
+| `GOOGLE_CLIENT_ID` | Google Sign-In OAuth client ID |
+| `RECAPTCHA_SECRET_KEY` | reCAPTCHA secret key (env fallback) |
+| `RECAPTCHA_SITE_KEY` | reCAPTCHA site key (env fallback; the database value is public) |
 | `APP_URL` | Public frontend URL used in emailed password reset links (defaults to `http://localhost:5500`) |
 | `TRUST_PROXY` | Number of trusted proxy hops, so rate limits see the real client IP (for example `1`) |
 | `RATE_LIMIT_STORE` | `mongo` (default when a database is configured) or `memory` for single-process tests |
@@ -131,6 +135,7 @@ Add these values to `backend/.env` (OAuth client of type *Web application*):
 | --- | --- |
 | `GOOGLE_CALENDAR_CLIENT_ID` | OAuth client ID |
 | `GOOGLE_CALENDAR_CLIENT_SECRET` | OAuth client secret |
+| `GOOGLE_CLIENT_SECRET` | Google Sign-In client secret, used only to validate the credential pair from System settings |
 | `GOOGLE_CALENDAR_REDIRECT_URI` | Must match the API callback, e.g. `http://localhost:5000/api/integrations/google-calendar/callback` |
 | `GOOGLE_CALENDAR_ID` | Target calendar (defaults to `primary`) |
 | `GOOGLE_CALENDAR_TIMEZONE` | IANA zone for event times (defaults to `Asia/Manila`) |
@@ -145,6 +150,65 @@ supplied through `GOOGLE_CALENDAR_REFRESH_TOKEN` takes precedence.
 revoked connection is reported as disconnected with `needsReconnect: true`.
 `POST /api/integrations/google-calendar/sync` (admin) backfills up to 100 pending
 activities that have no calendar event.
+
+## Integration credentials (System settings)
+
+Administrators can enter and validate credentials for Google Authentication,
+Brevo, Google Calendar, Google Sheets, and reCAPTCHA from **System settings**.
+`Test` checks the entered values without saving. `Save` validates first and
+stores the values only when validation succeeds. `Clear saved key` removes the
+database override and returns to the environment value.
+
+Encryption:
+
+```bash
+# 32 bytes, base64 (recommended) or 64 hex characters
+openssl rand -base64 32
+```
+
+Set the result as `INTEGRATION_ENCRYPTION_KEY` before saving any credential.
+Credentials are encrypted with AES-256-GCM; the key is never accepted from the
+browser. If the variable is missing or malformed, saves and clears return `503`
+and existing database credentials fail closed. Losing the key requires
+re-entering every saved credential.
+
+Precedence and resolution:
+
+- A value saved in the UI overrides the matching environment variable per field.
+- If a database record exists but a field is absent or cannot be decrypted, the
+  environment value is **not** used; the integration reports an unreadable or
+  missing credential.
+- `Clear saved key` restores environment resolution.
+- Calendar and Sheets share one encrypted OAuth client record; clearing either
+  Google card clears that shared client. Calendar keeps its own calendar ID.
+
+Validation behavior:
+
+- Google Authentication checks the client ID format and verifies the client
+  ID/secret pair with Google's token endpoint.
+- Google Calendar refreshes the stored Google token and reads one calendar event.
+  Google Sheets refreshes the token and performs a minimal Drive read; no
+  spreadsheet ID is configured, so Sheets API enablement is not checked.
+- Brevo calls `GET https://api.brevo.com/v3/account`. Sender identity is not
+  checked.
+- reCAPTCHA checks that both keys are present and match Google's key shape. Key
+  pairing cannot be verified without a live challenge.
+- Validation calls time out after 8 seconds. Any failure, including a timeout or
+  provider outage, rejects the save and leaves the previous credential active.
+
+Endpoints (admin only, under `/api/system-settings`):
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/integrations/:integration/test` | Validate candidate values without saving |
+| `PUT` | `/integrations/:integration` | Validate, encrypt, and save |
+| `DELETE` | `/integrations/:integration` | Remove the database override |
+| `GET` | `/integrations/audit?limit=20&before=<ISO>` | Read the audit trail |
+
+Audit entries record the integration, action, outcome, code, administrator,
+IP, and timestamp for 12 months. No secret value, prefix, suffix, or hash is
+written to the audit collection. Validation requests are limited to 20 per 15
+minutes per administrator in addition to the normal write limiter.
 
 ## Frontend
 

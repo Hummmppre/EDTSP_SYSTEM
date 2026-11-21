@@ -1,4 +1,5 @@
 const SystemSettings = require("../models/SystemSettings");
+const { resolveField } = require("./integrationCredentials");
 
 const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 const REQUEST_TIMEOUT_MS = 8000;
@@ -63,11 +64,15 @@ async function sendEmail({ to, subject, text, html, replyTo }) {
         return { sent: false, error: "Missing recipient." };
     }
 
-    const apiKey = process.env.BREVO_API_KEY;
+    const apiKeyField = await resolveField("brevo", "apiKey");
+    const apiKey = apiKeyField.value;
 
     if (!apiKey) {
-        console.warn(`[mailer] BREVO_API_KEY is not set — skipped "${subject}" to ${to}.`);
-        return { sent: false, error: "BREVO_API_KEY is not set." };
+        console.warn(`[mailer] Brevo is not configured — skipped "${subject}" to ${to}.`);
+        return {
+            sent: false,
+            error: apiKeyField.code || "Brevo is not configured."
+        };
     }
 
     const sender = getSender();

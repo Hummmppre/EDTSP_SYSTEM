@@ -1,6 +1,7 @@
 const { google } = require("googleapis");
 
 const MaintenanceActivity = require("../models/MaintenanceActivity");
+const { resolveField } = require("./integrationCredentials");
 const {
   integrationError,
   isDeadCredentialError,
@@ -19,8 +20,10 @@ const {
 
 const EVENT_DURATION_MS = 30 * 60 * 1000;
 
-function getCalendarId() {
-  return process.env.GOOGLE_CALENDAR_ID || "primary";
+async function getCalendarId() {
+  const field = await resolveField("google-calendar", "calendarId");
+
+  return field.value || "primary";
 }
 
 function getTimeZone() {
@@ -34,6 +37,7 @@ async function isEnabled() {
 async function getCalendarStatus({ verify = false } = {}) {
   const enabled = await isEnabled();
   const connection = await getConnectionStatus({ verify });
+  const calendarId = connection.configured ? await getCalendarId() : "";
 
   return {
     enabled,
@@ -42,7 +46,7 @@ async function getCalendarStatus({ verify = false } = {}) {
     connected: connection.connected && connection.calendarAuthorized,
     authorized: connection.calendarAuthorized,
     accountEmail: connection.connected ? connection.accountEmail : "",
-    calendarId: connection.configured ? getCalendarId() : "",
+    calendarId,
     needsReconnect: connection.needsReconnect,
     reconnectReason: connection.reconnectReason,
     scopes: connection.scopes,
@@ -92,7 +96,7 @@ async function createEventForActivity({ activity, cow, auth: existingAuth }) {
 
   try {
     response = await calendar.events.insert({
-      calendarId: getCalendarId(),
+      calendarId: await getCalendarId(),
       requestBody: {
         summary: `${activity.type} — ${cow.name} (${cow.cowId})`,
         description,

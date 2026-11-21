@@ -266,7 +266,7 @@ const gradeAssessment = async (req, res) => {
                 score: Number(score),
                 status: "Graded"
             },
-            $inc: { version: 1 }
+            $inc: { __v: 1 }
         };
 
         if (remarks !== undefined) {
@@ -291,7 +291,7 @@ const gradeAssessment = async (req, res) => {
         notifyRecordUpdated({
             resource: "assessment",
             id: String(graded._id),
-            version: graded.version,
+            version: currentVersionOf(graded),
             actorId: req.user && req.user.id
         });
 

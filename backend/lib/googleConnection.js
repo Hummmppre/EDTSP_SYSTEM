@@ -6,26 +6,16 @@ const { google } = require("googleapis");
 // integration.
 const GoogleCredential = require("../models/GoogleCalendarCredential");
 const SystemSettings = require("../models/SystemSettings");
+const {
+  SERVICE_SCOPES,
+  SCOPES,
+  parseScopes,
+  hasServiceAccess,
+} = require("./integrations/googleScopes");
+const { resolveField } = require("./integrationCredentials");
 
 const PROVIDER = "google";
 const STATE_PURPOSE = "google-integration-oauth";
-
-const SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/drive.file",
-];
-
-// A stored connection is only reused for a service when the scopes Google
-// actually granted cover that service.
-const SERVICE_SCOPES = {
-  calendar: ["https://www.googleapis.com/auth/calendar.events"],
-  sheets: [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/drive",
-  ],
-};
 
 const SERVICE_LABELS = {
   calendar: "Google Calendar",
@@ -70,18 +60,24 @@ function isMissingScopeError(error) {
   );
 }
 
-function getOAuthClient() {
-  const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CALENDAR_CLIENT_SECRET;
+async function getOAuthClient() {
+  const [clientId, clientSecret] = await Promise.all([
+    resolveField("google-calendar", "clientId"),
+    resolveField("google-calendar", "clientSecret"),
+  ]);
   const redirectUri = process.env.GOOGLE_CALENDAR_REDIRECT_URI;
 
-  if (!clientId || !clientSecret || !redirectUri) return null;
+  if (!clientId.value || !clientSecret.value || !redirectUri) return null;
 
-  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+  return new google.auth.OAuth2(
+    clientId.value,
+    clientSecret.value,
+    redirectUri,
+  );
 }
 
-function isConfigured() {
-  return Boolean(getOAuthClient());
+async function isConfigured() {
+  return Boolean(await getOAuthClient());
 }
 
 // Administrators can switch each integration off independently. A disabled
@@ -104,24 +100,6 @@ async function isServiceEnabled(service) {
   }
 }
 
-function parseScopes(scope) {
-  return String(scope || "")
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function hasServiceAccess(service, scopes) {
-  const granted = Array.isArray(scopes) ? scopes : [];
-
-  // Tokens created before scopes were stored were authorized with the same
-  // scope set; let the API confirm access rather than forcing a reconnect.
-  if (!granted.length) return true;
-
-  const required = SERVICE_SCOPES[service] || [];
-
-  return required.some((scope) => granted.includes(scope));
-}
-
 async function readConnection() {
   const credential = await GoogleCredential.findOne({
     provider: PROVIDER,
@@ -140,11 +118,11 @@ async function readConnection() {
   };
 }
 
-function buildConnectionStatus({ credential, refreshToken, source }) {
+function buildConnectionStatus({ credential, refreshToken, source, configured }) {
   const scopes = credential ? credential.scopes || [] : [];
 
   return {
-    configured: isConfigured(),
+    configured: Boolean(configured),
     connected: Boolean(refreshToken),
     accountEmail: credential ? credential.accountEmail || "" : "",
     scopes,
@@ -184,15 +162,17 @@ async function forgetInvalidCredential({ credential, envRefreshToken }) {
 async function getConnectionStatus({ verify = false } = {}) {
   const { credential, envRefreshToken, refreshToken, source } =
     await readConnection();
+  const configured = await isConfigured();
   const status = buildConnectionStatus({
     credential,
     refreshToken,
     source,
+    configured,
   });
 
   if (!status.configured || !status.connected || !verify) return status;
 
-  const client = getOAuthClient();
+  const client = await getOAuthClient();
 
   client.setCredentials({ refresh_token: refreshToken });
 
@@ -240,7 +220,7 @@ async function markConnectionInvalid() {
 }
 
 async function getAuthorizedClient({ service } = {}) {
-  const client = getOAuthClient();
+  const client = await getOAuthClient();
 
   if (!client) {
     throw integrationError(
@@ -270,8 +250,8 @@ async function getAuthorizedClient({ service } = {}) {
   return client;
 }
 
-function buildAuthUrl(state) {
-  const client = getOAuthClient();
+async function buildAuthUrl(state) {
+  const client = await getOAuthClient();
 
   if (!client) {
     throw integrationError(
@@ -292,7 +272,7 @@ function buildAuthUrl(state) {
 }
 
 async function exchangeCode(code) {
-  const client = getOAuthClient();
+  const client = await getOAuthClient();
 
   if (!client) {
     throw integrationError(
@@ -363,7 +343,7 @@ async function disconnect() {
     return { disconnected: false, accountEmail: "" };
   }
 
-  const client = getOAuthClient();
+  const client = await getOAuthClient();
 
   if (client) {
     try {
@@ -408,13 +388,14 @@ function verifyState(state) {
 module.exports = {
   SCOPES,
   SERVICE_LABELS,
+  SERVICE_SCOPES,
+  parseScopes,
+  hasServiceAccess,
   integrationError,
   isDeadCredentialError,
   isMissingScopeError,
   isConfigured,
   isServiceEnabled,
-  parseScopes,
-  hasServiceAccess,
   getConnectionStatus,
   markConnectionInvalid,
   getAuthorizedClient,

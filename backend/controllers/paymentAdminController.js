@@ -400,7 +400,7 @@ const updatePayment = async (req, res) => {
                     referenceNumber: reference,
                     remarks: cleanRemarks
                 },
-                $inc: { version: 1 }
+                $inc: { __v: 1 }
             },
             { new: true, runValidators: true }
         )
@@ -427,7 +427,7 @@ const updatePayment = async (req, res) => {
         notifyRecordUpdated({
             resource: "payment",
             id: String(updated._id),
-            version: updated.version,
+            version: currentVersionOf(updated),
             actorId: req.user && req.user.id
         });
 

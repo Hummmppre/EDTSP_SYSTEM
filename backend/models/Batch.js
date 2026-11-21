@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { exposeVersionAsJson } = require("../lib/versioning");
 
 const batchSchema = new mongoose.Schema(
     {
@@ -35,13 +36,6 @@ const batchSchema = new mongoose.Schema(
             type: String,
             enum: ["Open", "Closed"],
             default: "Open"
-        },
-
-        // Optimistic-concurrency counter for batch edits.
-        version: {
-            type: Number,
-            default: 0,
-            min: 0
         }
     },
     { timestamps: true }
@@ -59,6 +53,8 @@ batchSchema.virtual("isFull").get(function () {
 
 batchSchema.set("toJSON", { virtuals: true });
 batchSchema.set("toObject", { virtuals: true });
+
+exposeVersionAsJson(batchSchema);
 
 const Batch = mongoose.model("Batch", batchSchema);
 

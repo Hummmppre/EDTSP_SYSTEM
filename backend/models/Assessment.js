@@ -1,5 +1,6 @@
 
 const mongoose = require("mongoose");
+const { exposeVersionAsJson } = require("../lib/versioning");
 
 const assessmentSchema = new mongoose.Schema(
     {
@@ -57,13 +58,6 @@ dueDate: {
         remarks: {
             type: String,
             default: ""
-        },
-
-        // Optimistic-concurrency counter for grading edits.
-        version: {
-            type: Number,
-            default: 0,
-            min: 0
         }
     },
     { timestamps: true }
@@ -74,6 +68,8 @@ assessmentSchema.index(
     { user: 1, assessmentTitle: 1 },
     { unique: true }
 );
+
+exposeVersionAsJson(assessmentSchema);
 
 const Assessment = mongoose.model(
     "Assessment",

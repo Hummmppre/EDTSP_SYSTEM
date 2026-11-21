@@ -8,6 +8,7 @@ console.log("MONGODB_URI exists:", !!process.env.MONGODB_URI);
 
 const connectDB = require("./config/db");
 const { backfillTraineeIds } = require("./lib/traineeId");
+const { migrateVersionCounters } = require("./lib/versionMigration");
 const { initRealtime } = require("./lib/realtime");
 
 const app = express();
@@ -108,6 +109,21 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Move legacy `version` counters onto Mongoose's `__v` before any request
+    // can write. The migration is idempotent.
+    try {
+      const migration = await migrateVersionCounters();
+
+      if (migration.migrated || migration.initialized) {
+        console.log(
+          `Version migration: ${migration.migrated} records moved to __v, ` +
+            `${migration.initialized} records initialized.`,
+        );
+      }
+    } catch (error) {
+      console.error("Version migration failed:", error.message);
+    }
 
     // Give existing trainee accounts an ID if they predate automatic issuance.
     try {

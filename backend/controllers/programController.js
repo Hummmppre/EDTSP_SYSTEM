@@ -6,7 +6,8 @@ const {
     currentVersionOf,
     readExpectedVersion,
     sendVersionConflict,
-    versionFilter
+    versionFilter,
+    versionedRecord
 } = require("../lib/versioning");
 
 function startOfDay(date) {
@@ -92,8 +93,7 @@ const getPrograms = async (req, res) => {
                 .map(batchView);
 
             return {
-                ...program,
-                version: currentVersionOf(program),
+                ...versionedRecord(program),
                 batches: programBatches,
                 totalSlots: programBatches.reduce((sum, batch) => sum + batch.slotCapacity, 0),
                 slotsRemaining: programBatches.reduce((sum, batch) => sum + batch.slotsRemaining, 0)
@@ -336,7 +336,7 @@ const updateProgram = async (req, res) => {
 
         const updated = await Program.findOneAndUpdate(
             { _id: program._id, ...versionFilter(expectedVersion.value) },
-            { $set: updates, $inc: { version: 1 } },
+            { $set: updates, $inc: { __v: 1 } },
             { new: true, runValidators: true }
         );
 
@@ -345,7 +345,7 @@ const updateProgram = async (req, res) => {
 
             return sendVersionConflict(res, {
                 currentVersion: currentVersionOf(current),
-                current
+                current: versionedRecord(current)
             });
         }
 
@@ -357,7 +357,7 @@ const updateProgram = async (req, res) => {
                     { program: updated._id, status: "Open" },
                     {
                         $set: { status: "Closed" },
-                        $inc: { version: 1 }
+                        $inc: { __v: 1 }
                     }
                 );
 
@@ -367,10 +367,14 @@ const updateProgram = async (req, res) => {
                 console.error("Close program batches error:", batchError);
 
                 try {
-                    // Restore the stored status without inventing a new edit.
+                    // Restore the stored status and advance the counter, so a
+                    // reader can never keep a version that predates the revert.
                     await Program.updateOne(
                         { _id: updated._id },
-                        { $set: { status: previousStatus } }
+                        {
+                            $set: { status: previousStatus },
+                            $inc: { __v: 1 }
+                        }
                     );
                 } catch (revertError) {
                     console.error("Revert program status error:", revertError);
@@ -583,7 +587,7 @@ const updateBatch = async (req, res) => {
 
         const updated = await Batch.findOneAndUpdate(
             { _id: batch._id, ...versionFilter(expectedVersion.value) },
-            { $set: updates, $inc: { version: 1 } },
+            { $set: updates, $inc: { __v: 1 } },
             { new: true, runValidators: true }
         );
 

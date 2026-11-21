@@ -1,5 +1,8 @@
 
 const SystemSettings = require("../models/SystemSettings");
+const {
+    buildIntegrationMetadata
+} = require("./integrationCredentialController");
 
 // Get current system settings
 const getSystemSettings = async (req, res) => {
@@ -11,9 +14,12 @@ const getSystemSettings = async (req, res) => {
             settings = await SystemSettings.create({});
         }
 
+        const integrations = await buildIntegrationMetadata();
+
         res.status(200).json({
             success: true,
-            settings
+            settings,
+            integrations
         });
     } catch (error) {
         console.error("Get system settings error:", error);
@@ -37,7 +43,10 @@ const getPublicSystemSettings = async (req, res) => {
             success: true,
             settings: {
                 googleAuthEnabled: settings.googleAuthEnabled,
-                recaptchaEnabled: settings.recaptchaEnabled
+                recaptchaEnabled: settings.recaptchaEnabled,
+                recaptchaSiteKey:
+                    (settings.recaptchaSiteKey || "").trim() ||
+                    (process.env.RECAPTCHA_SITE_KEY || "")
             }
         });
     } catch (error) {

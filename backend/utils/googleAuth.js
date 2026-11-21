@@ -1,26 +1,31 @@
-
 const { OAuth2Client } = require("google-auth-library");
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const { resolveField } = require("../lib/integrationCredentials");
 
 const verifyGoogleToken = async (idToken) => {
-    const ticket = await client.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID
-    });
+  const clientId = await resolveField("google-auth", "clientId");
 
-    const payload = ticket.getPayload();
+  if (!clientId.value) {
+    throw new Error("Google sign-in is not configured.");
+  }
 
-    if (!payload || !payload.email || payload.email_verified !== true) {
-        throw new Error("Google account email is not verified.");
-    }
+  const client = new OAuth2Client(clientId.value);
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: clientId.value,
+  });
 
-    return {
-        googleId: payload.sub,
-        email: payload.email.toLowerCase(),
-        firstName: payload.given_name || "Google",
-        lastName: payload.family_name || "User"
-    };
+  const payload = ticket.getPayload();
+
+  if (!payload || !payload.email || payload.email_verified !== true) {
+    throw new Error("Google account email is not verified.");
+  }
+
+  return {
+    googleId: payload.sub,
+    email: payload.email.toLowerCase(),
+    firstName: payload.given_name || "Google",
+    lastName: payload.family_name || "User",
+  };
 };
 
 module.exports = verifyGoogleToken;

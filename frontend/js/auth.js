@@ -6,6 +6,7 @@ const GOOGLE_CLIENT_ID =
 let authSettings = {
   googleAuthEnabled: false,
   recaptchaEnabled: false,
+  recaptchaSiteKey: "",
 };
 
 function showToast(message, type = "info") {
@@ -68,6 +69,7 @@ function applyAuthSettings() {
   }
 
   if (authSettings.recaptchaEnabled) {
+    applyRecaptchaSiteKey();
     loadRecaptchaScript();
   }
 
@@ -79,6 +81,16 @@ function applyAuthSettings() {
 // =============================
 // LOAD GOOGLE AND RECAPTCHA
 // =============================
+
+function applyRecaptchaSiteKey() {
+  const siteKey = (authSettings.recaptchaSiteKey || "").trim();
+
+  if (!siteKey) return;
+
+  document.querySelectorAll(".g-recaptcha").forEach((widget) => {
+    widget.setAttribute("data-sitekey", siteKey);
+  });
+}
 
 function loadRecaptchaScript() {
   if (document.getElementById("recaptchaScript")) return;

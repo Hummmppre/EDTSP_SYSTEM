@@ -83,7 +83,7 @@ const updateMyProfile = async (req, res) => {
 
         const profile = await TraineeProfile.findOneAndUpdate(
             { user: req.user.id, ...versionFilter(expectedVersion.value) },
-            { $set: updates, $inc: { version: 1 } },
+            { $set: updates, $inc: { __v: 1 } },
             { new: true, runValidators: true }
         );
 
@@ -101,7 +101,7 @@ const updateMyProfile = async (req, res) => {
         notifyRecordUpdated({
             resource: "trainee",
             id: String(req.user.id),
-            version: profile.version,
+            version: currentVersionOf(profile),
             actorId: req.user && req.user.id
         });
 
@@ -204,7 +204,7 @@ const uploadMyAvatar = async (req, res) => {
 
         // Avatar changes are record changes too, so a stale admin form cannot
         // save over them without seeing the conflict.
-        profile.version = currentVersionOf(profile) + 1;
+        profile.__v = currentVersionOf(profile) + 1;
 
         await profile.save();
 

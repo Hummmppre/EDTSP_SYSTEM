@@ -311,7 +311,7 @@ const updateCow = async (req, res) => {
 
         const updated = await Cow.findOneAndUpdate(
             { _id: existing._id, ...versionFilter(expectedVersion.value) },
-            { $set: updates, $inc: { version: 1 } },
+            { $set: updates, $inc: { __v: 1 } },
             { new: true, runValidators: true }
         ).populate("assignedTrainee", "firstName lastName");
 
@@ -329,7 +329,7 @@ const updateCow = async (req, res) => {
         notifyRecordUpdated({
             resource: "cow",
             id: String(updated._id),
-            version: updated.version,
+            version: currentVersionOf(updated),
             actorId: req.user && req.user.id
         });
 
