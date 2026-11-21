@@ -8,6 +8,8 @@
 
     <link rel="stylesheet" href="../css/portal.css" />
     <script src="../js/admin.js" defer></script>
+    <script src="http://localhost:5000/socket.io/socket.io.js" defer></script>
+    <script src="../js/realtime.js" defer></script>
     <script src="../js/admin-cow.js" defer></script>
     <script src="../js/portal.js" defer></script>
   </head>
@@ -334,6 +336,7 @@
                     <th scope="col">Age</th>
                     <th scope="col">Assigned trainee</th>
                     <th scope="col">Health status</th>
+                    <th scope="col">Action</th>
                   </tr>
                 </thead>
 
@@ -461,7 +464,7 @@
         <div class="modal-heading">
           <div>
             <h2 id="cowModalTitle">Add cow record</h2>
-            <p>Enter the animal's basic information.</p>
+            <p id="cowModalSubtitle">Enter the animal's basic information.</p>
           </div>
           <button
             type="button"
@@ -537,6 +540,14 @@
           <div class="modal-actions">
             <button type="button" class="btn btn--ghost" id="cancelCow">
               Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn--ghost"
+              id="refreshCowRecord"
+              hidden
+            >
+              Refresh record
             </button>
             <button type="submit" class="btn btn--primary">Save cow</button>
           </div>

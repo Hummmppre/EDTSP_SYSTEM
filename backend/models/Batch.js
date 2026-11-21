@@ -35,6 +35,13 @@ const batchSchema = new mongoose.Schema(
             type: String,
             enum: ["Open", "Closed"],
             default: "Open"
+        },
+
+        // Optimistic-concurrency counter for batch edits.
+        version: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     { timestamps: true }

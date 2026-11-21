@@ -8,7 +8,10 @@
 
     <link rel="stylesheet" href="../css/portal.css" />
     <script src="../js/admin.js" defer></script>
+    <script src="http://localhost:5000/socket.io/socket.io.js" defer></script>
+    <script src="../js/realtime.js" defer></script>
     <script src="../js/admin-trainees.js" defer></script>
+    <script src="../js/google-sheets-export.js" defer></script>
     <script src="../js/portal.js" defer></script>
   </head>
   <body>
@@ -281,7 +284,22 @@
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </div>
+
+              <button
+                class="btn btn--ghost"
+                type="button"
+                data-google-sheets-export="trainees"
+              >
+                Export to Google Sheets
+              </button>
             </div>
+            <p
+              class="state state--inline"
+              id="googleSheetsExportStatus"
+              role="status"
+              aria-live="polite"
+              hidden
+            ></p>
 
             <div
               class="table-wrap"
@@ -415,6 +433,14 @@
         <div class="modal-actions">
           <button type="button" class="btn btn--ghost" id="cancelTraineeModal">
             Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn--ghost"
+            id="refreshTraineeRecord"
+            hidden
+          >
+            Refresh record
           </button>
           <button type="button" class="btn btn--primary" id="saveTrainee">
             Save changes

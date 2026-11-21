@@ -20,15 +20,23 @@ const {
     adminOnly
 } = require("../middleware/authMiddleware");
 
+const { apiWriteLimiter } = require("../middleware/rateLimiters");
+
 // TRAINEE ROUTE
 router.get("/me", protect, traineeOnly, getMyAssessments);
 
 
 // ADMIN ROUTES
 router.get("/trainees", protect, adminOnly, getAllTrainees);
-router.post("/", protect, adminOnly, createAssessment);
+router.post("/", apiWriteLimiter, protect, adminOnly, createAssessment);
 router.get("/", protect, adminOnly, getAllAssessments);
-router.put("/:id/grade", protect, adminOnly, gradeAssessment);
+router.put(
+    "/:id/grade",
+    apiWriteLimiter,
+    protect,
+    adminOnly,
+    gradeAssessment
+);
   
 
 module.exports = router;

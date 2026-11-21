@@ -30,6 +30,13 @@ const programSchema = new mongoose.Schema(
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
+        },
+
+        // Optimistic-concurrency counter for program edits.
+        version: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     { timestamps: true }

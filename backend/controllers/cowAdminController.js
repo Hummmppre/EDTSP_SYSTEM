@@ -4,6 +4,13 @@ const Cow = require("../models/Cow");
 const MaintenanceActivity = require("../models/MaintenanceActivity");
 const User = require("../models/User");
 const { todayRange, cowRow, activityRow } = require("../lib/cowMaintenance");
+const {
+    currentVersionOf,
+    readExpectedVersion,
+    sendVersionConflict,
+    versionFilter
+} = require("../lib/versioning");
+const { notifyRecordUpdated } = require("../lib/realtime");
 const { createEventForActivity } = require("../lib/googleCalendar");
 
 const HEALTH_STATUSES = ["Healthy", "Under Observation", "Under Treatment"];
@@ -169,6 +176,175 @@ const createCow = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Unable to save this cow record."
+        });
+    }
+};
+
+// ADMIN: correct an animal's care details. The cow ID is the stable key and
+// stays fixed; everything else can change against the version that was read.
+const updateCow = async (req, res) => {
+    try {
+        if (!isValidObjectId(req.params.cowId)) {
+            return res.status(404).json({
+                success: false,
+                message: "Cow not found."
+            });
+        }
+
+        const expectedVersion = readExpectedVersion(req.body);
+
+        if (expectedVersion.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: "Version must be a non-negative integer."
+            });
+        }
+
+        const existing = await Cow.findById(req.params.cowId);
+
+        if (!existing) {
+            return res.status(404).json({
+                success: false,
+                message: "Cow not found."
+            });
+        }
+
+        const body = req.body || {};
+        const updates = {};
+
+        if (body.name !== undefined) {
+            const name = cleanText(body.name);
+
+            if (!name || name.length > 80) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter a cow name of 80 characters or fewer."
+                });
+            }
+
+            updates.name = name;
+        }
+
+        if (body.breed !== undefined) {
+            const breed = cleanText(body.breed);
+
+            if (!breed || breed.length > 80) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter a breed of 80 characters or fewer."
+                });
+            }
+
+            updates.breed = breed;
+        }
+
+        if (body.ageYears !== undefined) {
+            const ageYears = Number(body.ageYears);
+
+            if (!Number.isFinite(ageYears) || ageYears < 0 || ageYears > 40) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter an age between 0 and 40 years."
+                });
+            }
+
+            updates.ageYears = ageYears;
+        }
+
+        if (body.healthStatus !== undefined) {
+            const healthStatus = cleanText(body.healthStatus);
+
+            if (!HEALTH_STATUSES.includes(healthStatus)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Choose a valid health status."
+                });
+            }
+
+            updates.healthStatus = healthStatus;
+        }
+
+        if (body.careStatus !== undefined) {
+            const careStatus = cleanText(body.careStatus);
+
+            if (!CARE_STATUSES.includes(careStatus)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Choose a valid care status."
+                });
+            }
+
+            updates.careStatus = careStatus;
+        }
+
+        if (body.notes !== undefined) {
+            const notes = cleanText(body.notes);
+
+            if (notes.length > 500) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Notes must be 500 characters or fewer."
+                });
+            }
+
+            updates.notes = notes;
+        }
+
+        if (body.assignedTrainee !== undefined) {
+            const raw = cleanText(body.assignedTrainee);
+
+            if (!raw) {
+                updates.assignedTrainee = null;
+            } else {
+                const trainee = await resolveTrainee(raw);
+
+                if (!trainee) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Choose a valid trainee."
+                    });
+                }
+
+                updates.assignedTrainee = trainee._id;
+            }
+        }
+
+        const updated = await Cow.findOneAndUpdate(
+            { _id: existing._id, ...versionFilter(expectedVersion.value) },
+            { $set: updates, $inc: { version: 1 } },
+            { new: true, runValidators: true }
+        ).populate("assignedTrainee", "firstName lastName");
+
+        if (!updated) {
+            const current = await Cow.findById(existing._id)
+                .populate("assignedTrainee", "firstName lastName")
+                .lean();
+
+            return sendVersionConflict(res, {
+                currentVersion: currentVersionOf(current),
+                current: current ? cowRow(current) : null
+            });
+        }
+
+        notifyRecordUpdated({
+            resource: "cow",
+            id: String(updated._id),
+            version: updated.version,
+            actorId: req.user && req.user.id
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Cow record updated.",
+            cow: cowRow(updated)
+        });
+
+    } catch (error) {
+        console.error("Update cow error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update this cow record."
         });
     }
 };
@@ -347,6 +523,7 @@ const createActivity = async (req, res) => {
 module.exports = {
     listCows,
     createCow,
+    updateCow,
     listActivities,
     createActivity
 };

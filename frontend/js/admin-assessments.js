@@ -153,8 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
       renderAssessmentTable(result.assessments);
       console.log("Assessments loaded:", result.assessments);
       console.log("Assessment summary:", summary);
+
+      return result.assessments || [];
     } catch (error) {
       console.error("Assessment loading error:", error);
+
+      return null;
     }
   }
   const selectAll = document.getElementById("selectAllTrainees");
@@ -230,12 +234,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const gradeForm = document.getElementById("gradeForm");
   const closeGradeModal = document.getElementById("closeGradeModal");
   const cancelGrade = document.getElementById("cancelGrade");
+  const gradeConflict = document.getElementById("gradeConflict");
+  const refreshGradeRecord = document.getElementById(
+    "refreshGradeRecord",
+  );
+  const realtime = window.EDTSPRealtime;
 
   let selectedAssessmentId = null;
+  let selectedAssessmentVersion = 0;
 
   function openGradeModal(assessment) {
     selectedAssessmentId = assessment._id;
+    selectedAssessmentVersion = assessment.version || 0;
     clearFieldErrors(gradeForm);
+
+    if (gradeConflict) {
+      gradeConflict.textContent = "";
+      gradeConflict.hidden = true;
+    }
+
+    if (refreshGradeRecord) refreshGradeRecord.hidden = true;
+
+    if (realtime) realtime.watch("assessment", assessment._id);
 
     document.getElementById("gradeAssessmentTitle").value =
       assessment.assessmentTitle;
@@ -263,10 +283,74 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.remove("modal-open");
     gradeForm.reset();
     selectedAssessmentId = null;
+    selectedAssessmentVersion = 0;
+
+    if (realtime) realtime.unwatch();
+  }
+
+  // Another admin saved a grade first. Reload the register and reopen this
+  // assessment with the stored values instead of overwriting them.
+  async function refreshSelectedAssessment() {
+    if (!selectedAssessmentId) return;
+
+    const assessmentId = selectedAssessmentId;
+    const originalLabel = refreshGradeRecord
+      ? refreshGradeRecord.textContent
+      : "";
+
+    if (refreshGradeRecord) {
+      refreshGradeRecord.disabled = true;
+      refreshGradeRecord.textContent = "Refreshing...";
+    }
+
+    try {
+      const assessments = await loadAssessments();
+      const latest = assessments
+        ? assessments.find((assessment) => assessment._id === assessmentId)
+        : null;
+
+      if (latest) {
+        openGradeModal(latest);
+        showToast("Record refreshed with the latest grade.", "success");
+      } else {
+        closeGradeModalWindow();
+        showToast("That assessment is no longer available.", "error");
+      }
+    } finally {
+      if (refreshGradeRecord) {
+        refreshGradeRecord.disabled = false;
+        refreshGradeRecord.textContent = originalLabel;
+      }
+    }
   }
 
   closeGradeModal.addEventListener("click", closeGradeModalWindow);
   cancelGrade.addEventListener("click", closeGradeModalWindow);
+  if (refreshGradeRecord) {
+    refreshGradeRecord.addEventListener("click", refreshSelectedAssessment);
+  }
+
+  // A parallel grade landed while this modal is open. The stale version is
+  // kept, so saving without refreshing is rejected by the server.
+  if (realtime) {
+    realtime.onRecordUpdated(payload => {
+      if (
+        !selectedAssessmentId ||
+        payload.resource !== "assessment" ||
+        String(payload.id) !== String(selectedAssessmentId)
+      ) {
+        return;
+      }
+
+      if (gradeConflict) {
+        gradeConflict.textContent =
+          "This assessment was graded by another user. Refresh the record to see the latest grade before saving.";
+        gradeConflict.hidden = false;
+      }
+
+      if (refreshGradeRecord) refreshGradeRecord.hidden = false;
+    });
+  }
 
   gradeForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -310,11 +394,28 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ score, remarks }),
+          body: JSON.stringify({
+            score,
+            remarks,
+            version: selectedAssessmentVersion,
+          }),
         },
       );
 
       const result = await response.json();
+
+      if (
+        response.status === 409 &&
+        result.code === "VERSION_CONFLICT"
+      ) {
+        if (gradeConflict) {
+          gradeConflict.textContent = result.message;
+          gradeConflict.hidden = false;
+        }
+
+        if (refreshGradeRecord) refreshGradeRecord.hidden = false;
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(result.message || "Failed to save grade.");

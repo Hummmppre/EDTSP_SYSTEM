@@ -22,8 +22,40 @@ The API runs on `http://localhost:5000` by default.
 | `BREVO_API_KEY` | Brevo transactional email API key |
 | `MAIL_FROM` | Sender identity, e.g. `Esperon Dairy Training Student Portal <no-reply@example.com>` |
 | `APP_URL` | Public frontend URL used in emailed password reset links (defaults to `http://localhost:5500`) |
+| `TRUST_PROXY` | Number of trusted proxy hops, so rate limits see the real client IP (for example `1`) |
+| `RATE_LIMIT_STORE` | `mongo` (default when a database is configured) or `memory` for single-process tests |
 
 `MAIL_FROM` may also be supplied as separate `MAIL_FROM_EMAIL` and `MAIL_FROM_NAME` values.
+
+### Rate limiting
+
+Limits apply to writes only — `POST`, `PUT`, `PATCH` and `DELETE`. Each write
+endpoint allows **60 requests per 15 minutes per client IP**, counted per route
+pattern (so `/api/admin/trainees/<id>` uses one bucket no matter which ID is
+requested). Going over returns `429` with `Retry-After` and
+`{ "success": false, "message": "Too many requests. Please wait a few minutes and try again." }`.
+
+The limit is per endpoint: exhausting one endpoint does not block any other.
+
+Reads (`GET`, `HEAD`, `OPTIONS`) are never rate limited, so page-load fetches,
+dashboards, polls, downloads and exports work regardless of write traffic. Read
+responses carry no `RateLimit-*` headers. `GET /api/health` and unmatched paths
+are unlimited as well.
+
+Sensitive write flows keep their own tighter limits on top of the write bucket:
+login 10 per 15 minutes, signup 5 per hour, Google sign-in 10 per 15 minutes,
+forgot/reset password 3 per hour (per IP and per account), and avatar/document
+uploads 20 per 15 minutes. Exports (`POST /api/admin/exports/:dataset/google-sheets`
+and `GET /api/admin/applications/export`) are exempt from rate limiting.
+
+`Retry-After` reports the seconds left in the window. A rejected request does not
+extend the window or consume the allowance, so the endpoint recovers on schedule.
+
+Rate limiting uses the shared `rateLimitCounters` MongoDB collection whenever
+`MONGODB_URI` is configured, including in production, so every API instance
+enforces the same counters. Counters expire automatically; set
+`RATE_LIMIT_STORE=memory` only for a single-process test environment. Behind a
+proxy, set `TRUST_PROXY` so limits see the real client IP.
 
 ## Email (Brevo)
 

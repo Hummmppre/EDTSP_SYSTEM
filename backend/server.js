@@ -1,4 +1,5 @@
 const express = require("express");
+const http = require("http");
 const cors = require("cors");
 const mongoose = require("mongoose");
 require("dotenv").config();
@@ -7,11 +8,29 @@ console.log("MONGODB_URI exists:", !!process.env.MONGODB_URI);
 
 const connectDB = require("./config/db");
 const { backfillTraineeIds } = require("./lib/traineeId");
+const { initRealtime } = require("./lib/realtime");
 
 const app = express();
+const httpServer = http.createServer(app);
+
+// Per-IP limits need the real client address when the API sits behind a proxy.
+// Leave this unset for direct connections; set TRUST_PROXY=1 for one proxy hop.
+if (process.env.TRUST_PROXY) {
+  const trustProxy = process.env.TRUST_PROXY;
+  const trustProxyValue = /^\d+$/.test(trustProxy)
+    ? Number(trustProxy)
+    : trustProxy === "true"
+      ? 1
+      : trustProxy;
+
+  app.set("trust proxy", trustProxyValue);
+}
 
 // Middleware
 app.use(cors());
+
+// Rate limits are attached per write route inside the routers, so reads and
+// page-load fetches are never counted. See middleware/rateLimiters.js.
 app.use(express.json());
 
 // Authentication Routes
@@ -97,14 +116,16 @@ const startServer = async () => {
       if (backfill.assigned || backfill.failed) {
         console.log(
           `Trainee ID backfill: ${backfill.assigned} assigned, ` +
-            `${backfill.preserved} already present, ${backfill.failed} failed.`
+            `${backfill.preserved} already present, ${backfill.failed} failed.`,
         );
       }
     } catch (error) {
       console.error("Trainee ID backfill skipped:", error.message);
     }
 
-    app.listen(PORT, () => {
+    initRealtime(httpServer);
+
+    httpServer.listen(PORT, () => {
       console.log(`EDTSP Server running on port ${PORT}`);
     });
   } catch (error) {

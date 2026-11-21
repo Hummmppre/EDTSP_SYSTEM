@@ -29,7 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const accountStatusInput = document.getElementById("traineeAccountStatusInput");
     const addressInput = document.getElementById("traineeAddressInput");
     const saveButton = document.getElementById("saveTrainee");
+    const refreshButton = document.getElementById("refreshTraineeRecord");
     const closeModalButton = document.getElementById("closeTraineeModal");
+    const realtime = window.EDTSPRealtime;
     const cancelModalButton = document.getElementById("cancelTraineeModal");
 
     const traineesById = new Map();
@@ -232,7 +234,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         formError.textContent = "";
         formError.hidden = true;
+        if (refreshButton) refreshButton.hidden = true;
         clearFieldErrors(form);
+
+        if (realtime) realtime.watch("trainee", trainee.userId);
 
         modal.classList.add("show");
     }
@@ -240,6 +245,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function closeModal() {
         modal.classList.remove("show");
         openTrainee = null;
+
+        if (realtime) realtime.unwatch();
     }
 
     async function loadTrainees() {
@@ -262,6 +269,8 @@ document.addEventListener("DOMContentLoaded", () => {
             renderSummary(data.summary);
             renderRows(data.trainees || []);
 
+            return data.trainees || [];
+
         } catch (error) {
             console.error("Trainee load error:", error);
 
@@ -271,6 +280,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 error.message || "Unable to load trainees. Please try again.",
                 true
             );
+
+            return null;
+        }
+    }
+
+    // A 409 means another admin saved first. Reload the row and reopen the
+    // form with the stored values so the admin can reapply their edit.
+    async function refreshOpenTrainee() {
+        if (!openTrainee) return;
+
+        const userId = openTrainee.userId;
+        const originalLabel = refreshButton ? refreshButton.textContent : "";
+
+        if (refreshButton) {
+            refreshButton.disabled = true;
+            refreshButton.textContent = "Refreshing...";
+        }
+
+        try {
+            const trainees = await loadTrainees();
+            const latest = trainees
+                ? trainees.find(trainee => trainee.userId === userId)
+                : null;
+
+            if (latest) {
+                openModal(latest);
+                setFeedback("Record refreshed with the latest changes.");
+            } else {
+                closeModal();
+                setFeedback("That trainee record is no longer available.", true);
+            }
+        } finally {
+            if (refreshButton) {
+                refreshButton.disabled = false;
+                refreshButton.textContent = originalLabel;
+            }
         }
     }
 
@@ -331,7 +376,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         enrollmentStatus: enrollmentInput.value,
                         phone,
                         address,
-                        accountStatus: accountStatusInput.value
+                        accountStatus: accountStatusInput.value,
+                        version: openTrainee.version
                     })
                 }
             );
@@ -342,6 +388,16 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
+
+            if (
+                response.status === 409 &&
+                data.code === "VERSION_CONFLICT"
+            ) {
+                formError.textContent = data.message;
+                formError.hidden = false;
+                if (refreshButton) refreshButton.hidden = false;
+                return;
+            }
 
             if (!response.ok || !data.success) {
                 throw new Error(data.message || "Unable to update this trainee.");
@@ -359,6 +415,26 @@ document.addEventListener("DOMContentLoaded", () => {
             saveButton.disabled = false;
             saveButton.textContent = originalLabel;
         }
+    }
+
+    // Another administrator saved this trainee. Keep the stale version so a
+    // save still hits the 409 guard, and point the admin at Refresh record.
+    if (realtime) {
+        realtime.onRecordUpdated(payload => {
+            if (
+                !openTrainee ||
+                payload.resource !== "trainee" ||
+                String(payload.id) !== String(openTrainee.userId)
+            ) {
+                return;
+            }
+
+            formError.textContent =
+                "This trainee was changed by another user. Refresh the record to see the latest details before saving.";
+            formError.hidden = false;
+
+            if (refreshButton) refreshButton.hidden = false;
+        });
     }
 
     if (searchInput) searchInput.addEventListener("input", filterRows);
@@ -382,6 +458,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (saveButton) saveButton.addEventListener("click", saveTrainee);
+    if (refreshButton) {
+        refreshButton.addEventListener("click", refreshOpenTrainee);
+    }
     if (closeModalButton) closeModalButton.addEventListener("click", closeModal);
     if (cancelModalButton) cancelModalButton.addEventListener("click", closeModal);
 

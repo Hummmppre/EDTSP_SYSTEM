@@ -8,6 +8,13 @@ const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../lib/mailer");
 const { assignTraineeId } = require("../lib/traineeId");
+const {
+    clearLoginFailures,
+    consumePasswordResetAttempt,
+    MESSAGES: RATE_LIMIT_MESSAGES,
+    recordLoginFailure,
+    sendRateLimitResponse
+} = require("../middleware/rateLimiters");
 
 // "Remember me" keeps the session for a month, otherwise it lasts a day.
 const SESSION_LIFETIME = { remembered: "30d", standard: "1d" };
@@ -197,6 +204,8 @@ const login = async (req, res) => {
         });
 
         if (!user || !user.password) {
+            await recordLoginFailure(email);
+
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password."
@@ -215,6 +224,8 @@ const login = async (req, res) => {
             user.password
         );
         if (!passwordMatch) {
+            await recordLoginFailure(email);
+
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password."
@@ -229,6 +240,8 @@ const login = async (req, res) => {
         }
 
         const token = generateToken(user, remember === true);
+
+        await clearLoginFailures(user.email);
 
         return res.status(200).json({
             success: true,
@@ -451,10 +464,23 @@ const resetPassword = async (req, res) => {
             });
         }
 
+        const resetLimit = await consumePasswordResetAttempt(user.email);
+
+        if (!resetLimit.allowed) {
+            return sendRateLimitResponse(
+                res,
+                RATE_LIMIT_MESSAGES.passwordReset,
+                resetLimit.retryAfterMs
+            );
+        }
+
         user.password = await bcrypt.hash(password, 12);
         user.resetPasswordToken = undefined;
         user.resetPasswordExpires = undefined;
         await user.save();
+
+        // A completed reset removes any delay left by earlier failed logins.
+        await clearLoginFailures(user.email);
 
         return res.status(200).json({
             success: true,

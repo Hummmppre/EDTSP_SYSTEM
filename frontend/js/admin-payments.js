@@ -25,6 +25,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const detailsEmpty = document.getElementById("paymentDetailsEmpty");
     const detailsError = document.getElementById("paymentDetailsError");
 
+    const editModal = document.getElementById("editPaymentModal");
+    const editForm = document.getElementById("editPaymentForm");
+    const editCloseBtn = document.getElementById("closeEditPayment");
+    const editCancelBtn = document.getElementById("cancelEditPayment");
+    const editSubmitButton = editForm
+        ? editForm.querySelector('button[type="submit"]')
+        : null;
+    const editFormError = document.getElementById("editPaymentFormError");
+    const editConflict = document.getElementById("editPaymentConflict");
+    const refreshPaymentRecord = document.getElementById("refreshPaymentRecord");
+    const realtime = window.EDTSPRealtime;
+
+    let editingPayment = null;
+
     const STATUS_CLASSES = {
         "Fully Paid": "completed",
         "Partial": "pending",
@@ -119,6 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
             renderTransactions(data.transactions || []);
             populateTraineeOptions(accounts);
 
+            return data.transactions || [];
+
         } catch (error) {
             console.error("Payment load error:", error);
 
@@ -131,6 +147,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 error.message || "Unable to load payment records. Please try again.",
                 true
             );
+
+            return null;
         } finally {
             filterPayments();
         }
@@ -271,7 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
 
-            cell.colSpan = 6;
+            cell.colSpan = 7;
             cell.className = "text-center";
             cell.textContent = "No payments recorded yet.";
             row.appendChild(cell);
@@ -317,6 +335,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 row.appendChild(element);
             });
+
+            const actionCell = document.createElement("td");
+            const editButton = document.createElement("button");
+
+            editButton.type = "button";
+            editButton.className = "row-action";
+            editButton.textContent = "Edit";
+            editButton.setAttribute(
+                "aria-label",
+                `Edit payment ${transaction.receiptNumber}`
+            );
+            editButton.addEventListener("click", () => openEditPayment(transaction));
+
+            actionCell.appendChild(editButton);
+            row.appendChild(actionCell);
 
             transactionBody.appendChild(row);
         });
@@ -513,6 +546,265 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
+
+    // ---------- Edit payment ----------
+
+    function setEditFormError(message) {
+        if (!editFormError) return;
+
+        editFormError.textContent = message;
+        editFormError.hidden = !message;
+    }
+
+    function openEditPayment(transaction) {
+        editingPayment = transaction;
+        clearFieldErrors(editForm);
+        setEditFormError("");
+
+        if (editConflict) {
+            editConflict.textContent = "";
+            editConflict.hidden = true;
+        }
+
+        if (refreshPaymentRecord) refreshPaymentRecord.hidden = true;
+
+        document.getElementById("editPaymentReceipt").value =
+            transaction.receiptNumber;
+        document.getElementById("editPaymentTrainee").value =
+            transaction.traineeName;
+        document.getElementById("editPaymentAmount").value =
+            transaction.amount;
+        document.getElementById("editPaymentMethod").value =
+            transaction.method;
+        document.getElementById("editPaymentReference").value =
+            transaction.referenceNumber || "";
+        document.getElementById("editPaymentRemarks").value =
+            transaction.remarks || "";
+
+        const dateInput = document.getElementById("editPaymentDate");
+
+        dateInput.max = todayValue();
+        dateInput.value = String(transaction.paymentDate || "").slice(0, 10);
+
+        if (realtime) realtime.watch("payment", transaction.id);
+
+        editModal.classList.add("show");
+    }
+
+    function closeEditPayment() {
+        editModal.classList.remove("show");
+        editingPayment = null;
+
+        if (realtime) realtime.unwatch();
+    }
+
+    // A 409 means another admin saved first. Reload the ledger and reopen this
+    // payment with the stored values.
+    async function refreshEditingPayment() {
+        if (!editingPayment) return;
+
+        const paymentId = editingPayment.id;
+        const originalLabel = refreshPaymentRecord
+            ? refreshPaymentRecord.textContent
+            : "";
+
+        if (refreshPaymentRecord) {
+            refreshPaymentRecord.disabled = true;
+            refreshPaymentRecord.textContent = "Refreshing...";
+        }
+
+        try {
+            const transactions = await loadPayments();
+            const latest = transactions
+                ? transactions.find(transaction => transaction.id === paymentId)
+                : null;
+
+            if (latest) {
+                openEditPayment(latest);
+                setFeedback("Payment refreshed with the latest changes.");
+            } else {
+                closeEditPayment();
+                setFeedback("That payment is no longer available.", true);
+            }
+        } finally {
+            if (refreshPaymentRecord) {
+                refreshPaymentRecord.disabled = false;
+                refreshPaymentRecord.textContent = originalLabel;
+            }
+        }
+    }
+
+    if (editCloseBtn) editCloseBtn.addEventListener("click", closeEditPayment);
+    if (editCancelBtn) editCancelBtn.addEventListener("click", closeEditPayment);
+    if (refreshPaymentRecord) {
+        refreshPaymentRecord.addEventListener("click", refreshEditingPayment);
+    }
+
+    // Another administrator saved this payment first. The stale version stays
+    // in the form, so saving still returns 409 until the record is refreshed.
+    if (realtime) {
+        realtime.onRecordUpdated(payload => {
+            if (
+                !editingPayment ||
+                payload.resource !== "payment" ||
+                String(payload.id) !== String(editingPayment.id)
+            ) {
+                return;
+            }
+
+            if (editConflict) {
+                editConflict.textContent =
+                    "This payment was changed by another user. Refresh the record to see the latest details before saving.";
+                editConflict.hidden = false;
+            }
+
+            if (refreshPaymentRecord) refreshPaymentRecord.hidden = false;
+        });
+    }
+
+    if (editModal) {
+        editModal.addEventListener("click", event => {
+            if (event.target === editModal) closeEditPayment();
+        });
+    }
+
+    if (editForm) {
+        editForm.addEventListener("submit", async event => {
+            event.preventDefault();
+
+            if (!editingPayment) return;
+
+            setEditFormError("");
+
+            if (editConflict) editConflict.hidden = true;
+            if (refreshPaymentRecord) refreshPaymentRecord.hidden = true;
+
+            const amountInput = document.getElementById("editPaymentAmount");
+            const dateInput = document.getElementById("editPaymentDate");
+            const methodInput = document.getElementById("editPaymentMethod");
+            const referenceInput = document.getElementById(
+                "editPaymentReference"
+            );
+            const remarksInput = document.getElementById("editPaymentRemarks");
+
+            const amount = Number(amountInput.value);
+            const method = methodInput.value;
+            const reference = referenceInput.value.trim();
+
+            [amountInput, dateInput, methodInput, referenceInput]
+                .forEach(field => setFieldError(field, ""));
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                setFieldError(amountInput, "Enter a valid payment amount.");
+                amountInput.focus();
+                return;
+            }
+
+            if (!dateInput.value) {
+                setFieldError(dateInput, "Enter a valid payment date.");
+                dateInput.focus();
+                return;
+            }
+
+            if (dateInput.max && dateInput.value > dateInput.max) {
+                setFieldError(dateInput, "Payment date cannot be in the future.");
+                dateInput.focus();
+                return;
+            }
+
+            if (!method) {
+                setFieldError(methodInput, "Choose a valid payment method.");
+                methodInput.focus();
+                return;
+            }
+
+            if (
+                PAYMENT_METHODS_REQUIRING_REFERENCE.includes(method) &&
+                !reference
+            ) {
+                setFieldError(
+                    referenceInput,
+                    "A reference number is required for GCash and bank transfers."
+                );
+                referenceInput.focus();
+                return;
+            }
+
+            const originalLabel = editSubmitButton
+                ? editSubmitButton.textContent
+                : "";
+
+            if (editSubmitButton) {
+                editSubmitButton.disabled = true;
+                editSubmitButton.textContent = "Saving...";
+            }
+
+            try {
+                const response = await fetch(
+                    `${PAYMENTS_API_URL}/${encodeURIComponent(editingPayment.id)}`,
+                    {
+                        method: "PUT",
+                        headers: authHeaders({
+                            "Content-Type": "application/json"
+                        }),
+                        body: JSON.stringify({
+                            amount,
+                            paymentDate: dateInput.value,
+                            method,
+                            referenceNumber: reference,
+                            remarks: remarksInput.value.trim(),
+                            version: editingPayment.version
+                        })
+                    }
+                );
+
+                if (response.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (
+                    response.status === 409 &&
+                    data.code === "VERSION_CONFLICT"
+                ) {
+                    if (editConflict) {
+                        editConflict.textContent = data.message;
+                        editConflict.hidden = false;
+                    }
+
+                    if (refreshPaymentRecord) {
+                        refreshPaymentRecord.hidden = false;
+                    }
+
+                    return;
+                }
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.message || "Unable to update this payment."
+                    );
+                }
+
+                closeEditPayment();
+                await loadPayments();
+                setFeedback(data.message || "Payment updated successfully.");
+
+            } catch (error) {
+                console.error("Update payment error:", error);
+                setEditFormError(
+                    error.message || "Unable to update this payment."
+                );
+
+            } finally {
+                if (editSubmitButton) {
+                    editSubmitButton.disabled = false;
+                    editSubmitButton.textContent = originalLabel;
+                }
+            }
+        });
+    }
 
     // ---------- Details dialog ----------
 

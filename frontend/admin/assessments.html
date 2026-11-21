@@ -8,6 +8,8 @@
 
     <link rel="stylesheet" href="../css/portal.css" />
     <script src="../js/admin.js" defer></script>
+    <script src="http://localhost:5000/socket.io/socket.io.js" defer></script>
+    <script src="../js/realtime.js" defer></script>
     <script src="../js/notifications.js" defer></script>
     <script src="../js/admin-assessments.js" defer></script>
     <script src="../js/google-sheets-export.js" defer></script>
@@ -509,9 +511,24 @@
             </div>
           </div>
 
+          <p
+            class="field__error"
+            id="gradeConflict"
+            role="alert"
+            hidden
+          ></p>
+
           <div class="modal-actions">
             <button type="button" class="btn btn--ghost" id="cancelGrade">
               Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn--ghost"
+              id="refreshGradeRecord"
+              hidden
+            >
+              Refresh record
             </button>
             <button type="submit" class="btn btn--primary">Save Grade</button>
           </div>

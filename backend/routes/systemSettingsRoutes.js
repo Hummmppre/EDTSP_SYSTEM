@@ -9,6 +9,7 @@ const {
 } = require("../controllers/systemSettingsController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { apiWriteLimiter } = require("../middleware/rateLimiters");
 
 // Public route for login and signup pages
 router.get("/public", getPublicSystemSettings);
@@ -17,6 +18,6 @@ router.get("/public", getPublicSystemSettings);
 router.get("/", protect, adminOnly, getSystemSettings);
 
 // Update system settings
-router.put("/", protect, adminOnly, updateSystemSettings);
+router.put("/", apiWriteLimiter, protect, adminOnly, updateSystemSettings);
 
 module.exports = router;

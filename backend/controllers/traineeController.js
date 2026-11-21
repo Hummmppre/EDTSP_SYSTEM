@@ -3,6 +3,13 @@ const User = require("../models/User");
 const TraineeProfile = require("../models/TraineeProfile");
 const { assignTraineeId } = require("../lib/traineeId");
 const {
+    currentVersionOf,
+    readExpectedVersion,
+    sendVersionConflict,
+    versionFilter
+} = require("../lib/versioning");
+const { notifyRecordUpdated } = require("../lib/realtime");
+const {
     validateAvatar,
     storeAvatar,
     deleteAvatarFile,
@@ -54,6 +61,14 @@ const updateMyProfile = async (req, res) => {
     try {
         const allowedFields = ["phone", "address"];
         const body = req.body || {};
+        const expectedVersion = readExpectedVersion(body);
+
+        if (expectedVersion.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: "Version must be a non-negative integer."
+            });
+        }
 
         const updates = {};
 
@@ -64,16 +79,31 @@ const updateMyProfile = async (req, res) => {
             }
         });
 
+        await ensureMyProfile(req.user.id);
+
         const profile = await TraineeProfile.findOneAndUpdate(
-            { user: req.user.id },
-            { $set: updates, $setOnInsert: { user: req.user.id } },
-            {
-                new: true,
-                upsert: true,
-                runValidators: true,
-                setDefaultsOnInsert: true
-            }
+            { user: req.user.id, ...versionFilter(expectedVersion.value) },
+            { $set: updates, $inc: { version: 1 } },
+            { new: true, runValidators: true }
         );
+
+        if (!profile) {
+            const current = await TraineeProfile.findOne({
+                user: req.user.id
+            }).lean();
+
+            return sendVersionConflict(res, {
+                currentVersion: currentVersionOf(current),
+                current
+            });
+        }
+
+        notifyRecordUpdated({
+            resource: "trainee",
+            id: String(req.user.id),
+            version: profile.version,
+            actorId: req.user && req.user.id
+        });
 
         return res.status(200).json({
             success: true,
@@ -90,6 +120,24 @@ const updateMyProfile = async (req, res) => {
         });
     }
 };
+
+// A versioned update requires the profile row to exist first. A concurrent
+// first save is resolved by reading the winner's row.
+async function ensureMyProfile(userId) {
+    try {
+        return await TraineeProfile.findOneAndUpdate(
+            { user: userId },
+            { $setOnInsert: { user: userId } },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+    } catch (error) {
+        if (error && error.code === 11000) {
+            return TraineeProfile.findOne({ user: userId });
+        }
+
+        throw error;
+    }
+}
 
 // GET: Stream the logged-in trainee's profile picture
 const getMyAvatar = async (req, res) => {
@@ -153,6 +201,10 @@ const uploadMyAvatar = async (req, res) => {
             size: accepted.size,
             updatedAt: new Date()
         };
+
+        // Avatar changes are record changes too, so a stale admin form cannot
+        // save over them without seeing the conflict.
+        profile.version = currentVersionOf(profile) + 1;
 
         await profile.save();
 

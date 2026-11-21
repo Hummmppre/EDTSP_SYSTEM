@@ -1,3 +1,5 @@
+const { currentVersionOf } = require("./versioning");
+
 function todayRange(reference = new Date()) {
     const start = new Date(
         reference.getFullYear(),
@@ -33,6 +35,7 @@ function cowRow(cow) {
         assignedTraineeName: fullName(cow.assignedTrainee),
         healthStatus: cow.healthStatus,
         careStatus: cow.careStatus,
+        version: currentVersionOf(cow),
         notes: cow.notes || "",
         createdAt: cow.createdAt || null
     };

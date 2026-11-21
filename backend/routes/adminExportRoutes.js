@@ -6,6 +6,7 @@ const {
 
 const router = express.Router();
 
+// Exempt from rate limiting: every admin may export as often as needed.
 router.post(
   "/:dataset/google-sheets",
   protect,

@@ -57,6 +57,13 @@ dueDate: {
         remarks: {
             type: String,
             default: ""
+        },
+
+        // Optimistic-concurrency counter for grading edits.
+        version: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     { timestamps: true }

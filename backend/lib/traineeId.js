@@ -90,7 +90,10 @@ async function assignTraineeId(userId) {
                             { traineeId: "" }
                         ]
                     },
-                    { $set: { traineeId } },
+                    {
+                        $set: { traineeId },
+                        $inc: { version: 1 }
+                    },
                     { new: true, runValidators: true }
                 );
 

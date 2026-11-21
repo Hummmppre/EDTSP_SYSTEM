@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const Program = require("../models/Program");
 const Batch = require("../models/Batch");
+const {
+    currentVersionOf,
+    readExpectedVersion,
+    sendVersionConflict,
+    versionFilter
+} = require("../lib/versioning");
 
 function startOfDay(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -69,7 +75,8 @@ function batchView(batch) {
         slotCapacity: batch.slotCapacity,
         filledCount: batch.filledCount,
         slotsRemaining: Math.max(batch.slotCapacity - batch.filledCount, 0),
-        status: batch.status
+        status: batch.status,
+        version: currentVersionOf(batch)
     };
 }
 
@@ -86,6 +93,7 @@ const getPrograms = async (req, res) => {
 
             return {
                 ...program,
+                version: currentVersionOf(program),
                 batches: programBatches,
                 totalSlots: programBatches.reduce((sum, batch) => sum + batch.slotCapacity, 0),
                 slotsRemaining: programBatches.reduce((sum, batch) => sum + batch.slotsRemaining, 0)
@@ -264,6 +272,15 @@ const updateProgram = async (req, res) => {
             });
         }
 
+        const expectedVersion = readExpectedVersion(req.body);
+
+        if (expectedVersion.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: "Version must be a non-negative integer."
+            });
+        }
+
         const program = await Program.findById(req.params.id);
 
         if (!program) {
@@ -275,6 +292,7 @@ const updateProgram = async (req, res) => {
 
         const previousStatus = program.status;
         const { name, description, fee, status } = req.body || {};
+        const updates = {};
 
         if (name !== undefined) {
             if (!String(name).trim()) {
@@ -283,7 +301,7 @@ const updateProgram = async (req, res) => {
                     message: "Program name cannot be empty."
                 });
             }
-            program.name = String(name).trim();
+            updates.name = String(name).trim();
         }
 
         if (description !== undefined) {
@@ -293,7 +311,7 @@ const updateProgram = async (req, res) => {
                     message: "Program description cannot be empty."
                 });
             }
-            program.description = String(description).trim();
+            updates.description = String(description).trim();
         }
 
         if (fee !== undefined) {
@@ -303,7 +321,7 @@ const updateProgram = async (req, res) => {
                     message: "Please provide a valid training fee."
                 });
             }
-            program.fee = Number(fee);
+            updates.fee = Number(fee);
         }
 
         if (status !== undefined) {
@@ -313,18 +331,34 @@ const updateProgram = async (req, res) => {
                     message: "Program status must be Open or Closed."
                 });
             }
-            program.status = status;
+            updates.status = status;
         }
 
-        await program.save();
+        const updated = await Program.findOneAndUpdate(
+            { _id: program._id, ...versionFilter(expectedVersion.value) },
+            { $set: updates, $inc: { version: 1 } },
+            { new: true, runValidators: true }
+        );
+
+        if (!updated) {
+            const current = await Program.findById(program._id).lean();
+
+            return sendVersionConflict(res, {
+                currentVersion: currentVersionOf(current),
+                current
+            });
+        }
 
         let closedBatchCount = 0;
 
         if (status === "Closed") {
             try {
                 const result = await Batch.updateMany(
-                    { program: program._id, status: "Open" },
-                    { $set: { status: "Closed" } }
+                    { program: updated._id, status: "Open" },
+                    {
+                        $set: { status: "Closed" },
+                        $inc: { version: 1 }
+                    }
                 );
 
                 closedBatchCount = result.modifiedCount || 0;
@@ -333,8 +367,11 @@ const updateProgram = async (req, res) => {
                 console.error("Close program batches error:", batchError);
 
                 try {
-                    program.status = previousStatus;
-                    await program.save();
+                    // Restore the stored status without inventing a new edit.
+                    await Program.updateOne(
+                        { _id: updated._id },
+                        { $set: { status: previousStatus } }
+                    );
                 } catch (revertError) {
                     console.error("Revert program status error:", revertError);
                 }
@@ -349,7 +386,7 @@ const updateProgram = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Program updated.",
-            program,
+            program: updated,
             closedBatchCount
         });
 
@@ -469,7 +506,17 @@ const updateBatch = async (req, res) => {
             });
         }
 
+        const expectedVersion = readExpectedVersion(req.body);
+
+        if (expectedVersion.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: "Version must be a non-negative integer."
+            });
+        }
+
         const { label, slotCapacity, intakeDate, status } = req.body || {};
+        const updates = {};
 
         if (label !== undefined) {
             if (!String(label).trim()) {
@@ -478,7 +525,7 @@ const updateBatch = async (req, res) => {
                     message: "Batch label cannot be empty."
                 });
             }
-            batch.label = String(label).trim();
+            updates.label = String(label).trim();
         }
 
         if (slotCapacity !== undefined) {
@@ -496,7 +543,7 @@ const updateBatch = async (req, res) => {
                 });
             }
 
-            batch.slotCapacity = Number(slotCapacity);
+            updates.slotCapacity = Number(slotCapacity);
         }
 
         if (intakeDate !== undefined) {
@@ -509,7 +556,7 @@ const updateBatch = async (req, res) => {
                 });
             }
 
-            batch.intakeDate = intake.date;
+            updates.intakeDate = intake.date;
         }
 
         if (status !== undefined) {
@@ -531,15 +578,28 @@ const updateBatch = async (req, res) => {
                 }
             }
 
-            batch.status = status;
+            updates.status = status;
         }
 
-        await batch.save();
+        const updated = await Batch.findOneAndUpdate(
+            { _id: batch._id, ...versionFilter(expectedVersion.value) },
+            { $set: updates, $inc: { version: 1 } },
+            { new: true, runValidators: true }
+        );
+
+        if (!updated) {
+            const current = await Batch.findById(batch._id).lean();
+
+            return sendVersionConflict(res, {
+                currentVersion: currentVersionOf(current),
+                current: current ? batchView(current) : null
+            });
+        }
 
         return res.status(200).json({
             success: true,
             message: "Batch updated.",
-            batch: batchView(batch)
+            batch: batchView(updated)
         });
 
     } catch (error) {

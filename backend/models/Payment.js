@@ -67,6 +67,13 @@ const paymentSchema = new mongoose.Schema(
         recordedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
+        },
+
+        // Optimistic-concurrency counter for payment edits.
+        version: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     { timestamps: true }

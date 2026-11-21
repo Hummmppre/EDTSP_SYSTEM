@@ -31,6 +31,14 @@ const traineeProfileSchema = new mongoose.Schema(
             default: "Pending"
         },
 
+        // Optimistic-concurrency counter. Every write increments it; an admin
+        // form only saves when the version it read still matches.
+        version: {
+            type: Number,
+            default: 0,
+            min: 0
+        },
+
         phone: {
             type: String,
             trim: true

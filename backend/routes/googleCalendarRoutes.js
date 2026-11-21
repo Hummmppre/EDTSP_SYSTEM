@@ -9,6 +9,7 @@ const {
 } = require("../controllers/googleCalendarController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { apiWriteLimiter } = require("../middleware/rateLimiters");
 
 const router = express.Router();
 
@@ -18,7 +19,13 @@ router.get("/callback", handleCallback);
 
 router.get("/status", protect, adminOnly, getStatus);
 router.get("/connect", protect, adminOnly, getConnectUrl);
-router.post("/disconnect", protect, adminOnly, disconnectCalendar);
-router.post("/sync", protect, adminOnly, syncActivities);
+router.post(
+  "/disconnect",
+  apiWriteLimiter,
+  protect,
+  adminOnly,
+  disconnectCalendar,
+);
+router.post("/sync", apiWriteLimiter, protect, adminOnly, syncActivities);
 
 module.exports = router;

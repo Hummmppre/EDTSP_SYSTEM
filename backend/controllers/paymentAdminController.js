@@ -6,6 +6,13 @@ const {
     buildPaymentAccounts,
     roundMoney
 } = require("../lib/paymentAccounts");
+const {
+    currentVersionOf,
+    readExpectedVersion,
+    sendVersionConflict,
+    versionFilter
+} = require("../lib/versioning");
+const { notifyRecordUpdated } = require("../lib/realtime");
 
 const PAYMENT_METHODS = ["Cash", "Bank Transfer", "GCash", "Other"];
 const METHODS_REQUIRING_REFERENCE = ["GCash", "Bank Transfer"];
@@ -39,6 +46,7 @@ function toTransaction(payment, accounts) {
 
     return {
         id: String(payment._id),
+        version: currentVersionOf(payment),
         receiptNumber: payment.receiptNumber,
         traineeName: `${firstName} ${lastName}`.trim() || "Unknown trainee",
         traineeId: id ? accounts.traineeIdByUser.get(id) || null : null,
@@ -274,6 +282,173 @@ const recordPayment = async (req, res) => {
     }
 };
 
+// ADMIN: correct a recorded payment. Receipt, trainee and program stay fixed;
+// only the ledger details can change, and only against the version read.
+const updatePayment = async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.paymentId)) {
+            return res.status(404).json({
+                success: false,
+                message: "Payment not found."
+            });
+        }
+
+        const expectedVersion = readExpectedVersion(req.body);
+
+        if (expectedVersion.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: "Version must be a non-negative integer."
+            });
+        }
+
+        const {
+            amount,
+            paymentDate,
+            method,
+            referenceNumber,
+            remarks
+        } = req.body || {};
+
+        const parsedAmount = roundMoney(amount);
+
+        if (!Number.isFinite(parsedAmount) || parsedAmount < 0.01) {
+            return res.status(400).json({
+                success: false,
+                message: "Enter a valid payment amount."
+            });
+        }
+
+        const parsedDate = new Date(paymentDate);
+
+        if (!paymentDate || Number.isNaN(parsedDate.getTime())) {
+            return res.status(400).json({
+                success: false,
+                message: "Enter a valid payment date."
+            });
+        }
+
+        const now = new Date();
+        const endOfToday = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999
+        );
+
+        if (parsedDate > endOfToday) {
+            return res.status(400).json({
+                success: false,
+                message: "Payment date cannot be in the future."
+            });
+        }
+
+        if (!PAYMENT_METHODS.includes(method)) {
+            return res.status(400).json({
+                success: false,
+                message: "Choose a valid payment method."
+            });
+        }
+
+        const reference = String(referenceNumber || "").trim();
+
+        if (METHODS_REQUIRING_REFERENCE.includes(method) && !reference) {
+            return res.status(400).json({
+                success: false,
+                message: "A reference number is required for GCash and bank transfers."
+            });
+        }
+
+        if (reference.length > 100) {
+            return res.status(400).json({
+                success: false,
+                message: "The reference number must be 100 characters or fewer."
+            });
+        }
+
+        const cleanRemarks = String(remarks || "").trim();
+
+        if (cleanRemarks.length > 500) {
+            return res.status(400).json({
+                success: false,
+                message: "Remarks must be 500 characters or fewer."
+            });
+        }
+
+        const existing = await Payment.findById(req.params.paymentId).lean();
+
+        if (!existing) {
+            return res.status(404).json({
+                success: false,
+                message: "Payment not found."
+            });
+        }
+
+        const updated = await Payment.findOneAndUpdate(
+            {
+                _id: existing._id,
+                ...versionFilter(expectedVersion.value)
+            },
+            {
+                $set: {
+                    amount: parsedAmount,
+                    paymentDate: parsedDate,
+                    method,
+                    referenceNumber: reference,
+                    remarks: cleanRemarks
+                },
+                $inc: { version: 1 }
+            },
+            { new: true, runValidators: true }
+        )
+            .populate("user", "firstName lastName")
+            .populate("program", "name");
+
+        if (!updated) {
+            const latest = await Payment.findById(existing._id)
+                .populate("user", "firstName lastName")
+                .populate("program", "name")
+                .lean();
+            const { accounts } = await buildPaymentAccounts();
+
+            return sendVersionConflict(res, {
+                currentVersion: currentVersionOf(latest),
+                current: latest
+                    ? toTransaction(latest, {
+                        traineeIdByUser: traineeIdMap(accounts)
+                    })
+                    : null
+            });
+        }
+
+        notifyRecordUpdated({
+            resource: "payment",
+            id: String(updated._id),
+            version: updated.version,
+            actorId: req.user && req.user.id
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Payment updated successfully.",
+            payment: toTransaction(updated, {
+                traineeIdByUser: new Map()
+            })
+        });
+
+    } catch (error) {
+        console.error("Update payment error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Unable to update this payment."
+        });
+    }
+};
+
 // A unique index race on receiptNumber is the only expected duplicate here.
 async function createPayment(values) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -293,5 +468,6 @@ async function createPayment(values) {
 module.exports = {
     listPayments,
     getPaymentAccount,
-    recordPayment
+    recordPayment,
+    updatePayment
 };

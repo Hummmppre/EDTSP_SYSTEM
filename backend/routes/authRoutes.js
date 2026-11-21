@@ -1,10 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const {
+  apiWriteLimiter,
   loginLimiter,
+  loginFailureGuard,
   signupLimiter,
-  forgotPasswordLimiter,
-  resetPasswordLimiter,
+  forgotPasswordIpLimiter,
+  forgotPasswordAccountLimiter,
+  resetPasswordIpLimiter,
   googleLoginLimiter,
 } = require("../middleware/rateLimiters");
 
@@ -29,25 +32,55 @@ const {
 } = require("../controllers/authController");
 
 // Trainee registration
-router.post("/signup", signupLimiter, signup);
+router.post("/signup", apiWriteLimiter, signupLimiter, signup);
 
 // Trainee and administrator login
-router.post("/login", loginLimiter, login);
+router.post(
+  "/login",
+  apiWriteLimiter,
+  loginLimiter,
+  loginFailureGuard,
+  login,
+);
 
 // Google Sign-In
-router.post("/google", googleLoginLimiter, googleLogin);
+router.post("/google", apiWriteLimiter, googleLoginLimiter, googleLogin);
 
 // Password recovery
-router.post("/forgot-password", forgotPasswordLimiter, forgotPassword);
-router.post("/reset-password", resetPasswordLimiter, resetPassword);
+router.post(
+  "/forgot-password",
+  apiWriteLimiter,
+  forgotPasswordIpLimiter,
+  forgotPasswordAccountLimiter,
+  forgotPassword,
+);
+router.post(
+  "/reset-password",
+  apiWriteLimiter,
+  resetPasswordIpLimiter,
+  resetPassword,
+);
 
 // Signed-in administrator's own profile
 router.get("/profile", protect, adminOnly, getAdminProfile);
-router.patch("/profile", protect, adminOnly, updateAdminProfile);
-router.patch("/profile/password", protect, adminOnly, changeAdminPassword);
+router.patch(
+  "/profile",
+  apiWriteLimiter,
+  protect,
+  adminOnly,
+  updateAdminProfile,
+);
+router.patch(
+  "/profile/password",
+  apiWriteLimiter,
+  protect,
+  adminOnly,
+  changeAdminPassword,
+);
 router.get("/profile/avatar", protect, adminOnly, getAdminAvatar);
 router.post(
   "/profile/avatar",
+  apiWriteLimiter,
   protect,
   adminOnly,
   receiveAvatar,

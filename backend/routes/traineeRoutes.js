@@ -15,19 +15,25 @@ const {
     protect,
     traineeOnly
 } = require("../middleware/authMiddleware");
+const {
+    apiWriteLimiter,
+    traineeUploadLimiter
+} = require("../middleware/rateLimiters");
 
 // Retrieve the logged-in trainee's profile
 router.get("/me", protect, traineeOnly, getMyProfile);
 
 // Update the logged-in trainee's profile
-router.put("/me", protect, traineeOnly, updateMyProfile);
+router.put("/me", apiWriteLimiter, protect, traineeOnly, updateMyProfile);
 
 // Read and replace the logged-in trainee's profile picture
 router.get("/me/avatar", protect, traineeOnly, getMyAvatar);
 router.post(
     "/me/avatar",
+    apiWriteLimiter,
     protect,
     traineeOnly,
+    traineeUploadLimiter,
     receiveAvatar,
     uploadMyAvatar
 );

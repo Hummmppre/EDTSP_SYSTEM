@@ -3,6 +3,13 @@ const mongoose = require("mongoose");
 const User = require("../models/User");
 const TraineeProfile = require("../models/TraineeProfile");
 const TrainingApplication = require("../models/TrainingApplication");
+const {
+    currentVersionOf,
+    readExpectedVersion,
+    sendVersionConflict,
+    versionFilter
+} = require("../lib/versioning");
+const { notifyRecordUpdated } = require("../lib/realtime");
 
 const ENROLLMENT_STATUSES = ["Pending", "Ongoing", "Completed", "Inactive"];
 const ACCOUNT_STATUSES = ["active", "inactive"];
@@ -48,6 +55,7 @@ function traineeRow(user, profile, application) {
             : null,
         approvedAt: application ? application.decidedAt : null,
         enrollmentStatus: (profile && profile.enrollmentStatus) || "Pending",
+        version: currentVersionOf(profile),
         accountStatus: user.status || "active",
         // Applications collect contact details before a profile is edited.
         phone: (profile && profile.phone) || (application && application.phone) || "",
@@ -68,6 +76,24 @@ function summarize(rows) {
     };
 }
 
+// A profile is required before a versioned update can run. Upserting here is
+// safe: a concurrent first save is resolved by re-reading the winner.
+async function ensureProfile(userId) {
+    try {
+        return await TraineeProfile.findOneAndUpdate(
+            { user: userId },
+            { $setOnInsert: { user: userId } },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+    } catch (error) {
+        if (error && error.code === 11000) {
+            return TraineeProfile.findOne({ user: userId });
+        }
+
+        throw error;
+    }
+}
+
 async function loadTrainee(userId) {
     const user = await User.findById(userId)
         .select("firstName lastName email status createdAt")
@@ -81,33 +107,39 @@ async function loadTrainee(userId) {
     return traineeRow(user, profile, applications.get(String(user._id)));
 }
 
+// Every registered trainee with their live profile and program. Shared with
+// the Google Sheets exporter so the sheet matches the admin table.
+async function loadTraineeRows() {
+    const users = await User.find({ role: "trainee" })
+        .select("firstName lastName email status createdAt")
+        .sort({ lastName: 1, firstName: 1 })
+        .lean();
+
+    const userIds = users.map(user => user._id);
+
+    const profiles = userIds.length
+        ? await TraineeProfile.find({ user: { $in: userIds } }).lean()
+        : [];
+
+    const applications = userIds.length
+        ? await approvedApplicationByUser(userIds)
+        : new Map();
+
+    const profileByUser = new Map(
+        profiles.map(profile => [String(profile.user), profile])
+    );
+
+    return users.map(user => traineeRow(
+        user,
+        profileByUser.get(String(user._id)),
+        applications.get(String(user._id))
+    ));
+}
+
 // ADMIN: every registered trainee with their live profile and program
 const getTrainees = async (req, res) => {
     try {
-        const users = await User.find({ role: "trainee" })
-            .select("firstName lastName email status createdAt")
-            .sort({ lastName: 1, firstName: 1 })
-            .lean();
-
-        const userIds = users.map(user => user._id);
-
-        const profiles = userIds.length
-            ? await TraineeProfile.find({ user: { $in: userIds } }).lean()
-            : [];
-
-        const applications = userIds.length
-            ? await approvedApplicationByUser(userIds)
-            : new Map();
-
-        const profileByUser = new Map(
-            profiles.map(profile => [String(profile.user), profile])
-        );
-
-        const trainees = users.map(user => traineeRow(
-            user,
-            profileByUser.get(String(user._id)),
-            applications.get(String(user._id))
-        ));
+        const trainees = await loadTraineeRows();
 
         return res.status(200).json({
             success: true,
@@ -146,6 +178,15 @@ const updateTrainee = async (req, res) => {
         }
 
         const body = req.body || {};
+        const expectedVersion = readExpectedVersion(body);
+
+        if (expectedVersion.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: "Version must be a non-negative integer."
+            });
+        }
+
         const profileSet = {};
         let clearTraineeId = false;
 
@@ -210,34 +251,48 @@ const updateTrainee = async (req, res) => {
             }
         }
 
-        const hasProfileChange = Object.keys(profileSet).length > 0 || clearTraineeId;
+        await ensureProfile(user._id);
 
-        if (hasProfileChange) {
-            const update = {
-                $set: profileSet,
-                $setOnInsert: { user: user._id }
-            };
+        // One atomic write guards the whole logical trainee record: it only
+        // matches the version the admin read and it advances that version.
+        const profileUpdate = { $inc: { version: 1 } };
 
-            if (clearTraineeId) {
-                update.$unset = { traineeId: 1 };
-            }
+        if (Object.keys(profileSet).length > 0) {
+            profileUpdate.$set = profileSet;
+        }
 
-            await TraineeProfile.findOneAndUpdate(
-                { user: user._id },
-                update,
-                {
-                    new: true,
-                    upsert: true,
-                    runValidators: true,
-                    setDefaultsOnInsert: true
-                }
-            );
+        if (clearTraineeId) {
+            profileUpdate.$unset = { traineeId: 1 };
+        }
+
+        const updatedProfile = await TraineeProfile.findOneAndUpdate(
+            { user: user._id, ...versionFilter(expectedVersion.value) },
+            profileUpdate,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProfile) {
+            const currentProfile = await TraineeProfile.findOne({
+                user: user._id
+            }).lean();
+
+            return sendVersionConflict(res, {
+                currentVersion: currentVersionOf(currentProfile),
+                current: await loadTrainee(user._id)
+            });
         }
 
         if (body.accountStatus !== undefined) {
             user.status = body.accountStatus;
             await user.save();
         }
+
+        notifyRecordUpdated({
+            resource: "trainee",
+            id: String(user._id),
+            version: updatedProfile.version,
+            actorId: req.user && req.user.id
+        });
 
         const trainee = await loadTrainee(user._id);
 
@@ -273,5 +328,6 @@ const updateTrainee = async (req, res) => {
 
 module.exports = {
     getTrainees,
+    loadTraineeRows,
     updateTrainee
 };

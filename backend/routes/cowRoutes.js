@@ -3,6 +3,7 @@ const express = require("express");
 const {
     listCows,
     createCow,
+    updateCow,
     listActivities,
     createActivity
 } = require("../controllers/cowAdminController");
@@ -10,23 +11,33 @@ const {
 const { getMyCowMaintenance } = require("../controllers/cowController");
 
 const { protect, adminOnly, traineeOnly } = require("../middleware/authMiddleware");
+const { apiWriteLimiter } = require("../middleware/rateLimiters");
 
 // /api/admin/cows
 const adminCowRoutes = express.Router();
 
-adminCowRoutes.use(protect, adminOnly);
-
-adminCowRoutes.get("/", listCows);
-adminCowRoutes.post("/", createCow);
-adminCowRoutes.get("/activities", listActivities);
-adminCowRoutes.post("/activities", createActivity);
+adminCowRoutes.get("/", protect, adminOnly, listCows);
+adminCowRoutes.post("/", apiWriteLimiter, protect, adminOnly, createCow);
+adminCowRoutes.put(
+    "/:cowId",
+    apiWriteLimiter,
+    protect,
+    adminOnly,
+    updateCow
+);
+adminCowRoutes.get("/activities", protect, adminOnly, listActivities);
+adminCowRoutes.post(
+    "/activities",
+    apiWriteLimiter,
+    protect,
+    adminOnly,
+    createActivity
+);
 
 // /api/trainee/cows
 const traineeCowRoutes = express.Router();
 
-traineeCowRoutes.use(protect, traineeOnly);
-
-traineeCowRoutes.get("/", getMyCowMaintenance);
+traineeCowRoutes.get("/", protect, traineeOnly, getMyCowMaintenance);
 
 module.exports = {
     adminCowRoutes,

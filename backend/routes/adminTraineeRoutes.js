@@ -7,8 +7,9 @@ const {
 } = require("../controllers/traineeAdminController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { apiWriteLimiter } = require("../middleware/rateLimiters");
 
 router.get("/", protect, adminOnly, getTrainees);
-router.put("/:userId", protect, adminOnly, updateTrainee);
+router.put("/:userId", apiWriteLimiter, protect, adminOnly, updateTrainee);
 
 module.exports = router;

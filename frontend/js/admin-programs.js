@@ -13,8 +13,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const state = {
         programs: [],
         editingProgramId: null,
+        editingProgramVersion: null,
         batchProgramId: null,
         editingBatchId: null,
+        editingBatchVersion: null,
         editingBatchIntake: null
     };
 
@@ -39,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         firstBatchCapacity: document.getElementById("firstBatchCapacity"),
         firstBatchIntake: document.getElementById("firstBatchIntake"),
         programError: document.getElementById("programError"),
+        refreshProgram: document.getElementById("refreshProgramRecord"),
         saveProgram: document.getElementById("saveProgram"),
         closeProgram: document.getElementById("closeProgramModal"),
         cancelProgram: document.getElementById("cancelProgram"),
@@ -52,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
         batchStatusField: document.getElementById("batchStatusField"),
         batchStatus: document.getElementById("batchStatus"),
         batchError: document.getElementById("batchError"),
+        refreshBatch: document.getElementById("refreshBatchRecord"),
         saveBatch: document.getElementById("saveBatch"),
         closeBatch: document.getElementById("closeBatchModal"),
         cancelBatch: document.getElementById("cancelBatch")
@@ -146,6 +150,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!response.ok || !data.success) {
             const error = new Error(data.message || "The request could not be completed.");
             error.status = response.status;
+            error.code = data.code;
+            error.data = data;
             throw error;
         }
 
@@ -346,6 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.programModal.classList.add("show");
         document.body.classList.add("modal-open");
         elements.programError.hidden = true;
+        if (elements.refreshProgram) elements.refreshProgram.hidden = true;
         elements.programName.focus();
     }
 
@@ -353,10 +360,13 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.programModal.classList.remove("show");
         document.body.classList.remove("modal-open");
         state.editingProgramId = null;
+        state.editingProgramVersion = null;
     }
 
     function openNewProgram() {
         elements.programForm.reset();
+        state.editingProgramId = null;
+        state.editingProgramVersion = null;
         elements.programModalTitle.textContent = "New program";
         elements.programStatusField.hidden = true;
         elements.firstBatchFields.hidden = false;
@@ -370,6 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function openEditProgram(program) {
         state.editingProgramId = program._id;
+        state.editingProgramVersion = program.version;
 
         elements.programModalTitle.textContent = "Edit program";
         elements.programName.value = program.name;
@@ -468,9 +479,11 @@ document.addEventListener("DOMContentLoaded", () => {
             };
         } else {
             payload.status = elements.programStatus.value;
+            payload.version = state.editingProgramVersion;
         }
 
         elements.programError.hidden = true;
+        if (elements.refreshProgram) elements.refreshProgram.hidden = true;
         elements.saveProgram.disabled = true;
         elements.saveProgram.textContent = "Saving…";
 
@@ -493,6 +506,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (error) {
             showError(error.message || "Unable to save this program.");
+
+            if (
+                error.status === 409 &&
+                error.code === "VERSION_CONFLICT" &&
+                elements.refreshProgram
+            ) {
+                elements.refreshProgram.hidden = false;
+            }
         } finally {
             elements.saveProgram.disabled = false;
             elements.saveProgram.textContent = isCreate ? "Create program & batch" : "Save program";
@@ -506,6 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.batchModal.classList.add("show");
         document.body.classList.add("modal-open");
         elements.batchError.hidden = true;
+        if (elements.refreshBatch) elements.refreshBatch.hidden = true;
         elements.batchLabel.focus();
     }
 
@@ -514,11 +536,14 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.remove("modal-open");
         state.batchProgramId = null;
         state.editingBatchId = null;
+        state.editingBatchVersion = null;
         state.editingBatchIntake = null;
     }
 
     function openNewBatch(program) {
         state.batchProgramId = program._id;
+        state.editingBatchId = null;
+        state.editingBatchVersion = null;
         state.editingBatchIntake = null;
 
         elements.batchForm.reset();
@@ -534,6 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function openEditBatch(program, batch) {
         state.batchProgramId = program._id;
         state.editingBatchId = batch._id;
+        state.editingBatchVersion = batch.version;
         state.editingBatchIntake = batch.intakeDate
             ? new Date(batch.intakeDate).toISOString().slice(0, 10)
             : null;
@@ -595,9 +621,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (state.editingBatchId) {
             payload.status = elements.batchStatus.value;
+            payload.version = state.editingBatchVersion;
         }
 
         elements.batchError.hidden = true;
+        if (elements.refreshBatch) elements.refreshBatch.hidden = true;
         elements.saveBatch.disabled = true;
 
         try {
@@ -622,6 +650,14 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             elements.batchError.textContent = error.message || "Unable to save this batch.";
             elements.batchError.hidden = false;
+
+            if (
+                error.status === 409 &&
+                error.code === "VERSION_CONFLICT" &&
+                elements.refreshBatch
+            ) {
+                elements.refreshBatch.hidden = false;
+            }
         } finally {
             elements.saveBatch.disabled = false;
         }
@@ -636,6 +672,84 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderSummary();
         render();
+
+        return state.programs;
+    }
+
+    // ---------- Version conflicts ----------
+
+    async function refreshEditingProgram() {
+        if (!state.editingProgramId) return;
+
+        const programId = state.editingProgramId;
+        const originalLabel = elements.refreshProgram
+            ? elements.refreshProgram.textContent
+            : "";
+
+        if (elements.refreshProgram) {
+            elements.refreshProgram.disabled = true;
+            elements.refreshProgram.textContent = "Refreshing…";
+        }
+
+        try {
+            const programs = await loadPrograms();
+            const latest = programs.find(
+                program => String(program._id) === String(programId)
+            );
+
+            if (latest) {
+                openEditProgram(latest);
+                setFeedback("Program refreshed with the latest changes.");
+            } else {
+                closeProgramModal();
+                setFeedback("That program is no longer available.");
+            }
+        } finally {
+            if (elements.refreshProgram) {
+                elements.refreshProgram.disabled = false;
+                elements.refreshProgram.textContent = originalLabel;
+            }
+        }
+    }
+
+    async function refreshEditingBatch() {
+        if (!state.editingBatchId || !state.batchProgramId) return;
+
+        const programId = state.batchProgramId;
+        const batchId = state.editingBatchId;
+        const originalLabel = elements.refreshBatch
+            ? elements.refreshBatch.textContent
+            : "";
+
+        if (elements.refreshBatch) {
+            elements.refreshBatch.disabled = true;
+            elements.refreshBatch.textContent = "Refreshing…";
+        }
+
+        try {
+            const programs = await loadPrograms();
+            const program = programs.find(
+                item => String(item._id) === String(programId)
+            );
+            const latest = program
+                ? program.batches.find(
+                    batch => String(batch._id) === String(batchId)
+                )
+                : null;
+
+            if (latest) {
+                openEditBatch(program, latest);
+                setFeedback("Batch refreshed with the latest changes.");
+            } else {
+                closeBatchModal();
+                setFeedback("That batch is no longer available.");
+            }
+        } finally {
+            if (elements.refreshBatch) {
+                elements.refreshBatch.disabled = false;
+                elements.refreshBatch.textContent = originalLabel;
+            }
+        }
     }
 
     async function init() {
@@ -653,8 +767,14 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.saveProgram.addEventListener("click", saveProgram);
     elements.closeProgram.addEventListener("click", closeProgramModal);
     elements.cancelProgram.addEventListener("click", closeProgramModal);
+    if (elements.refreshProgram) {
+        elements.refreshProgram.addEventListener("click", refreshEditingProgram);
+    }
 
     elements.saveBatch.addEventListener("click", saveBatch);
+    if (elements.refreshBatch) {
+        elements.refreshBatch.addEventListener("click", refreshEditingBatch);
+    }
     elements.closeBatch.addEventListener("click", closeBatchModal);
     elements.cancelBatch.addEventListener("click", closeBatchModal);
 

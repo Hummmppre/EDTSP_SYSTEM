@@ -5,6 +5,7 @@ const {
   createExportSpreadsheet,
   isSheetsEnabled,
 } = require("../lib/googleSheets");
+const { loadTraineeRows } = require("./traineeAdminController");
 
 function formatDate(value) {
   if (!value) return "";
@@ -96,6 +97,45 @@ const exporters = {
           formatDate(record.assessmentDate),
           formatDate(record.dueDate),
           record.remarks || "",
+        ]),
+      ],
+    };
+  },
+
+  trainees: async () => {
+    const records = await loadTraineeRows();
+
+    return {
+      title: "EDTSP Trainees Export",
+      tabName: "Trainees",
+      values: [
+        [
+          "Trainee ID",
+          "First name",
+          "Last name",
+          "Email",
+          "Phone",
+          "Program",
+          "Batch",
+          "Enrolment status",
+          "Account status",
+          "Approved",
+          "Member since",
+          "Address",
+        ],
+        ...records.map((record) => [
+          record.traineeId || "",
+          record.firstName,
+          record.lastName,
+          record.email,
+          record.phone || "",
+          record.programName || "",
+          record.batchLabel || "",
+          record.enrollmentStatus,
+          record.accountStatus,
+          formatDate(record.approvedAt),
+          formatDate(record.createdAt),
+          record.address || "",
         ]),
       ],
     };

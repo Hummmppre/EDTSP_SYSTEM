@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const activityForm = document.getElementById("activityForm");
     const cowFormError = document.getElementById("cowFormError");
     const activityFormError = document.getElementById("activityFormError");
+    const refreshCowRecord = document.getElementById("refreshCowRecord");
+    const realtime = window.EDTSPRealtime;
 
     // Tables and states
     const cowTableBody = document.getElementById("cowTableBody");
@@ -54,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let cows = [];
     let trainees = [];
+    let editingCow = null;
 
     function authHeaders(extra = {}) {
         return {
@@ -132,6 +135,8 @@ document.addEventListener("DOMContentLoaded", () => {
         renderSummary(data.summary || {});
         renderCows(cows);
         populateCowOptions();
+
+        return cows;
     }
 
     async function loadActivities() {
@@ -261,6 +266,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         statusCell.appendChild(badge);
         row.appendChild(statusCell);
+
+        const actionCell = document.createElement("td");
+        const editButton = document.createElement("button");
+
+        editButton.type = "button";
+        editButton.className = "row-action";
+        editButton.textContent = "Edit";
+        editButton.setAttribute("aria-label", `Edit cow ${cow.cowId}`);
+        editButton.addEventListener("click", () => openEditCow(cow));
+
+        actionCell.appendChild(editButton);
+        row.appendChild(actionCell);
 
         return row;
     }
@@ -487,9 +504,63 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modal) modal.classList.remove("show");
     }
 
-    addCowBtn.addEventListener("click", () => {
-        clearFieldErrors(cowForm);
+    function setCowModalMode(cow = null) {
+        editingCow = cow;
+
+        const title = document.getElementById("cowModalTitle");
+        const subtitle = document.getElementById("cowModalSubtitle");
+        const cowIdInput = document.getElementById("cowId");
+        const submitButton = cowForm.querySelector('button[type="submit"]');
+
+        if (title) {
+            title.textContent = cow ? "Edit cow record" : "Add cow record";
+        }
+
+        if (subtitle) {
+            subtitle.textContent = cow
+                ? `Updating ${cow.cowId}.`
+                : "Enter the animal's basic information.";
+        }
+
+        if (cowIdInput) cowIdInput.readOnly = Boolean(cow);
+
+        if (submitButton) {
+            submitButton.textContent = cow ? "Save changes" : "Save cow";
+        }
+
+        if (refreshCowRecord) refreshCowRecord.hidden = true;
+
         setFormError(cowFormError, "");
+        clearFieldErrors(cowForm);
+    }
+
+    function openEditCow(cow) {
+        setCowModalMode(cow);
+        populateTraineeOptions();
+
+        document.getElementById("cowId").value = cow.cowId;
+        document.getElementById("cowName").value = cow.name;
+        document.getElementById("cowBreed").value = cow.breed;
+        document.getElementById("cowAge").value = cow.ageYears;
+        document.getElementById("cowTrainee").value =
+            cow.assignedTraineeId || "";
+        document.getElementById("cowHealth").value = cow.healthStatus;
+
+        if (realtime) realtime.watch("cow", cow.id);
+
+        openModal(cowModal);
+    }
+
+    function closeCowModal() {
+        closeModal(cowModal);
+        editingCow = null;
+
+        if (realtime) realtime.unwatch();
+    }
+
+    addCowBtn.addEventListener("click", () => {
+        cowForm.reset();
+        setCowModalMode(null);
         populateTraineeOptions();
         openModal(cowModal);
     });
@@ -502,17 +573,79 @@ document.addEventListener("DOMContentLoaded", () => {
         openModal(activityModal);
     });
 
-    closeCowBtn.addEventListener("click", () => closeModal(cowModal));
-    cancelCowBtn.addEventListener("click", () => closeModal(cowModal));
+    closeCowBtn.addEventListener("click", closeCowModal);
+    cancelCowBtn.addEventListener("click", closeCowModal);
 
     closeActivityBtn.addEventListener("click", () => closeModal(activityModal));
     cancelActivityBtn.addEventListener("click", () => closeModal(activityModal));
 
-    [cowModal, activityModal].forEach(modal => {
-        modal.addEventListener("click", event => {
-            if (event.target === modal) closeModal(modal);
-        });
+    cowModal.addEventListener("click", event => {
+        if (event.target === cowModal) closeCowModal();
     });
+
+    activityModal.addEventListener("click", event => {
+        if (event.target === activityModal) closeModal(activityModal);
+    });
+
+    // A 409 means another admin saved first. Reload and reopen this cow with
+    // the stored values.
+    async function refreshEditingCow() {
+        if (!editingCow) return;
+
+        const cowId = editingCow.id;
+        const originalLabel = refreshCowRecord
+            ? refreshCowRecord.textContent
+            : "";
+
+        if (refreshCowRecord) {
+            refreshCowRecord.disabled = true;
+            refreshCowRecord.textContent = "Refreshing…";
+        }
+
+        try {
+            await loadCows();
+
+            const latest = cows.find(cow => cow.id === cowId);
+
+            if (latest) {
+                openEditCow(latest);
+                setFeedback("Cow record refreshed with the latest changes.");
+            } else {
+                closeCowModal();
+                setFeedback("That cow record is no longer available.", true);
+            }
+        } finally {
+            if (refreshCowRecord) {
+                refreshCowRecord.disabled = false;
+                refreshCowRecord.textContent = originalLabel;
+            }
+        }
+    }
+
+    if (refreshCowRecord) {
+        refreshCowRecord.addEventListener("click", refreshEditingCow);
+    }
+
+    // Another administrator changed this cow. Keep the stale version so a save
+    // still hits the 409 guard until the record is refreshed.
+    if (realtime) {
+        realtime.onRecordUpdated(payload => {
+            if (
+                !editingCow ||
+                payload.resource !== "cow" ||
+                String(payload.id) !== String(editingCow.id)
+            ) {
+                return;
+            }
+
+            setFormError(
+                cowFormError,
+                "This cow record was changed by another user. Refresh the record to see the latest details before saving."
+            );
+
+            if (refreshCowRecord) refreshCowRecord.hidden = false;
+        });
+    }
 
     // Prefill the activity trainee from the chosen cow's assignment.
     document.getElementById("activityCow").addEventListener("change", event => {
@@ -538,7 +671,7 @@ document.addEventListener("DOMContentLoaded", () => {
         [cowIdInput, cowNameInput, cowBreedInput, cowAgeInput]
             .forEach(field => setFieldError(field, ""));
 
-        if (!cowIdInput.value.trim()) {
+        if (!editingCow && !cowIdInput.value.trim()) {
             setFieldError(cowIdInput, "Enter a cow ID.");
             cowIdInput.focus();
             return;
@@ -578,20 +711,34 @@ document.addEventListener("DOMContentLoaded", () => {
             submitButton.textContent = "Saving…";
         }
 
+        const payload = {
+            name: cowNameInput.value.trim(),
+            breed: cowBreedInput.value.trim(),
+            ageYears,
+            assignedTrainee:
+                document.getElementById("cowTrainee").value || null,
+            healthStatus: document.getElementById("cowHealth").value
+        };
+
+        if (editingCow) {
+            payload.version = editingCow.version;
+        } else {
+            payload.cowId = cowIdInput.value.trim();
+        }
+
         try {
-            const response = await fetch(COWS_API_URL, {
-                method: "POST",
-                headers: authHeaders({ "Content-Type": "application/json" }),
-                body: JSON.stringify({
-                    cowId: cowIdInput.value.trim(),
-                    name: cowNameInput.value.trim(),
-                    breed: cowBreedInput.value.trim(),
-                    ageYears,
-                    assignedTrainee:
-                        document.getElementById("cowTrainee").value || null,
-                    healthStatus: document.getElementById("cowHealth").value
-                })
-            });
+            const response = await fetch(
+                editingCow
+                    ? `${COWS_API_URL}/${encodeURIComponent(editingCow.id)}`
+                    : COWS_API_URL,
+                {
+                    method: editingCow ? "PUT" : "POST",
+                    headers: authHeaders({
+                        "Content-Type": "application/json"
+                    }),
+                    body: JSON.stringify(payload)
+                }
+            );
 
             if (response.status === 401) {
                 handleUnauthorized();
@@ -600,12 +747,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
 
+            if (
+                response.status === 409 &&
+                data.code === "VERSION_CONFLICT"
+            ) {
+                setFormError(cowFormError, data.message);
+                if (refreshCowRecord) refreshCowRecord.hidden = false;
+                return;
+            }
+
             if (!response.ok || !data.success) {
                 throw new Error(data.message || "Unable to save this cow record.");
             }
 
             cowForm.reset();
-            closeModal(cowModal);
+            setCowModalMode(null);
+            closeCowModal();
             await loadCows();
             await loadActivities();
             setFeedback(data.message || "Cow record saved.");

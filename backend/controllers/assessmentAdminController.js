@@ -6,6 +6,13 @@ const {
     sendAssessmentAssigned,
     sendAssessmentGraded
 } = require("../lib/mailer");
+const {
+    currentVersionOf,
+    readExpectedVersion,
+    sendVersionConflict,
+    versionFilter
+} = require("../lib/versioning");
+const { notifyRecordUpdated } = require("../lib/realtime");
 
 // ADMIN: Create and assign an assessment
 const createAssessment = async (req, res) => {
@@ -209,6 +216,14 @@ const getAllTrainees = async (req, res) => {
 const gradeAssessment = async (req, res) => {
     try {
         const { score, remarks } = req.body || {};
+        const expectedVersion = readExpectedVersion(req.body);
+
+        if (expectedVersion.invalid) {
+            return res.status(400).json({
+                success: false,
+                message: "Version must be a non-negative integer."
+            });
+        }
 
         if (
             score === undefined ||
@@ -244,16 +259,43 @@ const gradeAssessment = async (req, res) => {
             });
         }
 
-        assessment.score = Number(score);
-        assessment.status = "Graded";
+        // Compare-and-set: only the version the admin read may be updated, and
+        // the same write advances it. A parallel edit gets null here.
+        const update = {
+            $set: {
+                score: Number(score),
+                status: "Graded"
+            },
+            $inc: { version: 1 }
+        };
 
         if (remarks !== undefined) {
-            assessment.remarks = remarks;
+            update.$set.remarks = remarks;
         }
 
-        await assessment.save();
+        const graded = await Assessment.findOneAndUpdate(
+            { _id: assessment._id, ...versionFilter(expectedVersion.value) },
+            update,
+            { new: true, runValidators: true }
+        );
 
-        const trainee = await User.findById(assessment.user).select(
+        if (!graded) {
+            const current = await Assessment.findById(assessment._id).lean();
+
+            return sendVersionConflict(res, {
+                currentVersion: currentVersionOf(current),
+                current
+            });
+        }
+
+        notifyRecordUpdated({
+            resource: "assessment",
+            id: String(graded._id),
+            version: graded.version,
+            actorId: req.user && req.user.id
+        });
+
+        const trainee = await User.findById(graded.user).select(
             "firstName lastName email"
         );
 
@@ -261,11 +303,11 @@ const gradeAssessment = async (req, res) => {
             ? await sendAssessmentGraded({
                 to: trainee.email,
                 name: `${trainee.firstName} ${trainee.lastName}`,
-                assessmentTitle: assessment.assessmentTitle,
-                subject: assessment.subject,
-                score: assessment.score,
-                totalScore: assessment.totalScore,
-                remarks: assessment.remarks
+                assessmentTitle: graded.assessmentTitle,
+                subject: graded.subject,
+                score: graded.score,
+                totalScore: graded.totalScore,
+                remarks: graded.remarks
             })
             : { sent: false };
 
@@ -273,7 +315,7 @@ const gradeAssessment = async (req, res) => {
             success: true,
             message: "Assessment graded successfully.",
             mail: { sent: Boolean(mail.sent) },
-            assessment
+            assessment: graded
         });
 
     } catch (error) {

@@ -8,6 +8,8 @@
 
     <link rel="stylesheet" href="../css/portal.css" />
     <script src="../js/admin.js" defer></script>
+    <script src="http://localhost:5000/socket.io/socket.io.js" defer></script>
+    <script src="../js/realtime.js" defer></script>
     <script src="../js/admin-payments.js" defer></script>
     <script src="../js/google-sheets-export.js" defer></script>
     <script src="../js/portal.js" defer></script>
@@ -358,6 +360,7 @@
                     <th scope="col">Method</th>
                     <th scope="col">Payment date</th>
                     <th scope="col">Reference no.</th>
+                    <th scope="col">Action</th>
                   </tr>
                 </thead>
 
@@ -466,6 +469,121 @@
               Cancel
             </button>
             <button type="submit" class="btn btn--primary">Save payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit payment -->
+    <div
+      class="admin-modal"
+      id="editPaymentModal"
+      data-portal-modal
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="editPaymentModalTitle"
+    >
+      <div class="admin-modal-content">
+        <div class="modal-heading">
+          <div>
+            <h2 id="editPaymentModalTitle">Edit payment</h2>
+            <p>Correct this recorded payment. The receipt stays unchanged.</p>
+          </div>
+          <button
+            type="button"
+            class="modal-close"
+            id="closeEditPayment"
+            aria-label="Close dialog"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+
+        <form class="modal-form" id="editPaymentForm" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="editPaymentReceipt">Receipt</label>
+              <input type="text" id="editPaymentReceipt" readonly />
+            </div>
+
+            <div class="field">
+              <label for="editPaymentTrainee">Trainee</label>
+              <input type="text" id="editPaymentTrainee" readonly />
+            </div>
+
+            <div class="field">
+              <label for="editPaymentAmount">Payment amount (₱)</label>
+              <input
+                type="number"
+                id="editPaymentAmount"
+                min="0.01"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="editPaymentDate">Payment date</label>
+              <input type="date" id="editPaymentDate" required />
+            </div>
+
+            <div class="field">
+              <label for="editPaymentMethod">Payment method</label>
+              <select id="editPaymentMethod" required>
+                <option value="">Select method</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank transfer</option>
+                <option value="GCash">GCash</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="editPaymentReference">Reference number</label>
+              <input type="text" id="editPaymentReference" />
+            </div>
+
+            <div class="field field--full">
+              <label for="editPaymentRemarks">Remarks</label>
+              <textarea id="editPaymentRemarks" rows="3"></textarea>
+            </div>
+          </div>
+
+          <p
+            class="state state--inline"
+            id="editPaymentFormError"
+            role="status"
+            hidden
+          ></p>
+
+          <p
+            class="field__error"
+            id="editPaymentConflict"
+            role="alert"
+            hidden
+          ></p>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn btn--ghost"
+              id="cancelEditPayment"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn--ghost"
+              id="refreshPaymentRecord"
+              hidden
+            >
+              Refresh record
+            </button>
+            <button type="submit" class="btn btn--primary">
+              Save changes
+            </button>
           </div>
         </form>
       </div>

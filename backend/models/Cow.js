@@ -56,6 +56,13 @@ const cowSchema = new mongoose.Schema(
             default: "",
             trim: true,
             maxlength: 500
+        },
+
+        // Optimistic-concurrency counter for care-record edits.
+        version: {
+            type: Number,
+            default: 0,
+            min: 0
         }
     },
     { timestamps: true }

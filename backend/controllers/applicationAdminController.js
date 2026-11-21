@@ -6,6 +6,7 @@ const Batch = require("../models/Batch");
 const { assignTraineeId } = require("../lib/traineeId");
 const { sendApplicationDecision } = require("../lib/mailer");
 const { streamDocumentFile, MESSAGES } = require("../lib/documentUpload");
+const { notifyRecordUpdated } = require("../lib/realtime");
 
 const STATUSES = [
     "Submitted",
@@ -157,6 +158,7 @@ const getApplication = async (req, res) => {
 // ADMIN: Approve or reject an application
 const decideApplication = async (req, res) => {
     let claimedBatchId = null;
+    let approvedProfile = null;
 
     try {
         const { decision, publicNote, internalNote } = req.body || {};
@@ -220,7 +222,7 @@ const decideApplication = async (req, res) => {
                     status: "Open",
                     $expr: { $lt: ["$filledCount", "$slotCapacity"] }
                 },
-                { $inc: { filledCount: 1 } },
+                { $inc: { filledCount: 1, version: 1 } },
                 { new: true }
             );
 
@@ -240,13 +242,14 @@ const decideApplication = async (req, res) => {
                         program: application.program.name,
                         enrollmentStatus: "Ongoing"
                     },
-                    $setOnInsert: { user: application.user }
+                    $setOnInsert: { user: application.user },
+                    $inc: { version: 1 }
                 },
                 { new: true, upsert: true, setDefaultsOnInsert: true }
             );
 
             // The trainee already has an ID from signup; keep it if so.
-            await assignTraineeId(application.user);
+            approvedProfile = await assignTraineeId(application.user);
 
             application.status = "Approved";
         } else {
@@ -258,6 +261,15 @@ const decideApplication = async (req, res) => {
         application.openApplication = false;
 
         await application.save();
+
+        if (approvedProfile) {
+            notifyRecordUpdated({
+                resource: "trainee",
+                id: String(application.user),
+                version: approvedProfile.version,
+                actorId: req.user && req.user.id
+            });
+        }
 
         const mail = await sendApplicationDecision({
             to: application.email,
@@ -283,7 +295,7 @@ const decideApplication = async (req, res) => {
             try {
                 await Batch.updateOne(
                     { _id: claimedBatchId },
-                    { $inc: { filledCount: -1 } }
+                    { $inc: { filledCount: -1, version: 1 } }
                 );
             } catch (rollbackError) {
                 console.error("Batch slot rollback failed:", rollbackError);
