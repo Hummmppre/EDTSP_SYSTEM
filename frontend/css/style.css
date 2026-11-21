@@ -17,40 +17,43 @@
 /* ---------- Tokens ---------- */
 
 :root {
-  --bg: #f8f7f0;
+  --bg: #f3f5f9;
   --surface: #ffffff;
-  --surface-2: #f1f2ec;
-  --surface-3: #e9ece3;
+  --surface-2: #f7f8fb;
+  --surface-3: #eef1f7;
 
-  --ink: #27352a;
-  --ink-2: #1c3022;
-  --muted: #69756b;
-  --muted-2: #8b948a;
+  --ink: #1f2430;
+  --ink-2: #151a24;
+  --muted: #6b7280;
+  --muted-2: #9aa1ad;
 
-  --line: #e2e6df;
-  --line-2: #cfd5cb;
+  --line: #e6e9f0;
+  --line-2: #d5dae4;
 
-  --accent: #315c3b;
-  --accent-hover: #21452b;
-  --accent-soft: #eff2eb;
-  --gold: #d6a85f;
+  --accent: #7c1d3d;
+  --accent-hover: #631630;
+  --accent-soft: #fbeef2;
+  --gold: #e58aa3;
+  --pink: #e58aa3;
+  --pink-strong: #d95d80;
+  --maroon: #7c1d3d;
 
-  --success: #2c6b3f;
-  --success-soft: #eaf3e6;
-  --warning: #7a5310;
-  --warning-soft: #f9ebcb;
-  --info: #2e566f;
-  --info-soft: #e2ebf0;
-  --danger: #9c3d25;
-  --danger-soft: #f6e1d8;
+  --success: #1f7a4d;
+  --success-soft: #e8f5ee;
+  --warning: #9a6a13;
+  --warning-soft: #fdf3dd;
+  --info: #2b5f8a;
+  --info-soft: #e8f1f9;
+  --danger: #b23a48;
+  --danger-soft: #fbe9ec;
 
-  --r-sm: 3px;
-  --r-md: 4px;
-  --r-lg: 6px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 16px;
   --r-full: 999px;
 
-  --shadow-overlay: 0 24px 48px -24px rgba(28, 48, 34, 0.35);
-  --focus-ring: 0 0 0 3px rgba(214, 168, 95, 0.45);
+  --shadow-overlay: 0 24px 48px -24px rgba(21, 26, 36, 0.3);
+  --focus-ring: 0 0 0 4px rgba(229, 138, 163, 0.24);
 
   --font-ui:
     "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

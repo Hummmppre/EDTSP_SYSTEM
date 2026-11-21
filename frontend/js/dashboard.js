@@ -291,6 +291,150 @@ function setDashboardFeedback(message) {
   feedback.hidden = !message;
 }
 
+// ---------- KPI + activity chart helpers ----------
+
+function monthBuckets(count = 6) {
+  const now = new Date();
+  const buckets = [];
+
+  for (let index = count - 1; index >= 0; index -= 1) {
+    const start = new Date(now.getFullYear(), now.getMonth() - index, 1);
+
+    buckets.push({
+      label: start.toLocaleDateString("en-US", { month: "short" }),
+      start: start.getTime(),
+      end: new Date(
+        start.getFullYear(),
+        start.getMonth() + 1,
+        1,
+      ).getTime(),
+    });
+  }
+
+  return buckets;
+}
+
+function assessmentTime(assessment) {
+  const value = assessment.assessmentDate || assessment.createdAt;
+  const date = value ? new Date(value) : null;
+
+  return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+}
+
+function countBetween(items, getTime, start, end) {
+  return items.filter((item) => {
+    const time = getTime(item);
+
+    return time >= start && time < end;
+  }).length;
+}
+
+function stampKpiTimes() {
+  const time = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  [
+    "paymentBalanceTime",
+    "assessmentAverageTime",
+    "pendingAssessmentsTime",
+    "enrollmentStatusTime",
+  ].forEach((id) => setText(id, `Updated ${time}`));
+}
+
+function renderActivityAnalytics(assessments) {
+  const buckets = monthBuckets();
+  const isGraded = (assessment) =>
+    assessment.status === "Graded" &&
+    typeof assessment.score === "number" &&
+    Number(assessment.totalScore) > 0;
+  const inBucket = (assessment, bucket) => {
+    const time = assessmentTime(assessment);
+
+    return time >= bucket.start && time < bucket.end;
+  };
+
+  const bars = buckets.map(
+    (bucket) =>
+      assessments.filter((assessment) => inBucket(assessment, bucket)).length,
+  );
+
+  const line = buckets.map((bucket) => {
+    const graded = assessments.filter(
+      (assessment) => inBucket(assessment, bucket) && isGraded(assessment),
+    );
+
+    if (!graded.length) return null;
+
+    return (
+      graded.reduce(
+        (total, assessment) =>
+          total + (assessment.score / Number(assessment.totalScore)) * 100,
+        0,
+      ) / graded.length
+    );
+  });
+
+  const windowStart = buckets[0].start;
+  const windowEnd = buckets[buckets.length - 1].end;
+  const windowAssessments = assessments.filter((assessment) => {
+    const time = assessmentTime(assessment);
+
+    return time >= windowStart && time < windowEnd;
+  });
+  const windowGraded = windowAssessments.filter(isGraded);
+  const average = windowGraded.length
+    ? windowGraded.reduce(
+        (total, assessment) =>
+          total + (assessment.score / Number(assessment.totalScore)) * 100,
+        0,
+      ) / windowGraded.length
+    : 0;
+  const pending = assessments.filter(
+    (assessment) =>
+      assessment.status === "Pending" || assessment.status === "Completed",
+  ).length;
+
+  setText("chartTotal", String(windowAssessments.length));
+  setText(
+    "chartAverage",
+    windowGraded.length ? `${Math.round(average)}%` : "—",
+  );
+  setText("chartPending", String(pending));
+
+  const chart = document.getElementById("activityChart");
+  const empty = document.getElementById("activityChartEmpty");
+  const rendered =
+    window.EDTSP && typeof window.EDTSP.renderActivityChart === "function"
+      ? window.EDTSP.renderActivityChart(chart, {
+          labels: buckets.map((bucket) => bucket.label),
+          bars,
+          line,
+          barLabel: "Assessments",
+          lineLabel: "Your score",
+        })
+      : false;
+
+  if (chart) chart.hidden = !rendered;
+  if (empty) empty.hidden = rendered;
+}
+
+function showActivityEmpty(message) {
+  const chart = document.getElementById("activityChart");
+  const empty = document.getElementById("activityChartEmpty");
+
+  if (chart) chart.hidden = true;
+  if (empty) {
+    empty.textContent = message;
+    empty.hidden = false;
+  }
+
+  setText("chartTotal", "0");
+  setText("chartAverage", "—");
+  setText("chartPending", "0");
+}
+
 function displayEnrollmentCard() {
   if (!document.getElementById("enrollmentStatus")) return;
 
@@ -304,6 +448,11 @@ function displayEnrollmentCard() {
       ? ENROLLMENT_NOTES[status] || "Training record on file"
       : "No training record yet",
   );
+  setText(
+    "enrollmentStatusTrend",
+    traineeProfile ? "Record on file" : "No record yet",
+  );
+  stampKpiTimes();
 }
 
 function renderPaymentSummary(summary = {}) {
@@ -318,6 +467,37 @@ function renderPaymentSummary(summary = {}) {
     "paymentBalanceNote",
     accountCount ? `of ${formatMoney(fee)} total fee` : "No fee assigned yet",
   );
+  setText(
+    "paymentBalanceTrend",
+    accountCount ? `${percent}% paid` : "No fee assigned",
+  );
+
+  const paymentStatus = document.getElementById("paymentBalanceStatus");
+  const paymentStatusLabel = paymentStatus
+    ? paymentStatus.querySelector("[data-payment-status-label]")
+    : null;
+
+  if (paymentStatus) {
+    paymentStatus.classList.remove(
+      "kpi-status--attention",
+      "kpi-status--info",
+      "kpi-status--danger",
+    );
+
+    if (!accountCount) {
+      paymentStatus.classList.add("kpi-status--info");
+    } else if (balance > 0) {
+      paymentStatus.classList.add("kpi-status--attention");
+    }
+  }
+
+  if (paymentStatusLabel) {
+    paymentStatusLabel.textContent = !accountCount
+      ? "No fee"
+      : balance > 0
+        ? "Balance"
+        : "Fully paid";
+  }
 
   setText("feePercent", String(percent));
   setText("feeTotal", formatMoney(fee));
@@ -371,6 +551,13 @@ function renderAssessmentSummary(assessments) {
     setText("assessmentAverageNote", "No graded assessments yet");
   }
 
+  setText(
+    "assessmentAverageTrend",
+    graded.length
+      ? `${graded.length} graded`
+      : "No grades yet",
+  );
+
   const pending = assessments.filter(
     (assessment) =>
       assessment.status === "Pending" || assessment.status === "Completed",
@@ -378,6 +565,14 @@ function renderAssessmentSummary(assessments) {
 
   setText("pendingAssessments", String(pending));
   setText("pendingAssessmentsNote", "Pending or completed, not graded yet");
+  setText(
+    "pendingAssessmentsTrend",
+    assessments.length
+      ? `${pending} of ${assessments.length}`
+      : "None assigned",
+  );
+
+  renderActivityAnalytics(assessments);
 }
 
 async function fetchDashboardJson(url) {
@@ -444,6 +639,7 @@ async function loadDashboardSummary() {
       assessmentResult.reason,
     );
     failed.push("assessments");
+    showActivityEmpty("Assessment activity could not load.");
   }
 
   setDashboardFeedback(
@@ -451,6 +647,7 @@ async function loadDashboardSummary() {
       ? `Some dashboard data could not load: ${failed.join(" and ")}.`
       : "",
   );
+  stampKpiTimes();
 }
 
 // =============================

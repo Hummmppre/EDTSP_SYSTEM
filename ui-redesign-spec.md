@@ -1,5 +1,12 @@
 # UI Redesign — Full Visual Replacement Spec
 
+> **Status: superseded in part.** The palette, shell and dashboard components
+> were revised after this spec was written. The shipped direction is a light
+> gray-blue ground with a maroon/pink accent, a fixed collapsible sidebar, soft
+> shadow cards and a combined analytics chart. `DESIGN.md` is now the canonical
+> reference; the token table in §5.1 below has been updated to match, while the
+> rest of this document remains the historical rationale and inventory.
+
 **Status:** Draft for approval
 **Requested:** "redesign the UI"
 **Scope agreed in interview:** All 19 production pages get a new visual direction — modern software rather than farm-themed, light only, sans-only typography, compact and scannable. Implemented as a **restyle of the three existing stylesheets**: no markup restructuring, no JS changes, no backend changes. Palette is carried over from the current public pages. Ships in three phases: public → admin → trainee.
@@ -13,7 +20,7 @@ Two problems were named in the interview, and the redesign is judged against the
 1. **Dated typography and spacing.** The public pages are set in Arial with loose leading, 14px copy at 20px gutters, 7px radii, 110px hero padding, and 34px section headings. The portal is set in Fraunces + Archivo at 15px/1.55 with 6px panel radii and 30–40px of panel padding. Neither is a modern software type system.
 2. **The portals are dense and hard to scan.** The portal pages carry a sidebar, a breadcrumb topbar, a serif page header, a four-cell ledger, and two or three panels each — but the hierarchy is carried by heavy rules, uppercase micro-labels, and large section padding, so the eye has to work to find the primary number, the active record, and the next action.
 
-The existing direction ("working farm ledger", documented in `DESIGN.md`) is **replaced**, not refined. The new direction is neutral modern software: cool structure, one green action colour, strong numeric hierarchy, compact tables, quiet chrome.
+The existing direction ("working farm ledger", documented in `DESIGN.md`) is **replaced**, not refined. The new direction is a modern admin dashboard: cool gray-blue structure, one maroon action colour with a pink accent, strong numeric hierarchy, soft card surfaces and quiet chrome.
 
 ---
 
@@ -26,7 +33,7 @@ The existing direction ("working farm ledger", documented in `DESIGN.md`) is **r
 | Anchor | Modern software, not farm-themed. Clean, data-forward, quiet chrome. |
 | References | The named product family in §4.4 (Linear, Stripe, Vercel, GitHub Primer, Mercury, Attio, Ashby, Sentry, plus GOV.UK for form behaviour). Patterns only — no copied assets, fonts, icons, or dependencies. |
 | Colour mode | **Light only.** No dark theme, no `prefers-color-scheme` branch. |
-| Palette | **Adopt the current public palette everywhere** (`#315c3b` primary, `#d6a85f` accent, `#f8f7f0` background, `#27352a` text). Portal tokens are remapped to these values. |
+| Palette | **One maroon/pink system everywhere** (`#7c1d3d` primary, `#e58aa3` pink accent, `#f3f5f9` background, `#1f2430` text). All three stylesheets share the same token values. |
 | Typography | **Sans-only system.** Fraunces is dropped; Archivo carries both display and UI. |
 | Density | **Compact and scannable.** More rows per screen, tighter leading, smaller base size, clearer grouping. |
 | Markup freedom | **Restyle only.** No renaming, moving, or removing elements/classes/ids that the JS reads. |
@@ -85,7 +92,7 @@ Recurring class vocabulary the restyle must preserve: `shell`, `sidebar`, `brand
 | Shadows used decoratively on public pages; banned in the portal | `.hero-card`, `.program-card:hover`, `.header` | One rule: shadow only on overlays (modal, drawer, toast). |
 | Emoji as icons on public pages | `index.html` (`🐄 🌾 🩺`), `login.html` (`☰`, `←`) | Drawn in CSS (see §8.2). |
 | Topbar is translucent; DESIGN.md called it the only translucent surface | portal `topbar` | Solid surface with a hairline; no backdrop blur. |
-| Page `theme-color` is `#f2ede1` (old paper) | all portal heads | `#f8f7f0`. This is a `<meta content>` value — see §8.3 for the exception rule. |
+| Page `theme-color` is `#f2ede1` (old paper) | all portal heads | `#f3f5f9`. This is a `<meta content>` value — see §8.3 for the exception rule. |
 | Sidebar 272px with serif-ish brand block | portal | 240px, sans wordmark, tighter nav rows. |
 
 ---
@@ -95,8 +102,8 @@ Recurring class vocabulary the restyle must preserve: `shell`, `sidebar`, `brand
 ### 4.1 Principles
 
 1. **The record is the interface.** Numbers, statuses, and dates are the primary visual material. Chrome (rules, headers, nav) recedes to a neutral grey-green.
-2. **One action colour.** Forest green `#315c3b` marks the single primary action per view, the active nav item, and links. Nothing else is green.
-3. **Gold is not decoration.** `#d6a85f` survives only as the focus ring and the "attention" marker on exactly one figure per page.
+2. **One action colour.** Maroon `#7c1d3d` marks the single primary action per view, the active nav item, and links. Nothing else is maroon.
+3. **Pink is an accent, not a warning.** `#e58aa3` survives as the focus ring, chart bars and one supporting detail per page.
 4. **Type does the hierarchy.** Weight and size, not boxes, borders, or uppercase labels everywhere. A heading is bigger and heavier; a caption is smaller and muted.
 5. **Density where the work is.** Tables, lists, and record rows are compact (32–36px rows). Page headers, forms, and empty states get room to breathe.
 6. **Quiet edges.** Hairline `#e2e6df` rules, 6px radii, no shadows on in-flow surfaces, no gradients, no glass, no texture, no emoji.
@@ -119,7 +126,7 @@ This section is the visual target in concrete terms. When a styling decision is 
 #### 4.4.1 How to use these references
 
 - **Patterns, not pixels.** Borrow structure, rhythm, and hierarchy. Never copy a layout wholesale, a screenshot, an icon set, or a font file.
-- **Nothing is imported.** No asset, font, icon, CSS framework, or component library comes from these products. The palette is yours (`#315c3b` / `#d6a85f` / `#f8f7f0` / `#27352a`), the type is Archivo, the icons are the existing inline SVG set.
+- **Nothing is imported.** No asset, font, icon, CSS framework, or component library comes from these products. The palette is yours (`#7c1d3d` / `#e58aa3` / `#f3f5f9` / `#1f2430`), the type is Archivo, the icons are the existing inline SVG set.
 - **References are sampled, not version-pinned.** At build time, open the live product at 1440×900 for a minute and apply the test in §4.4.5. If a reference has since changed its paint, the named pattern still holds.
 - **The spec wins.** Where a reference conflicts with a locked constraint — the palette, one sans family, compact density, restyle-only — the constraint wins. No reference is a reason for dark mode, a second accent, or a markup change.
 
@@ -129,7 +136,7 @@ This section is the visual target in concrete terms. When a styling decision is 
 | --- | --- | --- | --- |
 | **Linear** | Portal shell, navigation, list density | Chromeless shell: hairline separators instead of cards, 32–40px nav rows, muted 16px icons, one accent only on the active item, small radii, page title as a line of text rather than a hero, visible focus everywhere | Dark ground, glow and gradient effects, marketing flourishes inside the app, animated backgrounds, its exact type |
 | **Stripe Dashboard** | Money surfaces (payments, balances, fees) and every numeric table | Right-aligned tabular figures, currency prefix in muted text, totals separated by a hairline rather than a box, one emphasised figure per view, empty states with a single action, restrained status colours | Its blue accent (colour is ours), shadowed card groupings, chart-heavy dashboards, multi-column widgets competing for attention |
-| **Vercel dashboard** | Overall restraint, settings pages, dense lists | Monochrome structure, 1px borders doing all the grouping, sticky section headers, status dots small enough to read as punctuation, no decorative iconography | Near-black text on pure white (we keep green-tinted neutrals), the stark zero-radius black-button aesthetic, its monospace-everything voice |
+| **Vercel dashboard** | Overall restraint, settings pages, dense lists | Monochrome structure, 1px borders doing all the grouping, sticky section headers, status dots small enough to read as punctuation, no decorative iconography | Near-black text on pure white (we keep gray-blue neutrals), the stark zero-radius black-button aesthetic, its monospace-everything voice |
 | **GitHub (Primer)** | Settings forms, data tables, semantic status | 32px uppercase table headers on a tinted band, label-left / control-right settings rows with inline help beneath the label, semantic colour tokens for status, compact 34px rows, table headers that stay put while scrolling | Dense chrome on every row, bordered button clusters per row, its specific blue/green semantics, bordered boxes around every field group |
 | **Mercury / Ramp** | Ledger rows, KPI strips, payment history | Compact record rows, muted secondary columns, one large figure with its delta beneath, totals pinned at the bottom of a list, numbers carrying the visual weight instead of labels | Dark marketing language, illustrations, multi-colour category tags, animated counters |
 | **Attio** | Record pages: trainee, cow, program, application | Property rows as hairline-separated label/value pairs, a record header with identity on the left and actions on the right, inline status chips, compact detail density without boxed cards | Spreadsheet-editing everywhere, purple accents, empty decorative sidebars |
@@ -195,7 +202,7 @@ These are the target compositions for the three archetypes. They are wireframes 
 │                       │  New here? Create an account                  │
 │  Footer line, 50%     │                                               │
 └───────────────────────┴───────────────────────────────────────────────┘
-   #1c3022, 48px pad        #f8f7f0, 400px column, no card border
+   #151a24, 48px pad        #f3f5f9, 400px column, no card border
 ```
 
 **Portal page, ≥1024px:**
@@ -270,37 +277,40 @@ Light only. Every value below replaces the current `:root` block in `portal.css`
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--bg` | `#f8f7f0` | Page ground (all pages, including portals) |
-| `--surface` | `#ffffff` | Panels, tables, modals, topbar |
-| `--surface-2` | `#f1f2ec` | Table header rows, insets, disabled fields, progress tracks |
-| `--surface-3` | `#e9ece3` | Hover on table rows, segmented-control track |
-| `--ink` | `#27352a` | Primary text |
-| `--ink-2` | `#1c3022` | Display text, sidebar ground, pressed states |
-| `--muted` | `#69756b` | Secondary text, labels, placeholders (≥4.5:1 on `--bg` and `--surface`) |
-| `--muted-2` | `#8b948a` | Tertiary text, disabled text (**decorative only, never sole carrier of meaning**) |
-| `--line` | `#e2e6df` | Hairline borders, table rules |
-| `--line-2` | `#cfd5cb` | Strong border: focused inputs, active segments, table outer edge |
-| `--accent` | `#315c3b` | Primary button, active nav, links |
-| `--accent-hover` | `#21452b` | Primary button hover, link hover |
-| `--accent-soft` | `#eff2eb` | Active nav ground, selected row, quiet badge ground |
-| `--gold` | `#d6a85f` | Focus ring only (plus the single attention figure marker) |
-| `--success` | `#2c6b3f` | Complete / verified text and icon |
-| `--success-soft` | `#eaf3e6` | Success badge ground |
-| `--warning` | `#7a5310` | Pending / observation |
-| `--warning-soft` | `#f9ebcb` | Warning badge ground |
-| `--info` | `#2e566f` | Ongoing / in-progress |
-| `--info-soft` | `#e2ebf0` | Info badge ground |
-| `--danger` | `#9c3d25` | Outstanding / treatment / destructive |
-| `--danger-soft` | `#f6e1d8` | Danger badge ground |
-| `--shadow-overlay` | `0 24px 48px -24px rgba(28, 48, 34, 0.35)` | Modal, drawer, toast only |
-| `--focus-ring` | `0 0 0 3px rgba(214, 168, 95, 0.45)` | `:focus-visible` outer glow (paired with a 2px `--gold` outline) |
+| `--bg` | `#f3f5f9` | Page ground (all pages, including portals) |
+| `--surface` | `#ffffff` | Cards, tables, modals, topbar |
+| `--surface-2` | `#f7f8fb` | Table header rows, insets, disabled fields, progress tracks |
+| `--surface-3` | `#eef1f7` | Hover on table rows, segmented-control track |
+| `--ink` | `#1f2430` | Primary text |
+| `--ink-2` | `#151a24` | Display text, dark brand panels, pressed states |
+| `--muted` | `#6b7280` | Secondary text, labels, placeholders (≥4.5:1 on `--bg` and `--surface`) |
+| `--muted-2` | `#9aa1ad` | Tertiary text, disabled text (**decorative only, never sole carrier of meaning**) |
+| `--line` | `#e6e9f0` | Hairline borders, table rules |
+| `--line-2` | `#d5dae4` | Strong border: focused inputs, active segments, table outer edge |
+| `--accent` | `#7c1d3d` | Primary button, active nav, links |
+| `--accent-hover` | `#631630` | Primary button hover, link hover |
+| `--accent-soft` | `#fbeef2` | Active nav ground, selected row, quiet badge ground |
+| `--maroon-deep` | `#5e1229` | Featured KPI card, chart bar depth |
+| `--pink` | `#e58aa3` | Chart bars, focus ring, soft accents |
+| `--pink-strong` | `#d95d80` | Pink hover and detail states |
+| `--success` | `#1f7a4d` | Complete / verified text and icon |
+| `--success-soft` | `#e8f5ee` | Success badge ground |
+| `--warning` | `#9a6a13` | Pending / observation |
+| `--warning-soft` | `#fdf3dd` | Warning badge ground |
+| `--info` | `#2b5f8a` | Ongoing / in-progress |
+| `--info-soft` | `#e8f1f9` | Info badge ground |
+| `--danger` | `#b23a48` | Outstanding / treatment / destructive |
+| `--danger-soft` | `#fbe9ec` | Danger badge ground |
+| `--shadow-overlay` | `0 24px 56px -20px rgba(21, 26, 36, 0.3)` | Modal, drawer, toast only |
+| `--shadow-card` | `0 1px 2px rgba(21,26,36,.04), 0 10px 28px -18px rgba(21,26,36,.18)` | Cards and KPI surfaces |
+| `--focus-ring` | `0 0 0 4px rgba(229, 138, 163, 0.24)` | `:focus-visible` outer glow (paired with a 2px `--accent` outline) |
 
 Rules:
 
-- Removed tokens: `--paper`, `--paper-2`, `--field`, `--field-2`, `--hay`, `--hay-wash`, `--moss`, `--moss-wash`, `--amber`, `--amber-wash`, `--sky`, `--sky-wash`, `--clay`, `--clay-wash`, `--side-ink`, `--side-muted`, `--primary`, `--primary-dark`, `--background`, `--text`, `--border`, `--white`, `--accent` (old gold value). Each old name is either deleted or aliased to its new equivalent for one release (see §8.4).
-- `#ffffff` on `#f8f7f0` is the panel/page distinction. Panels never get a shadow; they get a `1px solid var(--line)` and `6px` radius.
+- Old token names (`--paper`, `--field`, `--hay`, `--moss`, `--amber`, `--sky`, `--clay`, `--side-ink`, `--side-muted`, etc.) are kept as aliases to the new palette so existing selectors keep working.
+- `#ffffff` on `#f3f5f9` is the card/page distinction. Cards get `1px solid var(--line)`, a 16px radius and `--shadow-card`; the featured KPI card is solid `--accent`.
 - Status colour is functional only. A badge may use a soft ground + matching text; it never uses `--accent`.
-- Sidebar ground is `--ink-2` with `--surface` text at 90% opacity; the active item is `--accent-soft` at 12% opacity with a 2px `--gold` left marker. This is the only place gold is decorative-adjacent, and it is allowed once per page.
+- The sidebar is a light `--surface` panel with `--ink` text; the active item is `--accent-soft` with `--accent` text and a rounded highlight.
 
 ### 5.2 Typography
 
@@ -431,8 +441,8 @@ Old name → new name. Implemented once per file, with the old names kept as ali
 | `--paper` | `--bg` |
 | `--paper-2` | `--surface-2` |
 | `--surface` (`#fffdf7`) | `--surface` (`#ffffff`) |
-| `--ink` | `--ink` (value changes to `#27352a`) |
-| `--ink-2` | `--ink-2` (now sidebar ground `#1c3022`) |
+| `--ink` | `--ink` (value changes to `#1f2430`) |
+| `--ink-2` | `--ink-2` (dark brand panels `#151a24`) |
 | `--muted` | `--muted` (value `#69756b`) |
 | `--line` / `--line-2` | `--line` / `--line-2` |
 | `--field` | `--accent` |
@@ -499,7 +509,7 @@ Rule: **no emoji may be visible anywhere** after the redesign. This is checked w
 
 These are the only edits outside CSS. Each is a value/text change, not a structural one, and each is listed in the delivery notes:
 
-- **A.** `meta[name="theme-color"]` changes from `#f2ede1` to `#f8f7f0` on the 14 portal pages. A meta content value has no CSS equivalent.
+- **A.** `meta[name="theme-color"]` changes from `#f2ede1` to `#f3f5f9` on the 14 portal pages. A meta content value has no CSS equivalent.
 - **B.** The three emoji characters inside `.program-icon` on `index.html` may instead be deleted, if you prefer clean source over a hidden-glyph workaround. Default is **not** to delete; CSS hiding is the plan unless approved.
 - **C.** Visible copy inside headings, decks, helper text, and empty-state text may be rewritten (§12). Copy lives in text nodes, so this does not touch structure.
 
@@ -1149,7 +1159,7 @@ A phase is done when its acceptance checklist passes, the screenshots are attach
 1. **"Restyle only" caps what density can fix.** The dashboards keep their current DOM: if a panel's markup forces a stack of long text blocks, CSS can tighten it but not reorder or collapse it. Table columns cannot be dropped. If a page still reads badly at 1440px, that is a markup change for a later phase, not a styling failure to hide.
 2. **One sans family means hierarchy comes from weight.** Removing Fraunces removes the strongest existing differentiator. Archivo 600 at 28px with `-0.02em` must do that work; if headings still feel flat in screenshots, the fix is size/tracking, not a new font.
 3. **Hidden emoji are a workaround, not a solution.** `font-size: 0` + `color: transparent` leaves the characters in the HTML and in the accessibility tree unless the element is `aria-hidden` in markup (which cannot be added). A screen reader may still announce the glyph. Exception **B** (deleting the three characters) is the clean fix and should be approved if the emoji count grows.
-4. **Kept palette, new structure.** Green `#315c3b` on cream `#f8f7f0` carries a warmth that fights the neutral-grey "modern software" anchor. The mitigation is strict neutrality everywhere else: near-white surfaces, grey-green hairlines, one accent, no gradients.
+4. **One accent, new structure.** Maroon `#7c1d3d` with pink `#e58aa3` on a gray-blue ground `#f3f5f9` keeps the chrome neutral: near-white surfaces, gray-blue hairlines, one accent, no gradients.
 5. **`theme-color` and copy edits are markup edits.** They are declared exceptions; if you want a truly zero-markup change, both stay stale and the mobile browser bar keeps the old paper colour.
 6. **Google's button is a fixed seam.** The sign-in iframe will remain Google-styled in the middle of the new form. Acceptable, but visible.
 7. **`DESIGN.md` is rewritten.** The farm-ledger rationale, palette table, and anti-slop list are replaced with the new direction. The old document is not preserved in the repo; `git log` is the record. If you want it kept, say so and it moves to `DESIGN-farm-ledger.md`.
@@ -1162,7 +1172,7 @@ Assumptions I made and will proceed on unless corrected:
 
 1. **`DESIGN.md` is rewritten in Phase 1** to document the new direction (typography, palette, density, component rules), replacing the farm-ledger text.
 2. **`fraunces-latin-var.woff2` is deleted** and its `@font-face` removed. Archivo stays exactly as shipped.
-3. **The sidebar keeps a deep-green ground** (`#1c3022`, the current footer colour) because the existing public palette's primary needs a dark structural surface on portal pages; the alternative is a white sidebar and a much flatter look.
+3. **The sidebar is a light surface** (`--surface`) with `--ink` text and a rounded `--accent-soft` active item; the dark ground is reserved for the auth brand panel.
 4. **The `Sample data` tag survives**, restyled as a neutral chip.
 5. **Gold stays as the focus colour.** If you'd rather the focus ring be green, contrast remains fine and the rename is one token.
 6. **The public hero keeps its current headline** unless you supply replacement copy.

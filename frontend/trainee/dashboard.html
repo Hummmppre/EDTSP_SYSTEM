@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f2ede1" />
+    <meta name="theme-color" content="#f3f5f9" />
     <title>Dashboard | EDTSP</title>
 
     <link rel="stylesheet" href="../css/portal.css" />
@@ -46,7 +46,7 @@
               <rect x="4" y="13" width="7" height="7" rx="1" />
               <rect x="13" y="13" width="7" height="7" rx="1" />
             </svg>
-            <span>Dashboard</span>
+            <span>Home</span>
           </a>
 
           <a class="nav__link" href="assessments.html">
@@ -87,7 +87,6 @@
             </svg>
             <span>Apply for training</span>
           </a>
-
         </nav>
 
         <p class="sidebar__foot">
@@ -123,6 +122,71 @@
             </p>
           </div>
 
+          <form class="topbar-search" role="search" data-nav-search>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              type="search"
+              name="q"
+              id="navSearchInput"
+              placeholder="Search portal"
+              aria-label="Search portal"
+              autocomplete="off"
+              role="combobox"
+              aria-expanded="false"
+              aria-controls="navSearchResults"
+              aria-autocomplete="list"
+              data-nav-search-input
+            />
+            <kbd class="topbar-search__hint" aria-hidden="true">/</kbd>
+            <div
+              class="search-results"
+              id="navSearchResults"
+              role="listbox"
+              aria-label="Search results"
+              data-nav-search-results
+              hidden
+            ></div>
+          </form>
+
+          <div class="topbar-tools">
+            <div class="topbar-notify" data-notify>
+              <button
+                class="icon-btn topbar-notify__trigger"
+                type="button"
+                data-notify-trigger
+                aria-label="Notifications"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                  <path d="M10 21h4" />
+                </svg>
+                <span class="notify-dot" data-notify-dot hidden></span>
+              </button>
+              <div
+                class="notify-panel"
+                data-notify-panel
+                role="dialog"
+                aria-label="Notifications"
+                hidden
+              >
+                <p class="notify-panel__title">Notifications</p>
+                <div data-notify-list></div>
+              </div>
+            </div>
+
+            <a class="icon-btn" href="profile.html" aria-label="Open profile">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.2" />
+                <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3" />
+              </svg>
+            </a>
+          </div>
+
           <div class="user-menu" data-user-menu>
             <button
               class="user-menu__trigger"
@@ -134,8 +198,17 @@
               aria-controls="userMenu"
             >
               <span class="user-menu__name" id="topbarName">Trainee</span>
-              <span class="avatar avatar--sm" id="topbarInitials" aria-hidden="true">T</span>
-              <svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <span
+                class="avatar avatar--sm"
+                id="topbarInitials"
+                aria-hidden="true"
+                >T</span
+              >
+              <svg
+                class="user-menu__chevron"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </button>
@@ -191,31 +264,103 @@
           </header>
 
           <section class="ledger" aria-label="Training summary">
-            <a class="ledger__cell" href="payments.html">
+            <a
+              class="ledger__cell kpi-card kpi-card--featured"
+              href="payments.html"
+            >
+              <span class="kpi-card__top">
+                <span class="kpi-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 7.5h16v11H4Z" />
+                    <path d="M4 7.5 6.5 4h11L20 7.5" />
+                    <path d="M15.5 13h4.5" />
+                  </svg>
+                </span>
+                <span
+                  class="kpi-status kpi-status--attention"
+                  id="paymentBalanceStatus"
+                >
+                  <span class="kpi-status__dot"></span>
+                  <span data-payment-status-label>Balance</span>
+                </span>
+              </span>
               <span class="ledger__label">Payment balance</span>
               <strong class="ledger__value" id="paymentBalance">₱0</strong>
               <span class="ledger__note" id="paymentBalanceNote"
                 >No fee assigned yet</span
               >
+              <span class="kpi-card__meta">
+                <span class="kpi-trend" id="paymentBalanceTrend">—</span>
+                <span class="kpi-time" id="paymentBalanceTime">Loading…</span>
+              </span>
             </a>
 
-            <a class="ledger__cell" href="assessments.html">
+            <a class="ledger__cell kpi-card" href="assessments.html">
+              <span class="kpi-card__top">
+                <span class="kpi-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 19V5" />
+                    <path d="M4 19h16" />
+                    <path d="m7 15 3.5-4 3 2.5L20 7" />
+                  </svg>
+                </span>
+                <span class="kpi-status">
+                  <span class="kpi-status__dot"></span>
+                  Graded
+                </span>
+              </span>
               <span class="ledger__label">Assessment average</span>
               <strong class="ledger__value" id="assessmentAverage">—</strong>
               <span class="ledger__note" id="assessmentAverageNote"
                 >No graded assessments yet</span
               >
+              <span class="kpi-card__meta">
+                <span class="kpi-trend" id="assessmentAverageTrend">—</span>
+                <span class="kpi-time" id="assessmentAverageTime"
+                  >Loading…</span
+                >
+              </span>
             </a>
 
-            <a class="ledger__cell" href="assessments.html">
+            <a class="ledger__cell kpi-card" href="assessments.html">
+              <span class="kpi-card__top">
+                <span class="kpi-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="8" />
+                    <path d="M12 7.5V12l3 1.8" />
+                  </svg>
+                </span>
+                <span class="kpi-status kpi-status--attention">
+                  <span class="kpi-status__dot"></span>
+                  To do
+                </span>
+              </span>
               <span class="ledger__label">Pending assessments</span>
               <strong class="ledger__value" id="pendingAssessments">0</strong>
               <span class="ledger__note" id="pendingAssessmentsNote"
                 >Pending or completed, not graded yet</span
               >
+              <span class="kpi-card__meta">
+                <span class="kpi-trend" id="pendingAssessmentsTrend">—</span>
+                <span class="kpi-time" id="pendingAssessmentsTime"
+                  >Loading…</span
+                >
+              </span>
             </a>
 
-            <a class="ledger__cell" href="profile.html">
+            <a class="ledger__cell kpi-card" href="profile.html">
+              <span class="kpi-card__top">
+                <span class="kpi-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="9" r="4" />
+                    <path d="M5 20c.8-3.4 3.3-5.3 7-5.3s6.2 1.9 7 5.3" />
+                  </svg>
+                </span>
+                <span class="kpi-status kpi-status--info">
+                  <span class="kpi-status__dot"></span>
+                  Enrolment
+                </span>
+              </span>
               <span class="ledger__label">Enrolment status</span>
               <strong class="ledger__value" id="enrollmentStatus"
                 >Pending</strong
@@ -223,7 +368,70 @@
               <span class="ledger__note" id="enrollmentStatusNote"
                 >No training record yet</span
               >
+              <span class="kpi-card__meta">
+                <span class="kpi-trend" id="enrollmentStatusTrend">—</span>
+                <span class="kpi-time" id="enrollmentStatusTime">Loading…</span>
+              </span>
             </a>
+          </section>
+
+          <section class="panel analytics" aria-labelledby="activity-title">
+            <header class="panel__head analytics__head">
+              <div>
+                <h2 id="activity-title">Your assessment activity</h2>
+                <p class="panel__sub">
+                  Assessment volume and your average score across the last six
+                  months.
+                </p>
+              </div>
+              <a class="text-link" href="assessments.html">Open assessments</a>
+            </header>
+
+            <div class="analytics__metrics">
+              <div class="analytics__metric">
+                <span class="analytics__metric-label"
+                  >Assessments · 6 months</span
+                >
+                <strong id="chartTotal">0</strong>
+                <span class="analytics__metric-note"
+                  >Scheduled in this window</span
+                >
+              </div>
+              <div class="analytics__metric">
+                <span class="analytics__metric-label">Average score</span>
+                <strong id="chartAverage">—</strong>
+                <span class="analytics__metric-note">Across graded work</span>
+              </div>
+              <div class="analytics__metric">
+                <span class="analytics__metric-label">Awaiting grade</span>
+                <strong id="chartPending">0</strong>
+                <span class="analytics__metric-note">Pending or completed</span>
+              </div>
+            </div>
+
+            <div class="analytics__chart">
+              <div class="chart-legend" aria-hidden="true">
+                <span class="chart-legend__item">
+                  <span class="chart-legend__bar"></span>
+                  Assessments
+                </span>
+                <span class="chart-legend__item">
+                  <span class="chart-legend__line"></span>
+                  Your score
+                </span>
+              </div>
+
+              <div
+                class="chart-canvas"
+                id="activityChart"
+                role="img"
+                aria-label="Your assessment volume and average score for the last six months"
+              ></div>
+
+              <p class="chart-empty" id="activityChartEmpty" hidden>
+                No assessment activity in the last six months.
+              </p>
+            </div>
           </section>
 
           <div class="grid grid--record">

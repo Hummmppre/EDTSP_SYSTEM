@@ -196,6 +196,165 @@ document.addEventListener("DOMContentLoaded", () => {
         return result.status === "fulfilled" ? result.value : null;
     }
 
+    // ---------- KPI + activity chart helpers ----------
+
+    function monthBuckets(count = 6) {
+        const now = new Date();
+        const buckets = [];
+
+        for (let index = count - 1; index >= 0; index -= 1) {
+            const start = new Date(now.getFullYear(), now.getMonth() - index, 1);
+
+            buckets.push({
+                label: start.toLocaleDateString("en-US", { month: "short" }),
+                start: start.getTime(),
+                end: new Date(
+                    start.getFullYear(),
+                    start.getMonth() + 1,
+                    1
+                ).getTime()
+            });
+        }
+
+        return buckets;
+    }
+
+    function countBetween(items, getTime, start, end) {
+        return items.filter(item => {
+            const time = getTime(item);
+
+            return time >= start && time < end;
+        }).length;
+    }
+
+    function percentChange(current, previous) {
+        if (!previous) {
+            return current > 0
+                ? { text: "New this month", className: "kpi-trend--up" }
+                : { text: "0% vs last month", className: "" };
+        }
+
+        const change = Math.round(((current - previous) / previous) * 100);
+
+        if (!change) return { text: "0% vs last month", className: "" };
+
+        return {
+            text: `${change > 0 ? "+" : ""}${change}% vs last month`,
+            className: change > 0 ? "kpi-trend--up" : "kpi-trend--down"
+        };
+    }
+
+    function setTrend(id, result) {
+        const element = document.getElementById(id);
+
+        if (!element) return;
+
+        element.textContent = result.text;
+        element.classList.remove("kpi-trend--up", "kpi-trend--down");
+
+        if (result.className) element.classList.add(result.className);
+    }
+
+    function stampKpiTimes() {
+        const time = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+        [
+            "totalTraineesTime",
+            "activeTraineesTime",
+            "totalAssessmentsTime",
+            "pendingAssessmentsTime"
+        ].forEach(id => setText(id, `Updated ${time}`));
+    }
+
+    function renderActivityAnalytics(assessments) {
+        const buckets = monthBuckets();
+        const isGraded = assessment =>
+            assessment.status === "Graded" &&
+            typeof assessment.score === "number" &&
+            Number(assessment.totalScore) > 0;
+
+        const inBucket = (assessment, bucket) => {
+            const time = dateValue(assessment);
+
+            return time >= bucket.start && time < bucket.end;
+        };
+
+        const bars = buckets.map(
+            bucket => assessments.filter(item => inBucket(item, bucket)).length
+        );
+
+        const line = buckets.map(bucket => {
+            const graded = assessments.filter(
+                item => inBucket(item, bucket) && isGraded(item)
+            );
+
+            if (!graded.length) return null;
+
+            return graded.reduce(
+                (total, item) =>
+                    total + (item.score / Number(item.totalScore)) * 100,
+                0
+            ) / graded.length;
+        });
+
+        const windowStart = buckets[0].start;
+        const windowEnd = buckets[buckets.length - 1].end;
+        const windowAssessments = assessments.filter(item => {
+            const time = dateValue(item);
+
+            return time >= windowStart && time < windowEnd;
+        });
+        const windowGraded = windowAssessments.filter(isGraded);
+        const average = windowGraded.length
+            ? windowGraded.reduce(
+                (total, item) =>
+                    total + (item.score / Number(item.totalScore)) * 100,
+                0
+            ) / windowGraded.length
+            : 0;
+
+        setText("chartTotal", String(windowAssessments.length));
+        setText(
+            "chartAverage",
+            windowGraded.length ? `${Math.round(average)}%` : "—"
+        );
+        setText("chartGraded", String(windowGraded.length));
+
+        const chart = document.getElementById("activityChart");
+        const empty = document.getElementById("activityChartEmpty");
+        const rendered =
+            window.EDTSP && typeof window.EDTSP.renderActivityChart === "function"
+                ? window.EDTSP.renderActivityChart(chart, {
+                    labels: buckets.map(bucket => bucket.label),
+                    bars,
+                    line,
+                    barLabel: "Assessments",
+                    lineLabel: "Average score"
+                })
+                : false;
+
+        if (chart) chart.hidden = !rendered;
+        if (empty) empty.hidden = rendered;
+    }
+
+    function showActivityEmpty(message) {
+        const chart = document.getElementById("activityChart");
+        const empty = document.getElementById("activityChartEmpty");
+
+        if (chart) chart.hidden = true;
+        if (empty) {
+            empty.textContent = message;
+            empty.hidden = false;
+        }
+
+        setText("chartTotal", "0");
+        setText("chartAverage", "—");
+        setText("chartGraded", "0");
+    }
+
     // ---------- Per-page overviews ----------
 
     function renderTrainees(result, failed) {
@@ -208,9 +367,35 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const summary = data.summary || {};
+        const trainees = data.trainees || [];
+        const buckets = monthBuckets(2);
+        const createdTime = trainee => {
+            const date = trainee.createdAt ? new Date(trainee.createdAt) : null;
 
-        setText("totalTrainees", String(summary.total || 0));
-        setText("activeTrainees", String(summary.ongoing || 0));
+            return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+        };
+        const thisMonth = countBetween(
+            trainees,
+            createdTime,
+            buckets[1].start,
+            buckets[1].end
+        );
+        const lastMonth = countBetween(
+            trainees,
+            createdTime,
+            buckets[0].start,
+            buckets[0].end
+        );
+        const total = Number(summary.total) || 0;
+        const active = Number(summary.ongoing) || 0;
+
+        setText("totalTrainees", String(total));
+        setText("activeTrainees", String(active));
+        setTrend("totalTraineesTrend", percentChange(thisMonth, lastMonth));
+        setText(
+            "activeTraineesTrend",
+            total ? `${Math.round((active / total) * 100)}% of total` : "No trainees yet"
+        );
     }
 
     function renderAssessments(result, failed) {
@@ -220,6 +405,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Dashboard assessment summary error:", result.reason);
             failed.push("assessments");
             setPanelState("overviewAssessmentsState", "Assessment figures could not load.");
+            showActivityEmpty("Assessment activity could not load.");
             return;
         }
 
@@ -230,17 +416,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 assessment.status === "Pending" ||
                 assessment.status === "Completed"
         ).length;
-
-        setText(
-            "totalAssessments",
-            String(data.count === undefined ? assessments.length : data.count)
+        const total =
+            data.count === undefined ? assessments.length : data.count;
+        const buckets = monthBuckets(2);
+        const thisMonth = countBetween(
+            assessments,
+            dateValue,
+            buckets[1].start,
+            buckets[1].end
         );
+        const lastMonth = countBetween(
+            assessments,
+            dateValue,
+            buckets[0].start,
+            buckets[0].end
+        );
+
+        setText("totalAssessments", String(total));
         setText("pendingAssessments", String(awaitingGrade));
+        setTrend(
+            "totalAssessmentsTrend",
+            percentChange(thisMonth, lastMonth)
+        );
+        setText(
+            "pendingAssessmentsTrend",
+            total
+                ? `${Math.round((awaitingGrade / total) * 100)}% of assessments`
+                : "None assigned"
+        );
         setText("overviewAwaitingAssessments", String(awaitingGrade));
         setText("overviewGradedAssessments", String(summary.gradedAssessments || 0));
         setText("overviewAverageScore", `${summary.averageScore || 0}%`);
 
         renderRecentAssessments(assessments);
+        renderActivityAnalytics(assessments);
         setPanelState("overviewAssessmentsState", "");
     }
 
@@ -450,6 +659,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderPayments(results.payments, failed);
         renderCowMaintenance(results.cows, results.activities, failed);
         renderSettings(results.settings, results.calendar, failed);
+        stampKpiTimes();
 
         setFeedback(
             failed.length

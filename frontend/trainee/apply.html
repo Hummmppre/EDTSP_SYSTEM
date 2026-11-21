@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f2ede1" />
+    <meta name="theme-color" content="#f3f5f9" />
     <title>Apply for training | EDTSP</title>
 
     <link rel="stylesheet" href="../css/portal.css" />
@@ -44,7 +44,7 @@
               <rect x="4" y="13" width="7" height="7" rx="1" />
               <rect x="13" y="13" width="7" height="7" rx="1" />
             </svg>
-            <span>Dashboard</span>
+            <span>Home</span>
           </a>
 
           <a class="nav__link" href="assessments.html">
@@ -85,7 +85,6 @@
             </svg>
             <span>Apply for training</span>
           </a>
-
         </nav>
 
         <p class="sidebar__foot">
@@ -121,6 +120,71 @@
             </p>
           </div>
 
+          <form class="topbar-search" role="search" data-nav-search>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              type="search"
+              name="q"
+              id="navSearchInput"
+              placeholder="Search portal"
+              aria-label="Search portal"
+              autocomplete="off"
+              role="combobox"
+              aria-expanded="false"
+              aria-controls="navSearchResults"
+              aria-autocomplete="list"
+              data-nav-search-input
+            />
+            <kbd class="topbar-search__hint" aria-hidden="true">/</kbd>
+            <div
+              class="search-results"
+              id="navSearchResults"
+              role="listbox"
+              aria-label="Search results"
+              data-nav-search-results
+              hidden
+            ></div>
+          </form>
+
+          <div class="topbar-tools">
+            <div class="topbar-notify" data-notify>
+              <button
+                class="icon-btn topbar-notify__trigger"
+                type="button"
+                data-notify-trigger
+                aria-label="Notifications"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                  <path d="M10 21h4" />
+                </svg>
+                <span class="notify-dot" data-notify-dot hidden></span>
+              </button>
+              <div
+                class="notify-panel"
+                data-notify-panel
+                role="dialog"
+                aria-label="Notifications"
+                hidden
+              >
+                <p class="notify-panel__title">Notifications</p>
+                <div data-notify-list></div>
+              </div>
+            </div>
+
+            <a class="icon-btn" href="profile.html" aria-label="Open profile">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="3.2" />
+                <path d="M5.5 20c.8-3.4 3.3-5.3 6.5-5.3s5.7 1.9 6.5 5.3" />
+              </svg>
+            </a>
+          </div>
+
           <div class="user-menu" data-user-menu>
             <button
               class="user-menu__trigger"
@@ -132,8 +196,17 @@
               aria-controls="userMenu"
             >
               <span class="user-menu__name" id="topbarName">Trainee</span>
-              <span class="avatar avatar--sm" id="topbarInitials" aria-hidden="true">T</span>
-              <svg class="user-menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <span
+                class="avatar avatar--sm"
+                id="topbarInitials"
+                aria-hidden="true"
+                >T</span
+              >
+              <svg
+                class="user-menu__chevron"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="m6 9 6 6 6-6" />
               </svg>
             </button>
@@ -457,55 +530,37 @@
                     <span class="process__num">01</span>
                     <strong>Applicant</strong>
                     <p>Contact details</p>
-                    <span
-                      class="sr-only process__state"
-                      data-step-state
-                    ></span>
+                    <span class="sr-only process__state" data-step-state></span>
                   </li>
                   <li data-step="2">
                     <span class="process__num">02</span>
                     <strong>Background</strong>
                     <p>Personal and school</p>
-                    <span
-                      class="sr-only process__state"
-                      data-step-state
-                    ></span>
+                    <span class="sr-only process__state" data-step-state></span>
                   </li>
                   <li data-step="3">
                     <span class="process__num">03</span>
                     <strong>Emergency contact</strong>
                     <p>Who to reach</p>
-                    <span
-                      class="sr-only process__state"
-                      data-step-state
-                    ></span>
+                    <span class="sr-only process__state" data-step-state></span>
                   </li>
                   <li data-step="4">
                     <span class="process__num">04</span>
                     <strong>Training choice</strong>
                     <p>Program and batch</p>
-                    <span
-                      class="sr-only process__state"
-                      data-step-state
-                    ></span>
+                    <span class="sr-only process__state" data-step-state></span>
                   </li>
                   <li data-step="5">
                     <span class="process__num">05</span>
                     <strong>Documents</strong>
                     <p>CV and valid ID</p>
-                    <span
-                      class="sr-only process__state"
-                      data-step-state
-                    ></span>
+                    <span class="sr-only process__state" data-step-state></span>
                   </li>
                   <li data-step="6">
                     <span class="process__num">06</span>
                     <strong>Confirmation</strong>
                     <p>Review and confirm</p>
-                    <span
-                      class="sr-only process__state"
-                      data-step-state
-                    ></span>
+                    <span class="sr-only process__state" data-step-state></span>
                   </li>
                 </ol>
 
@@ -637,7 +692,9 @@
                           aria-describedby="addressLocationHint"
                           disabled
                         >
-                          <option value="">Select city / municipality first</option>
+                          <option value="">
+                            Select city / municipality first
+                          </option>
                           <option value="__manual">
                             Not listed — enter manually
                           </option>
@@ -652,7 +709,10 @@
                         />
                       </div>
 
-                      <p class="field__hint field--full" id="addressLocationHint">
+                      <p
+                        class="field__hint field--full"
+                        id="addressLocationHint"
+                      >
                         Choose from the list, or select “Not listed” to type a
                         location.
                       </p>
@@ -857,7 +917,10 @@
                     >
                       Documents
                     </h3>
-                    <div class="document-requirements" id="documentRequirements">
+                    <div
+                      class="document-requirements"
+                      id="documentRequirements"
+                    >
                       <strong>File requirements</strong>
                       <p>
                         PDF, JPG or PNG. Up to 10 MB per file, 10 files per
@@ -1063,7 +1126,9 @@
                 <dl class="facts facts--guidance">
                   <div>
                     <dt>Eligibility</dt>
-                    <dd>Aged 18 or older, with contact and emergency details.</dd>
+                    <dd>
+                      Aged 18 or older, with contact and emergency details.
+                    </dd>
                   </div>
                   <div>
                     <dt>Applications</dt>
